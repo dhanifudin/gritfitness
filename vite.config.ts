@@ -1,0 +1,82 @@
+import { copyFileSync } from 'node:fs'
+import { fileURLToPath, URL } from 'node:url'
+import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
+import { defineConfig, type Plugin } from 'vite'
+
+// GitHub Pages has no SPA fallback: serve index.html for unknown deep links.
+const spa404 = (): Plugin => ({
+  name: 'spa-404',
+  apply: 'build',
+  writeBundle() {
+    copyFileSync('dist/index.html', 'dist/404.html')
+  },
+})
+
+export default defineConfig({
+  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  plugins: [
+    vue(),
+    tailwindcss(),
+    VitePWA({
+      registerType: 'prompt',
+      includeAssets: ['icons/favicon.ico', 'icons/apple-touch-icon-180x180.png', 'logo.png'],
+      manifest: {
+        name: 'GritFitness',
+        short_name: 'GritFit',
+        description: 'Aplikasi member GritFitness Malang: QR check-in, jadwal kelas, paket & tagihan.',
+        lang: 'id',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        orientation: 'portrait',
+        theme_color: '#14123a',
+        background_color: '#14123a',
+        icons: [
+          { src: 'icons/pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+          { src: 'icons/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+        shortcuts: [
+          { name: 'QR Check-in', url: '/qr', icons: [{ src: 'icons/pwa-192x192.png', sizes: '192x192' }] },
+          { name: 'Jadwal Kelas', url: '/jadwal', icons: [{ src: 'icons/pwa-192x192.png', sizes: '192x192' }] },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,png,ico,svg,woff2}'],
+        navigateFallback: 'index.html',
+        cleanupOutdatedCaches: true,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.origin === 'https://gritfitness.id' && url.pathname.startsWith('/api/'),
+            handler: 'NetworkFirst',
+            method: 'GET',
+            options: {
+              cacheName: 'api',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.origin === 'https://gritfitness.id' && url.pathname.startsWith('/storage/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images',
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com',
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'fonts', cacheableResponse: { statuses: [0, 200] } },
+          },
+        ],
+      },
+    }),
+    spa404(),
+  ],
+})

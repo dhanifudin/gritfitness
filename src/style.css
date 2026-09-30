@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-display: 'Kanit', 'Plus Jakarta Sans', sans-serif;
+  --color-ink-950: #0d0c26;
+  --color-ink-900: #14123a;
+  --color-ink-800: #1d1a52;
+  --color-ink-700: #2a2670;
+  --color-brand-500: #4a3fc4;
+  --color-brand-400: #6f63f0;
+  --color-brand-300: #a29bfa;
+  --color-pink-grit: #ec2f8f;
+  --color-lime-grit: #c8f560;
+}
+
+html, body, #app { height: 100%; }
+body {
+  margin: 0;
+  background: var(--color-ink-950);
+  color: #ecebff;
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+.safe-b { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+.safe-t { padding-top: max(env(safe-area-inset-top), 0px); }
+.card { @apply rounded-2xl border border-white/8 bg-ink-900/80; }
+.btn, .btn-primary, .btn-ghost { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[.98] disabled:opacity-50; }
+.btn-primary { @apply bg-brand-400 text-white; }
+.btn-ghost { @apply border border-white/12 text-white/90; }
+.input { @apply w-full rounded-xl border border-white/12 bg-ink-800/70 px-4 py-3 text-base outline-none focus:border-brand-300; }
