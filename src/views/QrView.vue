@@ -89,7 +89,7 @@ const at = computed(() => (cur.value?.at ? new Date(cur.value.at).toLocaleTimeSt
       </template>
       <div v-else class="py-10">
         <p class="font-semibold">{{ cur?.data.error === 'Cuti' ? 'Anda sedang cuti' : 'Tidak ada paket aktif' }}</p>
-        <RouterLink to="/paket" class="btn-primary mt-4">Lihat paket</RouterLink>
+        <RouterLink to="/packages" class="btn-primary mt-4">Lihat paket</RouterLink>
       </div>
     </div>
 

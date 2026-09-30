@@ -27,6 +27,12 @@ export const useAuth = defineStore('auth', () => {
     localStorage.setItem(userKey, JSON.stringify(u))
   }
 
+  function patchUser(patch: Partial<User>) {
+    if (!user.value) return
+    user.value = { ...user.value, ...patch }
+    localStorage.setItem(userKey, JSON.stringify(user.value))
+  }
+
   function clear() {
     setToken(null)
     token.value = null
@@ -39,5 +45,5 @@ export const useAuth = defineStore('auth', () => {
     clear()
   }
 
-  return { user, token, loggedIn, login, logout, clear }
+  return { user, token, loggedIn, login, logout, clear, patchUser }
 })

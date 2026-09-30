@@ -13,6 +13,13 @@ const rows = () => [
   ['Tipe', auth.user?.tipe],
 ]
 
+const links = [
+  { to: '/profile/edit', label: 'Ubah Profil' },
+  { to: '/memberships', label: 'Riwayat Membership' },
+  { to: '/leave', label: 'Cuti Membership' },
+  { to: '/packages', label: 'Paket' },
+]
+
 async function out() {
   await auth.logout()
   router.replace({ name: 'login' })
@@ -31,7 +38,9 @@ async function out() {
         </div>
       </dl>
     </div>
-    <RouterLink to="/paket" class="card mt-3 flex justify-between px-4 py-4 text-sm font-medium">Paket <span class="text-white/40">›</span></RouterLink>
+    <RouterLink v-for="l in links" :key="l.to" :to="l.to" class="card mt-3 flex justify-between px-4 py-4 text-sm font-medium">
+      {{ l.label }} <span class="text-white/40">›</span>
+    </RouterLink>
     <button class="btn-ghost mt-5 w-full !text-red-300" @click="out">Keluar</button>
   </div>
 </template>

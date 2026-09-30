@@ -68,6 +68,10 @@ async function verify() {
       <button type="button" class="btn-ghost w-full" @click="step = 'phone'">Ganti nomor</button>
     </form>
 
+    <p v-if="route.query.registered" class="mt-4 text-center text-sm text-emerald-300">Pendaftaran berhasil. Silakan masuk.</p>
     <p v-if="error" class="mt-4 text-center text-sm text-red-300">{{ error }}</p>
+    <p class="mt-8 text-center text-sm text-white/60">
+      Belum jadi member? <RouterLink to="/register" class="font-semibold text-lime-grit">Daftar</RouterLink>
+    </p>
   </div>
 </template>

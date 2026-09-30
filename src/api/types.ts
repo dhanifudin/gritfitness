@@ -60,3 +60,81 @@ export interface PaketMembership {
   tipe: string
   jenis: string
 }
+
+export interface ClassDetail {
+  id: number
+  nama_kelas: string
+  nama_jadwal_kelas: string
+  tanggal: string
+  jam_awal: string
+  jam_akhir: string
+  instruktur: string | null
+  max_member: number
+  peserta: number
+  waitinglist: number
+  harga_rp?: string
+  daftar: string
+  id_peserta?: number
+}
+export interface ActionResult {
+  success?: boolean
+  message?: string
+}
+export interface PackageDetail {
+  id: number
+  nama: string
+  durasi: number
+  satuan_durasi: string
+  harga: string
+  total_durasi?: number
+  jumlah_pertemuan: number | null
+  tipe: string
+  jenis: string
+}
+export interface ClassPackage {
+  id: number
+  nama: string
+  harga: string
+  foto: string
+  kelas_khusus: string
+  durasi_waktu: number
+  maksimal_member: number
+  deskripsi?: string
+  kategori?: string
+  instruktur?: string
+  jadwal?: { id: number; tanggal: string; jam_awal: string; jam_akhir: string }[]
+}
+export interface BillDetail extends Tagihan {
+  paket: string
+  tanggal: string
+  total_rp: string
+  dibayar_rp: string
+  belum_rp: string
+  nama_member: string
+}
+export interface Membership {
+  id: number
+  nama_paket: string
+  jenis: string
+  tanggal_mulai: string
+  tanggal_selesai: string
+  status: string
+  harga: string
+  status_bayar?: string
+  kode_registrasi?: string
+  total_durasi?: number
+  nama_member?: string
+}
+export interface Cuti {
+  id: number
+  status_cuti: string
+  nama_kegiatan: string
+  tgl_awal: string | null
+  tgl_akhir: string | null
+  status_paket: string
+  status_bayar: string
+}
+export interface Region {
+  id: string
+  text: string
+}

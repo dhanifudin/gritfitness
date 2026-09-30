@@ -13,9 +13,10 @@ const { data: bills } = useAsync(tagihan, [])
 
 const unpaid = () => bills.value.filter((b) => b.status === 'Belum Dibayar' || b.status === 'Belum Lunas').length
 const actions = [
-  { to: '/paket', label: 'Beli / Perpanjang Paket' },
-  { to: '/jadwal', label: 'Booking Kelas' },
-  { to: '/tagihan', label: 'Tagihan' },
+  { to: '/classes', label: 'Booking Kelas' },
+  { to: '/packages', label: 'Lihat Paket' },
+  { to: '/memberships', label: 'Riwayat Membership' },
+  { to: '/leave', label: 'Cuti Membership' },
 ]
 </script>
 
@@ -36,7 +37,7 @@ const actions = [
         <p class="font-display text-lg">
           {{ gym?.error === 'Cuti' ? 'Anda sedang cuti' : 'Membership belum aktif atau sudah berakhir' }}
         </p>
-        <p class="mt-1 text-sm text-white/70">Pilih paket untuk mulai latihan.</p>
+        <p class="mt-1 text-sm text-white/70">Hubungi front desk untuk mengaktifkan paket.</p>
       </template>
     </RouterLink>
 
@@ -48,7 +49,7 @@ const actions = [
 
     <div v-if="unpaid()" class="mt-3 rounded-2xl border border-pink-grit/40 bg-pink-grit/10 p-4 text-sm">
       Ada <b>{{ unpaid() }}</b> tagihan belum lunas.
-      <RouterLink to="/tagihan" class="ml-1 font-semibold text-pink-grit underline">Lihat</RouterLink>
+      <RouterLink to="/bills" class="ml-1 font-semibold text-pink-grit underline">Lihat</RouterLink>
     </div>
 
     <div class="mt-5 grid gap-2">
