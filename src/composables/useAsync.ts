@@ -1,22 +1,49 @@
 import { onMounted, ref, type Ref } from 'vue'
+import * as cache from '@/lib/dataCache'
 
-export function useAsync<T>(fn: () => Promise<T>, initial: T) {
+const FRESH_MS = 30_000
+
+interface Options {
+  /** Enables stale-while-revalidate: cached data paints instantly, then is refreshed. */
+  key?: string | (() => string)
+}
+
+export function useAsync<T>(fn: () => Promise<T>, initial: T, opts: Options = {}) {
+  const keyOf = () => (typeof opts.key === 'function' ? opts.key() : opts.key)
   const data = ref(initial) as Ref<T>
   const loading = ref(true)
   const error = ref('')
-  async function run() {
-    loading.value = true
+  const savedAt = ref(0)
+  /** true when a refresh failed (offline/server error) and older data is on screen */
+  const stale = ref(false)
+
+  const k0 = keyOf()
+  const hit = k0 ? cache.read<T>(k0) : null
+  if (hit) {
+    data.value = hit.data
+    savedAt.value = hit.savedAt
+    loading.value = false
+  }
+
+  async function run(force = true) {
+    if (!force && savedAt.value && Date.now() - savedAt.value < FRESH_MS) return
+    if (!savedAt.value) loading.value = true
     error.value = ''
+    stale.value = false
     try {
-      data.value = await fn()
+      const res = await fn()
+      data.value = res
+      const key = keyOf()
+      savedAt.value = key ? cache.write(key, res) : Date.now()
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Terjadi kesalahan'
+      if (savedAt.value) stale.value = true
+      else error.value = e instanceof Error ? e.message : 'Terjadi kesalahan'
     } finally {
       loading.value = false
     }
   }
-  onMounted(run)
-  return { data, loading, error, reload: run }
+  onMounted(() => run(false))
+  return { data, loading, error, savedAt, stale, reload: () => run(true) }
 }
 
 // API sends both raw ("75000.00") and pre-formatted ("Rp. 1.491.750") prices.

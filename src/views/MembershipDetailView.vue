@@ -6,14 +6,15 @@ import DetailRow from '@/components/DetailRow.vue'
 import StateBox from '@/components/StateBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { useAsync } from '@/composables/useAsync'
+import { CK } from '@/lib/dataCache'
 
 const route = useRoute()
-const { data: m, loading, error, reload } = useAsync(() => membershipDetail(route.params.id as string), null)
+const { data: m, loading, error, savedAt, stale, reload } = useAsync(() => membershipDetail(route.params.id as string), null, { key: () => CK.membershipDetail(route.params.id as string) })
 </script>
 
 <template>
   <BackHeader title="Detail membership" :subtitle="m?.kode_registrasi" />
-  <StateBox :loading="loading" :error="error" @retry="reload">
+  <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="m" class="px-5">
       <div class="card p-5">
         <div class="flex items-start justify-between gap-3">

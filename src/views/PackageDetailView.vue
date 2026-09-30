@@ -5,14 +5,15 @@ import BackHeader from '@/components/BackHeader.vue'
 import DetailRow from '@/components/DetailRow.vue'
 import StateBox from '@/components/StateBox.vue'
 import { rupiah, useAsync } from '@/composables/useAsync'
+import { CK } from '@/lib/dataCache'
 
 const route = useRoute()
-const { data: p, loading, error, reload } = useAsync(() => packageDetail(route.params.id as string), null)
+const { data: p, loading, error, savedAt, stale, reload } = useAsync(() => packageDetail(route.params.id as string), null, { key: () => CK.packageDetail(route.params.type as string, route.params.id as string) })
 </script>
 
 <template>
   <BackHeader :title="p?.nama ?? 'Detail paket'" :subtitle="route.params.type === 'pt' ? 'Personal Trainer' : 'Membership'" />
-  <StateBox :loading="loading" :error="error" @retry="reload">
+  <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="p" class="px-5">
       <div class="card p-5">
         <p class="font-display text-3xl text-lime-grit">{{ rupiah(p.harga) }}</p>

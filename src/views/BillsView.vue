@@ -4,13 +4,14 @@ import PageHeader from '@/components/PageHeader.vue'
 import StateBox from '@/components/StateBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { rupiah, useAsync } from '@/composables/useAsync'
+import { CK } from '@/lib/dataCache'
 
-const { data, loading, error, reload } = useAsync(tagihan, [])
+const { data, loading, error, savedAt, stale, reload } = useAsync(tagihan, [], { key: CK.bills })
 </script>
 
 <template>
   <PageHeader title="Tagihan" subtitle="Riwayat tagihan" />
-  <StateBox :loading="loading" :error="error" :empty="!data.length" empty-text="Belum ada tagihan" @retry="reload">
+  <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" :empty="!data.length" empty-text="Belum ada tagihan" @retry="reload">
     <ul class="space-y-3 px-5">
       <li v-for="b in data" :key="b.id">
       <RouterLink :to="`/bills/${b.id}`" class="card block p-4">

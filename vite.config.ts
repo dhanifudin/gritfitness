@@ -49,17 +49,7 @@ export default defineConfig({
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.origin === 'https://gritfitness.id' && url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
-            method: 'GET',
-            options: {
-              cacheName: 'api',
-              networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
+          // /api/* is deliberately not cached here: the app keeps its own per-user cache (src/lib/dataCache.ts)
           {
             urlPattern: ({ url }) => url.origin === 'https://gritfitness.id' && url.pathname.startsWith('/storage/'),
             handler: 'CacheFirst',

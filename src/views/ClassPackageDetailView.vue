@@ -7,15 +7,16 @@ import BackHeader from '@/components/BackHeader.vue'
 import DetailRow from '@/components/DetailRow.vue'
 import StateBox from '@/components/StateBox.vue'
 import { assetUrl, rupiah, useAsync } from '@/composables/useAsync'
+import { CK } from '@/lib/dataCache'
 
 const route = useRoute()
-const { data: p, loading, error, reload } = useAsync(() => paketKelasDetail(route.params.id as string), null)
+const { data: p, loading, error, savedAt, stale, reload } = useAsync(() => paketKelasDetail(route.params.id as string), null, { key: () => CK.packageDetail('class', route.params.id as string) })
 const html = computed(() => DOMPurify.sanitize(p.value?.deskripsi ?? ''))
 </script>
 
 <template>
   <BackHeader :title="p?.nama ?? 'Detail kelas'" :subtitle="p?.kategori" />
-  <StateBox :loading="loading" :error="error" @retry="reload">
+  <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="p" class="px-5">
       <img v-if="p.foto" :src="assetUrl('/storage/kelas/' + p.foto)" alt="" class="mb-4 h-48 w-full rounded-2xl object-cover" />
       <div class="card p-5">

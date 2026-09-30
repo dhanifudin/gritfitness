@@ -3,13 +3,14 @@ import { jadwalKelas } from '@/api/endpoints'
 import PageHeader from '@/components/PageHeader.vue'
 import StateBox from '@/components/StateBox.vue'
 import { assetUrl, useAsync } from '@/composables/useAsync'
+import { CK } from '@/lib/dataCache'
 
-const { data, loading, error, reload } = useAsync(jadwalKelas, [])
+const { data, loading, error, savedAt, stale, reload } = useAsync(jadwalKelas, [], { key: CK.classes })
 </script>
 
 <template>
   <PageHeader title="Kelas" subtitle="Kelas yang tersedia" />
-  <StateBox :loading="loading" :error="error" :empty="!data.length" empty-text="Belum ada jadwal kelas" @retry="reload">
+  <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" :empty="!data.length" empty-text="Belum ada jadwal kelas" @retry="reload">
     <ul class="space-y-3 px-5">
       <li v-for="j in data" :key="j.id">
       <RouterLink :to="`/classes/${j.id}`" class="card flex gap-3 p-3">

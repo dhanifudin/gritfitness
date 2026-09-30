@@ -1,15 +1,37 @@
 <script setup lang="ts">
 import { memberAktif, memberPtAktif, tagihan } from '@/api/endpoints'
+import { onMounted } from 'vue'
 import { useAsync } from '@/composables/useAsync'
+import { CK } from '@/lib/dataCache'
+import { prefetchAll } from '@/lib/prefetch'
+import { syncQr } from '@/lib/qrCache'
 import { useInstall } from '@/composables/useSw'
 import { useAuth } from '@/stores/auth'
 
 const auth = useAuth()
 const uid = auth.user!.id
 const install = useInstall()
-const { data: gym, loading } = useAsync(() => memberAktif(uid), null as Awaited<ReturnType<typeof memberAktif>> | null)
-const { data: pt } = useAsync(() => memberPtAktif(uid), null as Awaited<ReturnType<typeof memberPtAktif>> | null)
-const { data: bills } = useAsync(tagihan, [])
+const me = { id: uid, nama: auth.user!.nama }
+const { data: gym, loading } = useAsync(
+  async () => {
+    const r = await memberAktif(uid)
+    syncQr(me, 'gym', r) // keep the offline QR fresh whenever Home loads
+    return r
+  },
+  null as Awaited<ReturnType<typeof memberAktif>> | null,
+  { key: CK.memberGym },
+)
+const { data: pt } = useAsync(
+  async () => {
+    const r = await memberPtAktif(uid)
+    syncQr(me, 'pt', r)
+    return r
+  },
+  null as Awaited<ReturnType<typeof memberPtAktif>> | null,
+  { key: CK.memberPt },
+)
+const { data: bills } = useAsync(tagihan, [], { key: CK.bills })
+onMounted(() => prefetchAll(uid))
 
 const unpaid = () => bills.value.filter((b) => b.status === 'Belum Dibayar' || b.status === 'Belum Lunas').length
 const actions = [

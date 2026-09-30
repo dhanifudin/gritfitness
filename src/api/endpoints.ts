@@ -8,7 +8,6 @@ import type { Region } from './types'
 export const requestOtp = (no_hp: string) => api<{ message?: string }>('/request-otp', { method: 'POST', body: { no_hp } })
 export const verifyOtp = (no_hp: string, otp: string) => api<LoginResponse>('/verify-otp', { method: 'POST', body: { no_hp, otp } })
 export const logout = () => api('/logout', { method: 'POST' })
-export const validateToken = () => api('/validate-token', { method: 'POST' })
 
 export const memberAktif = (userId: number) => api<ActiveMember>(`/member/list/${userId}`, { emptyOn404: { error: 'none' } })
 export const memberPtAktif = (userId: number) => api<ActiveMember>(`/memberpt/list/${userId}`, { emptyOn404: { error: 'none' } })

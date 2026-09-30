@@ -12,8 +12,11 @@ app.use(router)
 
 const auth = useAuth()
 setUnauthorizedHandler(() => {
-  auth.clear()
-  router.replace({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })
+  auth.expire()
+  // The QR screen keeps working from its cache; everything else needs a fresh login.
+  if (router.currentRoute.value.name !== 'qr') {
+    router.replace({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })
+  }
 })
 
 app.mount('#app')

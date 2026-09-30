@@ -4,11 +4,13 @@ import { useRouter } from 'vue-router'
 import { profileUpdate } from '@/api/endpoints'
 import BackHeader from '@/components/BackHeader.vue'
 import { useAction } from '@/composables/useAction'
+import { useOnline } from '@/composables/useSw'
 import { useAuth } from '@/stores/auth'
 
 const auth = useAuth()
 const router = useRouter()
 const { busy, error, run } = useAction()
+const online = useOnline()
 
 // API stores dates as DD/MM/YYYY; <input type=date> wants YYYY-MM-DD
 const toInput = (d: string | null) => {
@@ -77,7 +79,8 @@ async function submit() {
       <input type="file" accept="image/*" class="input mt-1" @change="pick" />
     </label>
     <img v-if="preview" :src="preview" alt="Pratinjau" class="h-24 w-24 rounded-xl object-cover" />
+    <p v-if="!online" class="text-sm text-amber-300">Perlu koneksi internet untuk menyimpan.</p>
     <p v-if="error" class="text-sm text-red-300">{{ error }}</p>
-    <button class="btn-primary w-full" :disabled="busy">{{ busy ? 'Menyimpan…' : 'Simpan' }}</button>
+    <button class="btn-primary w-full" :disabled="busy || !online">{{ busy ? 'Menyimpan…' : 'Simpan' }}</button>
   </form>
 </template>

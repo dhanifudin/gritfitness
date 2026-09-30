@@ -8,11 +8,14 @@ import DetailRow from '@/components/DetailRow.vue'
 import StateBox from '@/components/StateBox.vue'
 import { useAction } from '@/composables/useAction'
 import { useAsync } from '@/composables/useAsync'
+import { CK, invalidate } from '@/lib/dataCache'
+import { useOnline } from '@/composables/useSw'
 
 type Kind = 'register' | 'waiting' | 'cancel'
 
 const route = useRoute()
-const { data: c, loading, error, reload } = useAsync(() => classDetail(route.params.id as string), null)
+const { data: c, loading, error, savedAt, stale, reload } = useAsync(() => classDetail(route.params.id as string), null, { key: () => CK.classDetail(route.params.id as string) })
+const online = useOnline()
 const { busy, error: actionError, run } = useAction()
 
 const notices: Record<string, string> = {
@@ -60,6 +63,7 @@ async function confirm() {
   if (!res) return
   sheet.value = false
   reason.value = ''
+  invalidate('classes') // list counts and status changed
   done.value = res.message || 'Berhasil'
   await reload()
 }
@@ -67,7 +71,7 @@ async function confirm() {
 
 <template>
   <BackHeader :title="c?.nama_jadwal_kelas ?? 'Detail kelas'" :subtitle="c?.nama_kelas" />
-  <StateBox :loading="loading && !c" :error="error" @retry="reload">
+  <StateBox :loading="loading && !c" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="c" class="px-5">
       <div class="card px-5 py-2">
         <dl class="divide-y divide-white/8">
@@ -82,7 +86,8 @@ async function confirm() {
       <p v-if="done" class="mt-4 rounded-xl bg-emerald-500/15 px-4 py-3 text-sm text-emerald-300">{{ done }}</p>
       <p v-if="notice" class="mt-4 rounded-xl bg-white/5 px-4 py-3 text-center text-sm text-white/70">{{ notice }}</p>
 
-      <button v-if="action" :class="action.danger ? 'btn mt-4 w-full bg-red-500 text-white' : 'btn-primary mt-4 w-full'" @click="(sheet = true), (done = '')">
+      <p v-if="action && !online" class="mt-4 text-center text-xs text-amber-300">Perlu koneksi internet untuk mendaftar atau membatalkan.</p>
+      <button v-if="action" :disabled="!online" :class="action.danger ? 'btn mt-4 w-full bg-red-500 text-white' : 'btn-primary mt-4 w-full'" @click="(sheet = true), (done = '')">
         {{ action.label }}
       </button>
     </div>

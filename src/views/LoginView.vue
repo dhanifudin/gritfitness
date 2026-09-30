@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { requestOtp } from '@/api/endpoints'
+import { hasValidQr } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
 
 const auth = useAuth()
@@ -67,6 +68,8 @@ async function verify() {
       <button class="btn-primary w-full" :disabled="busy || otp.length < 4">{{ busy ? 'Memeriksa…' : 'Masuk' }}</button>
       <button type="button" class="btn-ghost w-full" @click="step = 'phone'">Ganti nomor</button>
     </form>
+
+    <RouterLink v-if="hasValidQr()" to="/qr" class="btn-ghost mt-4 w-full !border-lime-grit/50 !text-lime-grit">Tampilkan QR (tanpa masuk)</RouterLink>
 
     <p v-if="route.query.registered" class="mt-4 text-center text-sm text-emerald-300">Pendaftaran berhasil. Silakan masuk.</p>
     <p v-if="error" class="mt-4 text-center text-sm text-red-300">{{ error }}</p>

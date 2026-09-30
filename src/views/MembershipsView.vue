@@ -4,15 +4,16 @@ import PageHeader from '@/components/PageHeader.vue'
 import StateBox from '@/components/StateBox.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
 import { useAsync } from '@/composables/useAsync'
+import { CK } from '@/lib/dataCache'
 import { useAuth } from '@/stores/auth'
 
 const uid = useAuth().user!.id
-const { data, loading, error, reload } = useAsync(() => memberships(uid), [])
+const { data, loading, error, savedAt, stale, reload } = useAsync(() => memberships(uid), [], { key: CK.memberships })
 </script>
 
 <template>
   <PageHeader title="Riwayat Membership" />
-  <StateBox :loading="loading" :error="error" :empty="!data.length" empty-text="Belum ada riwayat membership" @retry="reload">
+  <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" :empty="!data.length" empty-text="Belum ada riwayat membership" @retry="reload">
     <ul class="space-y-3 px-5">
       <li v-for="m in data" :key="m.id">
         <RouterLink :to="`/memberships/${m.id}`" class="card block p-4">

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { hasValidQr } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
 
 export const router = createRouter({
@@ -28,6 +29,8 @@ export const router = createRouter({
 
 router.beforeEach((to) => {
   const auth = useAuth()
+  // Cached QR stays reachable after the session expires, until the membership ends.
+  if (to.name === 'qr' && !auth.loggedIn && hasValidQr()) return
   if (!to.meta.public && !auth.loggedIn) return { name: 'login', query: { redirect: to.fullPath } }
   if (to.meta.public && auth.loggedIn) return { name: 'home' }
 })

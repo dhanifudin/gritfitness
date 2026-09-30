@@ -4,6 +4,7 @@ import { paketKelas, paketMemberships, paketPt } from '@/api/endpoints'
 import PageHeader from '@/components/PageHeader.vue'
 import StateBox from '@/components/StateBox.vue'
 import { assetUrl, rupiah, useAsync } from '@/composables/useAsync'
+import { CK } from '@/lib/dataCache'
 
 type Tab = 'membership' | 'pt' | 'class'
 const tabs: { key: Tab; label: string }[] = [
@@ -12,7 +13,11 @@ const tabs: { key: Tab; label: string }[] = [
   { key: 'class', label: 'Kelas' },
 ]
 const tab = ref<Tab>('membership')
-const sources = { membership: useAsync(paketMemberships, []), pt: useAsync(paketPt, []), class: useAsync(paketKelas, []) }
+const sources = {
+  membership: useAsync(paketMemberships, [], { key: CK.packages('membership') }),
+  pt: useAsync(paketPt, [], { key: CK.packages('pt') }),
+  class: useAsync(paketKelas, [], { key: CK.packages('class') }),
+}
 const cur = () => sources[tab.value]
 const link = (id: number) => (tab.value === 'class' ? `/packages/class/${id}` : `/packages/${tab.value}/${id}`)
 </script>
@@ -30,7 +35,7 @@ const link = (id: number) => (tab.value === 'class' ? `/packages/class/${id}` : 
       {{ t.label }}
     </button>
   </div>
-  <StateBox :loading="cur().loading.value" :error="cur().error.value" :empty="!cur().data.value.length" @retry="cur().reload()">
+  <StateBox :loading="cur().loading.value" :error="cur().error.value" :stale="cur().stale.value" :saved-at="cur().savedAt.value" :empty="!cur().data.value.length" @retry="cur().reload()">
     <ul class="space-y-3 px-5">
       <li v-for="p in cur().data.value as any[]" :key="p.id">
         <RouterLink :to="link(p.id)" class="card flex gap-3 p-4">

@@ -1,6 +1,8 @@
 <script setup lang="ts">
-defineProps<{ loading?: boolean; error?: string; empty?: boolean; emptyText?: string }>()
+defineProps<{ loading?: boolean; error?: string; empty?: boolean; emptyText?: string; stale?: boolean; savedAt?: number }>()
 defineEmits<{ retry: [] }>()
+
+const hhmm = (t: number) => new Date(t).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 </script>
 
 <template>
@@ -11,6 +13,11 @@ defineEmits<{ retry: [] }>()
     <p class="text-sm text-red-300">{{ error }}</p>
     <button class="btn-ghost mt-3" @click="$emit('retry')">Coba lagi</button>
   </div>
-  <p v-else-if="empty" class="px-5 py-10 text-center text-sm text-white/50">{{ emptyText ?? 'Belum ada data' }}</p>
-  <slot v-else />
+  <template v-else>
+    <p v-if="stale && savedAt" class="mx-5 mb-3 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300">
+      Tidak bisa memperbarui · data tersimpan {{ hhmm(savedAt) }}
+    </p>
+    <p v-if="empty" class="px-5 py-10 text-center text-sm text-white/50">{{ emptyText ?? 'Belum ada data' }}</p>
+    <slot v-else />
+  </template>
 </template>

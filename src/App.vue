@@ -2,10 +2,12 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import TabBar from '@/components/TabBar.vue'
+import { useAuth } from '@/stores/auth'
 import { useOnline, useUpdater } from '@/composables/useSw'
 
 const route = useRoute()
-const showTabs = computed(() => !route.meta.public)
+const auth = useAuth()
+const showTabs = computed(() => !route.meta.public && auth.loggedIn)
 const online = useOnline()
 const { needRefresh, update } = useUpdater()
 </script>
