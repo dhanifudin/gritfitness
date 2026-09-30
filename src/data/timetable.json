@@ -1,0 +1,310 @@
+{
+  "generatedAt": "2026-09-30",
+  "weeksUsed": 4,
+  "backtest": {
+    "precision": 0.87,
+    "recall": 0.96
+  },
+  "slots": [
+    {
+      "wd": 0,
+      "start": "08:00",
+      "end": "09:00",
+      "name": "GLUTES & CORE",
+      "kelas": "Abs & Glutes",
+      "instructor": "Coach Estu",
+      "packageId": 22,
+      "weeks": 4
+    },
+    {
+      "wd": 0,
+      "start": "09:00",
+      "end": "10:00",
+      "name": "BODY COMBAT",
+      "kelas": "Lesmills Body Combat",
+      "instructor": "Coach Atha",
+      "packageId": 2,
+      "weeks": 4
+    },
+    {
+      "wd": 0,
+      "start": "16:00",
+      "end": "17:00",
+      "name": "Strength Training for Senior",
+      "kelas": "STRENGTH TRAINING FOR SENIOR",
+      "instructor": "Coach Dzaky",
+      "packageId": 28,
+      "weeks": 4
+    },
+    {
+      "wd": 0,
+      "start": "17:00",
+      "end": "18:00",
+      "name": "DANCE FITNESS CLASS",
+      "kelas": "Hip Hop",
+      "instructor": "Coach Hyang",
+      "packageId": 5,
+      "weeks": 4
+    },
+    {
+      "wd": 0,
+      "start": "18:00",
+      "end": "19:00",
+      "name": "BODY PUMP",
+      "kelas": "Lesmills Body Pump",
+      "instructor": "Coach Yannie",
+      "packageId": 1,
+      "weeks": 4
+    },
+    {
+      "wd": 0,
+      "start": "19:00",
+      "end": "20:00",
+      "name": "PILATES",
+      "kelas": "Lesmills Pilates",
+      "instructor": "Coach Yannie",
+      "packageId": 8,
+      "weeks": 3
+    },
+    {
+      "wd": 1,
+      "start": "08:00",
+      "end": "09:00",
+      "name": "ZUMBA",
+      "kelas": "Zumba",
+      "instructor": "Zin Sinyo",
+      "packageId": 3,
+      "weeks": 4
+    },
+    {
+      "wd": 1,
+      "start": "09:00",
+      "end": "10:00",
+      "name": "STRENGTH DEVELOPMENT",
+      "kelas": "Strength Development",
+      "instructor": "Coach Aang",
+      "packageId": 21,
+      "weeks": 4
+    },
+    {
+      "wd": 1,
+      "start": "19:00",
+      "end": "20:00",
+      "name": "BODY COMBAT",
+      "kelas": "Lesmills Body Combat",
+      "instructor": "Coach Atha",
+      "packageId": 2,
+      "weeks": 4
+    },
+    {
+      "wd": 2,
+      "start": "08:00",
+      "end": "09:00",
+      "name": "BODY PUMP",
+      "kelas": "Lesmills Body Pump",
+      "instructor": "Coach Aang",
+      "packageId": 1,
+      "weeks": 4
+    },
+    {
+      "wd": 2,
+      "start": "09:15",
+      "end": "10:15",
+      "name": "BODY COMBAT",
+      "kelas": "Lesmills Body Combat",
+      "instructor": "Coach Yannie",
+      "packageId": 2,
+      "weeks": 4
+    },
+    {
+      "wd": 2,
+      "start": "17:00",
+      "end": "18:00",
+      "name": "STRENGTH DEVELOPMENT",
+      "kelas": "Strength Development",
+      "instructor": "Coach Dzaky",
+      "packageId": 21,
+      "weeks": 4
+    },
+    {
+      "wd": 2,
+      "start": "18:00",
+      "end": "19:00",
+      "name": "ZUMBA",
+      "kelas": "Zumba",
+      "instructor": "Zin Wahyu",
+      "packageId": 3,
+      "weeks": 4
+    },
+    {
+      "wd": 2,
+      "start": "19:00",
+      "end": "20:00",
+      "name": "BOXING",
+      "kelas": "Boxing",
+      "instructor": "Coach Randy",
+      "packageId": 10,
+      "weeks": 4
+    },
+    {
+      "wd": 3,
+      "start": "08:00",
+      "end": "09:00",
+      "name": "FUNCTIONAL CIRCUIT",
+      "kelas": "Functional Circuit",
+      "instructor": "Coach Wira",
+      "packageId": 23,
+      "weeks": 4
+    },
+    {
+      "wd": 3,
+      "start": "09:00",
+      "end": "10:00",
+      "name": "POUND",
+      "kelas": "Pound",
+      "instructor": "PTC Irena",
+      "packageId": 4,
+      "weeks": 4
+    },
+    {
+      "wd": 3,
+      "start": "16:00",
+      "end": "17:00",
+      "name": "STRENGTH DEVELOPMENT",
+      "kelas": "Strength Development",
+      "instructor": "Coach Aang",
+      "packageId": 21,
+      "weeks": 4
+    },
+    {
+      "wd": 3,
+      "start": "17:00",
+      "end": "18:00",
+      "name": "ZUMBA",
+      "kelas": "Zumba",
+      "instructor": "Zin Surya",
+      "packageId": 3,
+      "weeks": 4
+    },
+    {
+      "wd": 3,
+      "start": "18:00",
+      "end": "19:00",
+      "name": "BODY COMBAT",
+      "kelas": "Lesmills Body Combat",
+      "instructor": "Coach Azhar",
+      "packageId": 2,
+      "weeks": 4
+    },
+    {
+      "wd": 3,
+      "start": "19:00",
+      "end": "20:00",
+      "name": "YOGA",
+      "kelas": "Yoga all Level",
+      "instructor": "Coach Dhea",
+      "packageId": 12,
+      "weeks": 2
+    },
+    {
+      "wd": 3,
+      "start": "19:00",
+      "end": "20:00",
+      "name": "YOGA",
+      "kelas": "Yoga Hatha",
+      "instructor": "Coach Dhea",
+      "packageId": 13,
+      "weeks": 2
+    },
+    {
+      "wd": 4,
+      "start": "07:00",
+      "end": "08:00",
+      "name": "Strength Training for Senior",
+      "kelas": "STRENGTH TRAINING FOR SENIOR",
+      "instructor": "Coach Atha",
+      "packageId": 28,
+      "weeks": 4
+    },
+    {
+      "wd": 4,
+      "start": "08:00",
+      "end": "09:00",
+      "name": "BARRE",
+      "kelas": "Barre",
+      "instructor": "Coach Rere",
+      "packageId": 24,
+      "weeks": 4
+    },
+    {
+      "wd": 4,
+      "start": "09:00",
+      "end": "10:00",
+      "name": "BODY PUMP",
+      "kelas": "Lesmills Body Pump",
+      "instructor": "Coach Dzaky",
+      "packageId": 1,
+      "weeks": 4
+    },
+    {
+      "wd": 4,
+      "start": "18:00",
+      "end": "19:00",
+      "name": "STRENGTH & CONDITIONING",
+      "kelas": "Strength & Conditioning",
+      "instructor": "Coach Estu",
+      "packageId": 18,
+      "weeks": 4
+    },
+    {
+      "wd": 4,
+      "start": "19:00",
+      "end": "20:00",
+      "name": "MUAYTHAI",
+      "kelas": "Muay thai",
+      "instructor": "Coach Stivian",
+      "packageId": 7,
+      "weeks": 4
+    },
+    {
+      "wd": 5,
+      "start": "08:15",
+      "end": "09:15",
+      "name": "YOGA",
+      "kelas": "Yoga all Level",
+      "instructor": "Coach Dhea",
+      "packageId": 12,
+      "weeks": 4
+    },
+    {
+      "wd": 5,
+      "start": "09:15",
+      "end": "10:15",
+      "name": "ZUMBA",
+      "kelas": "Zumba",
+      "instructor": "Zin Renny",
+      "packageId": 3,
+      "weeks": 4
+    },
+    {
+      "wd": 5,
+      "start": "16:00",
+      "end": "17:00",
+      "name": "BODY PUMP",
+      "kelas": "Lesmills Body Pump",
+      "instructor": "Coach Yannie",
+      "packageId": 1,
+      "weeks": 3
+    },
+    {
+      "wd": 5,
+      "start": "17:00",
+      "end": "18:00",
+      "name": "BODY COMBAT",
+      "kelas": "Lesmills Body Combat",
+      "instructor": "Coach Azhar",
+      "packageId": 2,
+      "weeks": 3
+    }
+  ]
+}

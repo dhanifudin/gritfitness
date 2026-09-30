@@ -24,3 +24,16 @@ Regenerate icons from `public/icons/source.jpg` with `npx pwa-assets-generator`.
 - Never use a trailing slash in API paths; the server redirects to plain `http://`.
 - "No data" is often HTTP 404 `{status, message}`; `api()` maps it to an empty value via `emptyOn404`.
 - Active membership / QR: `GET /member/list/:userId` returns `qr_code` as a base64 SVG.
+
+## Weekly class timetable
+
+The API only lists **today's** classes, and schedule rows are created about a day ahead, so the week view (`/classes`) combines two sources:
+
+- **Real**: today's rows from `GET /jadwal-kelas` (badge "Terjadwal", opens the class detail).
+- **Predicted**: the gym's recurring weekly timetable, inferred from past schedules and bundled as `src/data/timetable.json` (badge "Perkiraan").
+
+The API lets us read history by id (`GET /jadwal-kelas/detail/:id`), so the timetable can be rebuilt with:
+
+    GRIT_TOKEN=<member bearer token> npm run gen:timetable
+
+A slot (weekday + start time + class) is kept when it appeared in at least 2 of the last 4 complete Mon–Sun weeks. The script prints a backtest against the newest complete week (last run: precision 0.87, recall 0.96). Regenerate whenever the gym changes its timetable. A proper `GET /jadwal-kelas?from=&to=` endpoint (and publishing schedules further ahead) on the backend would make the predictions unnecessary.
