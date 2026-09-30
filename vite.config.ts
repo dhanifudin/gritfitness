@@ -41,6 +41,7 @@ export default defineConfig({
         ],
         shortcuts: [
           { name: 'QR Check-in', url: '/qr', icons: [{ src: 'icons/pwa-192x192.png', sizes: '192x192' }] },
+          { name: 'QR Tersimpan', url: '/saved-qr', icons: [{ src: 'icons/pwa-192x192.png', sizes: '192x192' }] },
           { name: 'Jadwal Kelas', url: '/classes', icons: [{ src: 'icons/pwa-192x192.png', sizes: '192x192' }] },
         ],
       },

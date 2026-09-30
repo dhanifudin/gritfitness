@@ -115,4 +115,11 @@ export function syncQr(user: { id: number; nama: string }, kind: QrKind, m: Acti
   else saveQr(user, kind, m)
 }
 
+/** Whole calendar days until the membership's last day: 0 = ends today, null = no known end date. */
+export function daysLeft(e: Pick<QrEntry, 'expiresAt'>, now = Date.now()): number | null {
+  if (e.expiresAt === null) return null
+  const day = (t: number) => new Date(new Date(t).getFullYear(), new Date(t).getMonth(), new Date(t).getDate()).getTime()
+  return Math.max(0, Math.round((day(e.expiresAt) - day(now)) / 86_400_000))
+}
+
 export const clearQr = () => localStorage.removeItem(KEY)

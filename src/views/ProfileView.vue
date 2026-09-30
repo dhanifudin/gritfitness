@@ -18,6 +18,7 @@ const links = [
   { to: '/memberships', label: 'Riwayat Membership' },
   { to: '/leave', label: 'Cuti Membership' },
   { to: '/packages', label: 'Paket' },
+  { to: '/saved-qr', label: 'QR Tersimpan (offline)' },
 ]
 
 async function out() {

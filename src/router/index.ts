@@ -9,6 +9,8 @@ export const router = createRouter({
     { path: '/register', name: 'register', component: () => import('@/views/RegisterView.vue'), meta: { public: true } },
     { path: '/', name: 'home', component: () => import('@/views/HomeView.vue') },
     { path: '/qr', name: 'qr', component: () => import('@/views/QrView.vue') },
+    // cache-only: no API calls, reachable in every session state (public => no tab bar)
+    { path: '/saved-qr', name: 'saved-qr', component: () => import('@/views/SavedQrView.vue'), meta: { public: true } },
     { path: '/classes', name: 'classes', component: () => import('@/views/ClassesView.vue') },
     { path: '/classes/:id', name: 'class-detail', component: () => import('@/views/ClassDetailView.vue') },
     { path: '/bills', name: 'bills', component: () => import('@/views/BillsView.vue') },
@@ -29,8 +31,9 @@ export const router = createRouter({
 
 router.beforeEach((to) => {
   const auth = useAuth()
-  // Cached QR stays reachable after the session expires, until the membership ends.
-  if (to.name === 'qr' && !auth.loggedIn && hasValidQr()) return
+  if (to.name === 'saved-qr') return
+  // Session expired but a valid QR is cached: opening the app lands on the saved QR.
+  if (!auth.loggedIn && (to.name === 'home' || to.name === 'qr') && hasValidQr()) return { name: 'saved-qr' }
   if (!to.meta.public && !auth.loggedIn) return { name: 'login', query: { redirect: to.fullPath } }
   if (to.meta.public && auth.loggedIn) return { name: 'home' }
 })
