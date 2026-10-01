@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import TabBar from '@/components/TabBar.vue'
 import { useAuth } from '@/stores/auth'
 import { useOnline, useUpdater } from '@/composables/useSw'
@@ -9,7 +9,9 @@ const route = useRoute()
 const auth = useAuth()
 const showTabs = computed(() => !route.meta.public && auth.loggedIn)
 const online = useOnline()
-const { needRefresh, update } = useUpdater()
+const { needRefresh, update, applyIfSafe } = useUpdater()
+// a waiting update is applied on the next navigation (never while typing)
+useRouter().afterEach(() => applyIfSafe())
 </script>
 
 <template>
@@ -25,7 +27,7 @@ const { needRefresh, update } = useUpdater()
       class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl bg-lime-grit px-4 py-3 text-sm font-semibold text-black shadow-lg"
       @click="update"
     >
-      Versi baru tersedia — ketuk untuk memperbarui
+      Versi baru siap — ketuk untuk memperbarui sekarang
     </button>
     <TabBar v-if="showTabs" />
   </div>

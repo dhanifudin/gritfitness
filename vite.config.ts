@@ -1,9 +1,20 @@
+import { execSync } from 'node:child_process'
 import { copyFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig, type Plugin } from 'vite'
+
+// Build identity shown in Profil, so anyone can tell which version they are running.
+const sha = (() => {
+  try {
+    return (process.env.GITHUB_SHA ?? execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString()).trim().slice(0, 7)
+  } catch {
+    return 'dev'
+  }
+})()
+const APP_VERSION = { sha, date: new Date().toISOString().slice(0, 10) }
 
 // GitHub Pages has no SPA fallback: serve index.html for unknown deep links.
 const spa404 = (): Plugin => ({
@@ -15,6 +26,7 @@ const spa404 = (): Plugin => ({
 })
 
 export default defineConfig({
+  define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   plugins: [
     vue(),
@@ -49,6 +61,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,ico,svg,woff2}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
+        clientsClaim: true,
         runtimeCaching: [
           // /api/* is deliberately not cached here: the app keeps its own per-user cache (src/lib/dataCache.ts)
           {

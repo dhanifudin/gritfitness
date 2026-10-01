@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/PageHeader.vue'
+import { ref } from 'vue'
+import { checkForUpdate } from '@/composables/useSw'
 import { useAuth } from '@/stores/auth'
 
 const auth = useAuth()
@@ -20,6 +22,17 @@ const links = [
   { to: '/packages', label: 'Paket' },
   { to: '/saved-qr', label: 'QR Tersimpan (offline)' },
 ]
+
+const version = __APP_VERSION__
+const checking = ref(false)
+const updateMsg = ref('')
+async function checkUpdate() {
+  checking.value = true
+  updateMsg.value = ''
+  const r = await checkForUpdate()
+  updateMsg.value = r === 'available' ? 'Versi baru ditemukan — akan dipasang saat Anda berpindah halaman.' : r === 'latest' ? 'Sudah versi terbaru.' : 'Pembaruan otomatis tidak aktif di mode ini.'
+  checking.value = false
+}
 
 async function out() {
   await auth.logout()
@@ -43,5 +56,10 @@ async function out() {
       {{ l.label }} <span class="text-white/40">›</span>
     </RouterLink>
     <button class="btn-ghost mt-5 w-full !text-red-300" @click="out">Keluar</button>
+    <p class="mt-6 text-center text-xs text-white/40">Versi {{ version.sha }} · {{ version.date }}</p>
+    <button class="mx-auto mt-1 block text-xs text-brand-300 underline disabled:opacity-50" :disabled="checking" @click="checkUpdate">
+      {{ checking ? 'Memeriksa…' : 'Periksa pembaruan' }}
+    </button>
+    <p v-if="updateMsg" class="mt-1 text-center text-xs text-white/50">{{ updateMsg }}</p>
   </div>
 </template>
