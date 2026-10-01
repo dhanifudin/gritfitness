@@ -1,10 +1,12 @@
 -- ============================================================================
--- grit_004_selftest.sql: proves Row Level Security isolation inside ONE transaction that is ROLLED BACK.
--- Run in the SQL editor after grit_001/002. It writes nothing permanently. Success ends with a NOTICE
--- "grit selftest OK"; any failure raises an exception.
+-- grit_004_selftest.sql: proves Row Level Security isolation, atomically and without leaving anything behind.
+--
+-- A single DO block seeds two fake members, acts as one of them (role grit_member + a simulated token claim)
+-- and checks isolation. It ALWAYS ends by raising an exception, which rolls everything back:
+--   * success -> ERROR "grit selftest OK (rolled back)"   (an error by design: that is the pass signal)
+--   * failure -> ERROR "FAIL: ..." describing what was visible/writable that should not be
+-- Works the same in the SQL editor and through `supabase db query --linked`.
 -- ============================================================================
-begin;
-
 do $$
 declare n int;
 begin
@@ -33,19 +35,28 @@ begin
   get diagnostics n = row_count;
   if n <> 0 then raise exception 'FAIL: member updated another member''s row'; end if;
 
+  delete from grit.visits where member_id = 900002;
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL: member deleted another member''s row'; end if;
+
   -- default member_id comes from the token
   insert into grit.visits (client_id, visited_on) values (gen_random_uuid(), current_date);
   select count(*) into n from grit.visits where member_id = 900001;
   if n <> 2 then raise exception 'FAIL: default member_id not applied (have % rows)', n; end if;
 
-  -- no token claim => nothing at all
+  -- no member claim in the token => nothing at all
   perform set_config('request.jwt.claims', '{"role":"grit_member"}', true);
   select count(*) into n from grit.visits;
   if n <> 0 then raise exception 'FAIL: request without member claim sees % rows', n; end if;
 
+  -- the bookkeeping table is not reachable for the app role
+  begin
+    perform 1 from grit.migrations;
+    raise exception 'FAIL: grit_member can read grit.migrations';
+  exception when insufficient_privilege then null; -- expected
+  end;
+
   reset role;
-  raise notice 'grit selftest OK';
+  raise exception 'grit selftest OK (rolled back)';
 end
 $$;
-
-rollback;

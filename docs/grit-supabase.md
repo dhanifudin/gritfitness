@@ -32,9 +32,10 @@ How isolation works:
 2. Run, in this order, in the SQL editor: `grit_001_schema.sql`, then `grit_002_rls.sql`. Both are idempotent and
    safe to re-run.
 3. Run `grit_003_audit.sql` again and compare with step 1. The only differences must be the new schema `grit`
-   (6 tables, 9 indexes, 2 functions) and the role `grit_member`. Steps 4 and 5 of the audit must return **no rows**.
-4. Run `grit_004_selftest.sql`. It proves RLS isolation inside a transaction that is rolled back and ends with
-   `NOTICE: grit selftest OK`.
+   (6 tables, 9 indexes, 2 functions) and the role `grit_member`. Steps 4 and 5 of the audit must return **no rows**
+   (step 4 compares with the anonymous role: Supabase extensions such as pg_cron/pg_net grant to every role by default).
+4. Run `grit_004_selftest.sql`. It proves RLS isolation in one atomic block and always rolls back. **Success is an
+   error message** `grit selftest OK (rolled back)`; a failure says `FAIL: ...`.
 5. Dashboard, **API settings, Exposed schemas**: add `grit` to the existing list (do not replace it).
 6. Dashboard, **Project settings, API, JWT**: copy the project's JWT secret (the legacy HS256 secret). The new
    asymmetric signing keys cannot be used to sign our tokens; if your project only has those, tell us (see
@@ -70,3 +71,34 @@ service role and check the gym token on every request. Only `src/lib/supabase.ts
 
 Copy `.env.example` to `.env` and fill `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` (the publishable/anon key is
 public by design; **never** put a service-role key or database password in this repository).
+
+## Using the CLI instead of the dashboard (what was done for this project)
+
+With `supabase login` done once on the machine and `supabase link --project-ref <ref>` from this repo:
+
+```bash
+supabase db query --linked -f supabase/sql/grit_003_audit.sql     # baseline
+supabase db query --linked -f supabase/sql/grit_001_schema.sql
+supabase db query --linked -f supabase/sql/grit_002_rls.sql
+supabase db query --linked -f supabase/sql/grit_004_selftest.sql   # expect: grit selftest OK (rolled back)
+supabase secrets set --env-file <file with GRIT_JWT_SECRET=...>    # delete the file afterwards
+supabase functions deploy grit-auth --no-verify-jwt --use-api
+```
+
+Add `grit` to Exposed schemas in the dashboard (the only step the CLI cannot do).
+
+## Setup log (2026-10-01)
+
+- Baseline audit: schemas `lulu`, `bomi`, `codemonkey` (+ platform schemas) present; no `grit`, no `grit_member`.
+- Applied `grit_001`, `grit_002`; audit diff: only schema `grit` (6 tables, 9 indexes, 2 functions), role `grit_member`
+  and its membership in `authenticator` were added. (The platform's own `storage` schema also changed object counts
+  during the session; nothing in the grit SQL touches it.)
+- Self-test passed; all grit tables empty afterwards.
+- `grit-auth` deployed (other functions untouched). The project uses the new JWT signing keys, and tokens signed with
+  the legacy JWT secret are accepted by PostgREST (smoke test below).
+- Smoke test with the test member: bad gym token -> 401; valid -> 1 h JWT (`role: grit_member`); insert, idempotent
+  upsert, read, delete all work; inserting a row for another member id -> 403 (RLS); invalid values -> 400;
+  anon key on schema grit -> 401 `permission denied for schema grit`; grit token on `lulu` and `bomi` -> 403
+  `permission denied for schema ...`. Test rows were deleted.
+
+If the legacy JWT secret is ever rotated, run `supabase secrets set GRIT_JWT_SECRET=...` again with the new value.
