@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment (Supabase URL/key etc.)
+.env
+.env.*
+!.env.example
+
+# Supabase CLI scratch
+supabase/.temp
+supabase/.branches

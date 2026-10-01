@@ -1,0 +1,12 @@
+# Local Supabase CLI settings for the grit app. The remote project is shared with other apps (lulu, bomi):
+# grit only owns the "grit" schema, the "grit_member" role and the "grit-auth" Edge Function.
+# Do NOT run `supabase db push` against the shared project (see docs/grit-supabase.md); apply supabase/sql/*.sql instead.
+project_id = "grit"
+
+[api]
+schemas = ["public", "grit"]
+extra_search_path = ["public", "extensions"]
+
+[functions.grit-auth]
+# Called with the gym's own bearer token, not a Supabase JWT.
+verify_jwt = false
