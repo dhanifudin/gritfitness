@@ -7,7 +7,9 @@ import ConfirmSheet from '@/components/ConfirmSheet.vue'
 import DetailRow from '@/components/DetailRow.vue'
 import StateBox from '@/components/StateBox.vue'
 import { useAction } from '@/composables/useAction'
-import { useAsync } from '@/composables/useAsync'
+import { assetUrl, useAsync } from '@/composables/useAsync'
+import classInfo from '@/data/classInfo.json'
+import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
 import { CK, invalidate } from '@/lib/dataCache'
 import { useOnline } from '@/composables/useSw'
 
@@ -16,6 +18,9 @@ type Kind = 'register' | 'waiting' | 'cancel'
 const route = useRoute()
 const { data: c, loading, error, savedAt, stale, reload } = useAsync(() => classDetail(route.params.id as string), null, { key: () => CK.classDetail(route.params.id as string) })
 const online = useOnline()
+const about = computed(() =>
+  c.value ? classInfoFor(classInfo as unknown as ClassInfoData, { packageId: c.value.id_paket_kelas, kelas: c.value.nama_kelas }) : null,
+)
 const { busy, error: actionError, run } = useAction()
 
 const notices: Record<string, string> = {
@@ -90,6 +95,21 @@ async function confirm() {
       <button v-if="action" :disabled="!online" :class="action.danger ? 'btn mt-4 w-full bg-red-500 text-white' : 'btn-primary mt-4 w-full'" @click="(sheet = true), (done = '')">
         {{ action.label }}
       </button>
+
+      <div v-if="about" class="card mt-5 overflow-hidden">
+        <img v-if="about.cls.photo" :src="assetUrl(about.cls.photo)" :alt="about.cls.name" loading="lazy" class="h-36 w-full object-cover" />
+        <div class="p-4">
+          <p class="text-xs font-semibold tracking-wide text-white/50 uppercase">Tentang kelas</p>
+          <p class="mt-1 font-display text-lg">{{ about.cls.name }}</p>
+          <p class="mt-1 text-xs text-white/55">
+            <template v-if="about.category">{{ about.category.name }}</template>
+            <template v-if="about.category && about.cls.minutes"> · </template>
+            <template v-if="about.cls.minutes">{{ about.cls.minutes }} menit</template>
+          </p>
+          <p v-if="about.cls.description" class="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/80">{{ about.cls.description }}</p>
+          <p v-else-if="about.category" class="mt-3 text-sm leading-relaxed text-white/65">{{ about.category.tagline }}</p>
+        </div>
+      </div>
     </div>
   </StateBox>
 

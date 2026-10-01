@@ -6,10 +6,20 @@ import StateBox from '@/components/StateBox.vue'
 import { assetUrl, useAsync } from '@/composables/useAsync'
 import timetable from '@/data/timetable.json'
 import { CK } from '@/lib/dataCache'
-import { DAY_NAMES, mergeDay, sameDay, weekDates, weekLabel, type Slot } from '@/lib/timetable'
+import ClassInfoSheet from '@/components/ClassInfoSheet.vue'
+import classInfo from '@/data/classInfo.json'
+import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
+import { DAY_NAMES, mergeDay, sameDay, weekDates, weekLabel, type DayItem, type Slot } from '@/lib/timetable'
 
 const MAX_OFFSET = 3 // current week + 3 weeks ahead
 const slots = timetable.slots as Slot[]
+const info = classInfo as unknown as ClassInfoData
+
+// What the class is (description, category), joined on the class package id.
+const matchOf = (it: DayItem) => classInfoFor(info, { packageId: it.packageId, kelas: it.kelas })
+const CAT_DOT: Record<string, string> = { '2': 'bg-pink-grit', '4': 'bg-brand-300', '5': 'bg-lime-grit' }
+const opened = ref<DayItem | null>(null)
+const openedMatch = computed(() => (opened.value ? matchOf(opened.value) : null))
 
 // Real rows: the API only lists today's still-open classes.
 const { data: actual, error, savedAt, stale, reload } = useAsync(jadwalKelas, [], { key: CK.classes })
@@ -34,12 +44,10 @@ const selected = computed(() => picked.value ?? (todayIdx.value >= 0 ? todayIdx.
 function go(delta: number) {
   offset.value = Math.min(MAX_OFFSET, Math.max(0, offset.value + delta))
   picked.value = null
-  hint.value = ''
 }
 
 const week = computed(() => dates.value.map((d) => mergeDay(d, actual.value, slots, now.value)))
 const items = computed(() => week.value[selected.value])
-const hint = ref('')
 const generated = new Date(timetable.generatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 
 const badge = {
@@ -71,7 +79,7 @@ const badgeText = { confirmed: 'Terjadwal', predicted: 'Perkiraan', ended: 'Sele
         i === todayIdx && selected !== i ? 'ring-1 ring-lime-grit/70' : '',
         !week[i].length && selected !== i ? 'opacity-40' : '',
       ]"
-      @click="(picked = i), (hint = '')"
+      @click="picked = i"
     >
       <span>{{ DAY_NAMES[i] }}</span>
       <span class="mt-0.5 font-display text-lg leading-none">{{ d.getDate() }}</span>
@@ -85,13 +93,11 @@ const badgeText = { confirmed: 'Terjadwal', predicted: 'Perkiraan', ended: 'Sele
   </p>
   <StateBox :stale="stale" :saved-at="savedAt" :empty="!items.length" empty-text="Tidak ada jadwal kelas di hari ini">
     <ul class="space-y-3 px-5">
-      <li v-for="it in items" :key="it.key">
+      <li v-for="it in items" :key="it.key" class="card overflow-hidden" :class="it.status === 'ended' ? 'opacity-50' : ''">
         <component
-          :is="it.status === 'confirmed' ? 'RouterLink' : 'button'"
-          v-bind="it.status === 'confirmed' ? { to: `/classes/${it.classId}` } : { type: 'button' }"
-          class="card flex w-full gap-3 p-3 text-left"
-          :class="it.status === 'ended' ? 'opacity-50' : ''"
-          @click="it.status === 'predicted' && (hint = hint === it.key ? '' : it.key)"
+          :is="it.status === 'confirmed' ? 'RouterLink' : 'div'"
+          v-bind="it.status === 'confirmed' ? { to: `/classes/${it.classId}` } : {}"
+          class="flex w-full gap-3 p-3"
         >
           <img
             v-if="it.fotoUrl || photoOf(it.packageId)"
@@ -106,11 +112,24 @@ const badgeText = { confirmed: 'Terjadwal', predicted: 'Perkiraan', ended: 'Sele
               <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="badge[it.status]">{{ badgeText[it.status] }}</span>
             </div>
             <p class="truncate text-sm text-white/55">{{ it.kelas }}<template v-if="it.instructor"> · {{ it.instructor }}</template></p>
-            <p class="mt-1 text-sm">{{ it.start }}–{{ it.end }}</p>
+            <p class="mt-1 flex items-center gap-1.5 text-sm">
+              {{ it.start }}–{{ it.end }}
+              <template v-if="matchOf(it)?.category">
+                <span class="h-1.5 w-1.5 rounded-full" :class="CAT_DOT[String(matchOf(it)!.cls.categoryId)] ?? 'bg-white/30'" />
+                <span class="text-xs text-white/55">{{ matchOf(it)!.category!.name }}</span>
+              </template>
+            </p>
             <p v-if="it.status === 'confirmed'" class="mt-0.5 text-xs text-brand-300">{{ it.peserta }}/{{ it.max }} peserta</p>
-            <p v-if="hint === it.key" class="mt-1 text-xs text-amber-200/80">Jadwal pasti biasanya dibuka sehari sebelumnya — cek lagi nanti.</p>
           </div>
         </component>
+        <button
+          v-if="matchOf(it)"
+          type="button"
+          class="flex w-full items-center justify-between border-t border-white/8 px-4 py-2.5 text-xs font-semibold text-brand-300 active:bg-white/5"
+          @click="opened = it"
+        >
+          Tentang kelas <span aria-hidden="true">›</span>
+        </button>
       </li>
     </ul>
   </StateBox>
@@ -118,4 +137,12 @@ const badgeText = { confirmed: 'Terjadwal', predicted: 'Perkiraan', ended: 'Sele
   <p class="mx-5 mt-4 text-center text-[11px] leading-relaxed text-white/40">
     Kelas berlabel “Perkiraan” mengikuti pola {{ timetable.weeksUsed }} minggu terakhir (diperbarui {{ generated }}) dan bisa berubah.
   </p>
+
+  <ClassInfoSheet
+    v-if="opened"
+    :match="openedMatch"
+    :title="opened.name"
+    :session="{ time: `${opened.start}–${opened.end}`, instructor: opened.instructor, predicted: opened.status === 'predicted' }"
+    @close="opened = null"
+  />
 </template>

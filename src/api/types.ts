@@ -63,6 +63,7 @@ export interface PaketMembership {
 
 export interface ClassDetail {
   id: number
+  id_paket_kelas?: number
   nama_kelas: string
   nama_jadwal_kelas: string
   tanggal: string

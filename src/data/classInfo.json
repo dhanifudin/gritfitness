@@ -1,0 +1,247 @@
+{
+  "generatedAt": "2026-10-01",
+  "source": "https://gritfitness.id/kelas",
+  "categories": {
+    "2": {
+      "name": "Cardio",
+      "tagline": "Kelas cardio dirancang untuk meningkatkan detak jantung dan membakar kalori secara efektif, membantu Anda mencapai tujuan penurunan berat badan atau menjaga kebugaran tubuh.",
+      "image": "/storage/kategoriKelas/5939_1751685281.JPG"
+    },
+    "4": {
+      "name": "Flexibility",
+      "tagline": "Kelas Mind and Soul memberikan pendekatan holistik untuk kebugaran, memadukan latihan fisik dengan teknik pernapasan dan relaksasi untuk mencapai keseimbangan tubuh dan pikiran.",
+      "image": "/storage/kategoriKelas/7919_1751685398.JPG"
+    },
+    "5": {
+      "name": "Strength",
+      "tagline": "Kelas Strength berfokus pada pengembangan kekuatan otot dan daya tahan, membantu Anda membentuk tubuh dan meningkatkan kekuatan fisik secara keseluruhan.",
+      "image": "/storage/kategoriKelas/5701_1751685489.JPG"
+    }
+  },
+  "classes": {
+    "1": {
+      "id": 1,
+      "name": "Lesmills Body Pump",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "Latihan kekuatan seluruh tubuh yang akan membentuk dan mengencangkan semua kelompok otot utama, meningkatkan kekuatan inti, meningkatkan kesehatan tulang dan membuat Anda merasa kuat dan bugar",
+      "photo": "/storage/kelas/2945_1758426882.jpg"
+    },
+    "2": {
+      "id": 2,
+      "name": "Lesmills Body Combat",
+      "categoryId": 2,
+      "minutes": 60,
+      "description": "Kelas kardio dengan gerakan seni bela diri yang memadukan teknik pertarungan untuk meningkatkan stamina dan kekuatan tubuh.",
+      "photo": "/storage/kelas/7882_1758436378.jpg"
+    },
+    "3": {
+      "id": 3,
+      "name": "Zumba",
+      "categoryId": 2,
+      "minutes": 60,
+      "description": "Tarian aerobik yang menyenangkan dan energik, ideal untuk meningkatkan kebugaran jantung dan membakar kalori.",
+      "photo": "/storage/kelas/6133_1759217865.jpg"
+    },
+    "4": {
+      "id": 4,
+      "name": "Pound",
+      "categoryId": 2,
+      "minutes": 60,
+      "description": "Dengan menggunakan drumsticks sebagai alat, Pound memberikan latihan kardio yang menyenangkan dan menantang.",
+      "photo": "/storage/kelas/4151_1759218214.jpg"
+    },
+    "5": {
+      "id": 5,
+      "name": "Hip Hop",
+      "categoryId": 2,
+      "minutes": 60,
+      "description": "Kelas tari dengan gerakan dinamis yang penuh energi dan dipenuhi dengan alunan musik hip hop. Ideal untuk meningkatkan kelenturan, koordinasi, dan ketahanan tubuh.",
+      "photo": "/storage/kelas/5818_1760091636.jpeg"
+    },
+    "6": {
+      "id": 6,
+      "name": "Dynamic Strength",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "Kelas yang mengkombinasikan latihan beban tubuh dan peralatan untuk membangun kekuatan dan tonus otot.",
+      "photo": "/storage/kelas/7008_1760091916.webp"
+    },
+    "7": {
+      "id": 7,
+      "name": "Muay thai",
+      "categoryId": 2,
+      "minutes": 60,
+      "description": "Kelas bela diri yang memadukan latihan kekuatan dan kardio untuk meningkatkan kebugaran tubuh secara keseluruhan.",
+      "photo": "/storage/kelas/3651_1760092089.jpg"
+    },
+    "8": {
+      "id": 8,
+      "name": "Lesmills Pilates",
+      "categoryId": 4,
+      "minutes": 60,
+      "description": "Kelas pilates dengan pendekatan penuh kontrol yang berfokus pada kekuatan inti tubuh, postur tubuh yang lebih baik, dan keseimbangan.",
+      "photo": "/storage/kelas/4951_1760092189.jpeg"
+    },
+    "9": {
+      "id": 9,
+      "name": "Fit Track",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "Kelas yang menggabungkan latihan kekuatan dan daya tahan dengan track latihan yang dapat disesuaikan untuk segala tingkat kebugaran.",
+      "photo": "/storage/kelas/1550_1760092783.jpg"
+    },
+    "10": {
+      "id": 10,
+      "name": "Boxing",
+      "categoryId": 2,
+      "minutes": 60,
+      "description": "Latihan tinju yang menggabungkan gerakan kardio untuk meningkatkan kebugaran jantung dan membentuk tubuh.",
+      "photo": "/storage/kelas/9592_1760092891.webp"
+    },
+    "11": {
+      "id": 11,
+      "name": "Circuit Training",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "Latihan sirkuit yang menggabungkan berbagai latihan kekuatan dan kardio untuk membentuk tubuh dan meningkatkan kebugaran secara keseluruhan.",
+      "photo": "/storage/kelas/9993_1751685595.JPG"
+    },
+    "12": {
+      "id": 12,
+      "name": "Yoga all Level",
+      "categoryId": 4,
+      "minutes": 60,
+      "description": "Kelas yoga yang cocok untuk semua level, menggabungkan latihan fleksibilitas, pernapasan, dan meditasi untuk menenangkan pikiran dan tubuh.",
+      "photo": "/storage/kelas/6127_1751685027.JPG"
+    },
+    "13": {
+      "id": 13,
+      "name": "Yoga Hatha",
+      "categoryId": 4,
+      "minutes": 60,
+      "description": "Fokus pada postur dan teknik pernapasan yang lebih lambat dan mendalam, ideal untuk memperbaiki postur tubuh, mengurangi stres, dan meningkatkan fleksibilitas.",
+      "photo": "/storage/kelas/9667_1751685071.JPG"
+    },
+    "14": {
+      "id": 14,
+      "name": "Power Up",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "Kelas kekuatan yang menantang untuk membantu membangun kekuatan otot dan daya tahan dengan intensitas yang tinggi.",
+      "photo": null
+    },
+    "15": {
+      "id": 15,
+      "name": "Yoga Prenatal",
+      "categoryId": 4,
+      "minutes": 60,
+      "description": "Kelas Yoga Prenatal dirancang khusus untuk ibu hamil di semua trimester, dengan gerakan yang lembut, aman, dan fokus pada kenyamanan tubuh selama kehamilan. Latihan ini membantu memperkuat otot-otot penting untuk persalinan, meningkatkan fleksibilitas, serta mengurangi ketegangan dan stres. Selain itu, teknik pernapasan dan relaksasi yang diajarkan dapat membantu ibu hamil tetap tenang dan terkoneksi dengan bayi di dalam kandungan. Cocok untuk menjaga kesehatan fisik dan emosional sepanjang masa kehamilan.",
+      "photo": null
+    },
+    "16": {
+      "id": 16,
+      "name": "Les Mills Functional Strength",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "Rangkaian latihan yang memadukan gerakan multi-sendi dan latihan beban untuk membangun kekuatan atletis, meningkatkan masa otot, dan mendorong Anda menjadi lebih bugar dan kuat untuk kehidupan sehari-hari.",
+      "photo": "/storage/kelas/8331_1760093657.webp"
+    },
+    "17": {
+      "id": 17,
+      "name": "Les Mills Body Pump",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "Latihan kekuatan seluruh tubuh yang akan membentuk dan mengencangkan semua kelompok otot utama, meningkatkan kekuatan inti, meningkatkan kesehatan tulang dan membuat Anda merasa kuat dan bugar",
+      "photo": "/storage/kelas/6116_1760094889.jpg"
+    },
+    "18": {
+      "id": 18,
+      "name": "Strength & Conditioning",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "Adalah pendekatan berbasis ilmu olahraga untuk meningkatkan kekuatan fisik, kinerja atletik, dan kesehatan menyeluruh melalui latihan terstruktur yang berfokus pada pengembangan kekuatan otot, daya tahan, kecepatan, kelincahan, dan pencegahan cedera, baik untuk atlet profesional maupun amatir. Ini bukan hanya sekadar angkat beban, tapi kombinasi latihan seperti latihan beban, plyometrics, HIIT, dan kardio yang dirancang sistematis agar tubuh lebih kuat, bugar, dan efisien dalam bergerak.",
+      "photo": "/storage/kelas/2906_1767828719.jpeg"
+    },
+    "19": {
+      "id": 19,
+      "name": "Low Impact Training",
+      "categoryId": 5,
+      "minutes": 45,
+      "description": "Low impact workout (latihan berdampak rendah) adalah jenis aktivitas fisik yang dirancang dengan gerakan halus, stabil, dan minimal benturan, di mana setidaknya satu kaki tetap bertumpu di lantai sepanjang waktu. Latihan ini bertujuan mengurangi tekanan berlebih pada sendi, tulang, dan otot, menjadikannya pilihan aman bagi pemula, lansia, ibu hamil, atau masa pemulihan cedera.",
+      "photo": "/storage/kelas/3074_1771285494.jfif"
+    },
+    "20": {
+      "id": 20,
+      "name": "Basic Strength & Conditioning",
+      "categoryId": 5,
+      "minutes": 45,
+      "description": "Basic strength and conditioning (S&C) adalah pendekatan terstruktur dan berbasis ilmu olahraga untuk meningkatkan kemampuan fisik, performa, dan kesehatan secara umum. Program ini menggabungkan latihan beban (kekuatan) dan latihan kardiovaskular/daya tahan (pengondisian) untuk membangun otot, kekuatan, daya tahan, kecepatan, kelincahan, serta mencegah cedera.",
+      "photo": "/storage/kelas/6110_1771286048.webp"
+    },
+    "21": {
+      "id": 21,
+      "name": "Strength Development",
+      "categoryId": 5,
+      "minutes": 45,
+      "description": "adalah program latihan kekuatan progresif selama 12 sesi (45 menit per sesi) yang dirancang untuk membangun otot, meningkatkan teknik angkat beban, dan meningkatkan kepercayaan diri, baik bagi pemula maupun yang sudah berpengalaman. Program ini fokus pada teknik, time under tension, dan peningkatan beban secara bertahap.",
+      "photo": "/storage/kelas/9333_1771286370.jpg"
+    },
+    "22": {
+      "id": 22,
+      "name": "Abs & Glutes",
+      "categoryId": 5,
+      "minutes": 45,
+      "description": "adalah kombinasi latihan fisik yang menargetkan otot perut (abs/abdominal) dan otot bokong (glutes) secara spesifik, bertujuan untuk memperkuat core (inti tubuh), membentuk bokong, dan meningkatkan stabilitas panggul. Latihan ini sangat efisien untuk mengencangkan tubuh bagian tengah dan bawah.",
+      "photo": "/storage/kelas/9603_1771286499.webp"
+    },
+    "23": {
+      "id": 23,
+      "name": "Functional Circuit",
+      "categoryId": 5,
+      "minutes": 45,
+      "description": "metode latihan kebugaran yang menggabungkan gerakan fungsional (meniru aktivitas sehari-hari seperti mendorong, menarik, jongkok) dengan format circuit training (pos berganti-ganti dengan jeda minim). Latihan ini bertujuan meningkatkan kekuatan, stabilitas, koordinasi, dan daya tahan tubuh secara menyeluruh dalam satu sesi yang intens.",
+      "photo": "/storage/kelas/1988_1771286668.jpg"
+    },
+    "24": {
+      "id": 24,
+      "name": "Barre",
+      "categoryId": 4,
+      "minutes": 60,
+      "description": "Barre adalah kelas olahraga low-impact yang menggabungkan elemen balet, pilates, yoga, dan latihan kekuatan (fitness) untuk membentuk serta mengencangkan seluruh tubuh. Latihan ini fokus pada gerakan kecil, repetitif, dan isometrik (menahan posisi) untuk mengaktifkan otot kecil dan inti.",
+      "photo": "/storage/kelas/6440_1774423788.jfif"
+    },
+    "25": {
+      "id": 25,
+      "name": "Calistenic 101",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "",
+      "photo": null
+    },
+    "26": {
+      "id": 26,
+      "name": "Calistenic 101",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "",
+      "photo": null
+    },
+    "27": {
+      "id": 27,
+      "name": "Hyper Pump",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "",
+      "photo": null
+    },
+    "28": {
+      "id": 28,
+      "name": "STRENGTH TRAINING FOR SENIOR",
+      "categoryId": 5,
+      "minutes": 60,
+      "description": "",
+      "photo": null
+    }
+  }
+}
