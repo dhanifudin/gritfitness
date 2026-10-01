@@ -184,6 +184,9 @@ export interface Badge {
   target: number
 }
 
+/** Total-visit milestones used by both the badge list and the Home insight line. */
+export const VISIT_MILESTONES = [10, 25, 50, 100, 200]
+
 const hourOf = (v: Visit) => (v.visited_at ? new Date(v.visited_at).getHours() : null)
 
 /** Longest gap in days between two consecutive visit days. */
@@ -212,11 +215,7 @@ export function badgesFor(visits: Visit[], goal: number, now: Date): Badge[] {
   const mk = (key: string, title: string, desc: string, value: number, target: number): Badge => ({ key, title, desc, value: Math.min(value, target), target, unlocked: value >= target })
   return [
     mk('first_visit', 'Langkah pertama', 'Catat latihan pertamamu', total, 1),
-    mk('visits_10', '10 latihan', 'Total 10 hari latihan', total, 10),
-    mk('visits_25', '25 latihan', 'Total 25 hari latihan', total, 25),
-    mk('visits_50', '50 latihan', 'Total 50 hari latihan', total, 50),
-    mk('visits_100', '100 latihan', 'Total 100 hari latihan', total, 100),
-    mk('visits_200', '200 latihan', 'Total 200 hari latihan', total, 200),
+    ...VISIT_MILESTONES.map((n) => mk(`visits_${n}`, `${n} latihan`, `Total ${n} hari latihan`, total, n)),
     mk('goal_first', 'Target tercapai', 'Capai target mingguan untuk pertama kali', hitGoalOnce ? 1 : 0, 1),
     mk('streak_4', 'Konsisten 4 minggu', 'Capai target 4 minggu berturut-turut', best, 4),
     mk('streak_8', 'Konsisten 8 minggu', 'Capai target 8 minggu berturut-turut', best, 8),

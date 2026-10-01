@@ -1,12 +1,15 @@
 import * as ep from '@/api/endpoints'
 import { CK, read, write } from '@/lib/dataCache'
+import { syncQr } from '@/lib/qrCache'
 
 let running = false
 
-/** Warm the caches for every tab so they open instantly (and work offline) after one session start. */
-export async function prefetchAll(userId: number) {
+/** Warm the caches for every tab so they open instantly (and work offline) after one session start. Also
+ *  keeps the offline-QR cache fresh (Home is the only caller of this, so this is the one place that matters). */
+export async function prefetchAll(user: { id: number; nama: string }) {
   if (running || !navigator.onLine) return
   running = true
+  const userId = user.id
   const jobs: [string, () => Promise<unknown>][] = [
     [CK.classes, ep.jadwalKelas],
     [CK.bills, ep.tagihan],
@@ -15,6 +18,22 @@ export async function prefetchAll(userId: number) {
     [CK.packages('membership'), ep.paketMemberships],
     [CK.packages('pt'), ep.paketPt],
     [CK.packages('class'), ep.paketKelas],
+    [
+      CK.memberGym,
+      async () => {
+        const r = await ep.memberAktif(userId)
+        syncQr(user, 'gym', r)
+        return r
+      },
+    ],
+    [
+      CK.memberPt,
+      async () => {
+        const r = await ep.memberPtAktif(userId)
+        syncQr(user, 'pt', r)
+        return r
+      },
+    ],
   ]
   try {
     for (const [key, fn] of jobs) {

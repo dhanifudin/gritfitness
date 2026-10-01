@@ -14,7 +14,7 @@ const dayLabel = (d: string) => parseYmd(d).toLocaleDateString('id-ID', { weekda
 
 <template>
   <section v-if="showYesterday || tracker.pastSignups.length" class="mt-3 space-y-3" data-testid="missing-days">
-    <div v-if="showYesterday" class="rounded-2xl border border-white/12 bg-white/5 p-4" data-testid="missing-yesterday">
+    <div v-if="showYesterday" class="border-l-2 border-brand-400 bg-white/5 px-4 py-3" data-testid="missing-yesterday">
       <p class="font-semibold">Kemarin belum tercatat</p>
       <p class="mt-0.5 text-xs text-white/55">Sudah latihan atau beraktivitas? Lengkapi datanya supaya progresmu akurat.</p>
       <div class="mt-3 grid grid-cols-2 gap-2">
@@ -23,7 +23,7 @@ const dayLabel = (d: string) => parseYmd(d).toLocaleDateString('id-ID', { weekda
       </div>
     </div>
 
-    <div v-for="c in tracker.pastSignups" :key="c.schedule_id" class="rounded-2xl border border-white/12 bg-white/5 p-4" data-testid="past-signup">
+    <div v-for="c in tracker.pastSignups" :key="c.schedule_id" class="border-l-2 border-brand-400 bg-white/5 px-4 py-3" data-testid="past-signup">
       <p class="font-semibold">Jadi ikut {{ c.class_name }}?</p>
       <p class="mt-0.5 text-xs text-white/55">{{ dayLabel(c.scheduled_on) }}<span v-if="c.start_time"> · {{ c.start_time.slice(0, 5) }}</span></p>
       <div class="mt-3 grid grid-cols-2 gap-2">
