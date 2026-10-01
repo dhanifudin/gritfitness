@@ -15,15 +15,6 @@ const rows = () => [
   ['Tipe', auth.user?.tipe],
 ]
 
-const links = [
-  { to: '/profile/edit', label: 'Ubah Profil' },
-  { to: '/memberships', label: 'Riwayat Membership' },
-  { to: '/leave', label: 'Cuti Membership' },
-  { to: '/bills', label: 'Tagihan' },
-  { to: '/packages', label: 'Paket' },
-  { to: '/saved-qr', label: 'QR Tersimpan (offline)' },
-]
-
 const version = __APP_VERSION__
 const checking = ref(false)
 const updateMsg = ref('')
@@ -53,9 +44,6 @@ async function out() {
         </div>
       </dl>
     </div>
-    <RouterLink v-for="l in links" :key="l.to" :to="l.to" class="card mt-3 flex justify-between px-4 py-4 text-sm font-medium">
-      {{ l.label }} <span class="text-white/40">›</span>
-    </RouterLink>
     <button class="btn-ghost mt-5 w-full !text-red-300" @click="out">Keluar</button>
     <p class="mt-6 text-center text-xs text-white/40">Versi {{ version.sha }} · {{ version.date }}</p>
     <button class="mx-auto mt-1 block text-xs text-brand-300 underline disabled:opacity-50" :disabled="checking" @click="checkUpdate">

@@ -50,19 +50,28 @@ Refreshes the file from the site (it refuses to overwrite it if the page layout 
 
 Beyond QR and bookings, the app is a self-tracker that helps members build a healthy habit:
 
-- **Beranda**: weekly goal ring, weekly-goal streak, a motivation message that fits the situation (ahead, one visit left, behind, comeback, streak), one-tap **"Catat latihan hari ini"**, today's registered classes ("Jadi ikut kelas?"), and an in-app reminder when the goal is at risk.
+- **Beranda**: a real information dashboard, not a menu — weekly goal ring, weekly-goal streak, a motivation message that fits the situation (ahead, one visit left, behind, comeback, streak), one-tap **"Catat latihan hari ini"**, today's registered classes ("Jadi ikut kelas?"), an in-app reminder when the goal is at risk, the membership card with a **days-left** countdown, the **next upcoming class**, an **unpaid-bill** alert (or a quiet "lunas" line), and a **cost-per-visit** teaser.
 - **QR screens** also have the check-in button (also on the cached saved-QR view, so it works without logging in).
 - **Past days and other activities**: any past date can be filled in (Beranda nudges "Kemarin belum tercatat", tap a day in the Progres calendar, or **Tambah aktivitas** in Catatan). Activity types: Gym, Kelas (pick from the gym's 28 classes), Personal Trainer, Pemulihan, and **Lainnya** with your own name (Hyrox, lari, renang…). Only workouts count toward the weekly goal and streak; recovery is recorded but not counted.
-- **Progres**: frequency stats, 8-week bars, month calendar, favourite weekdays, goal and reminder settings; **Badge** milestones; **Tubuh** (weight / waist / body fat with trend and target); **Catatan** (per-visit notes and energy, manual entries).
+- **Progres**: frequency stats, 8-week bars, month calendar, favourite weekdays, goal and reminder settings; **Badge** milestones; **Anggaran** (budget: spend vs GritFitness activities only — excludes custom entries like Hyrox — monthly spend, cost per visit, unpaid total); **Tubuh** (weight / waist / body fat with trend and target); **Catatan** (per-visit notes and energy, manual entries).
+- **Profil** stays just the member's own info; rarely-used destinations (Ubah Profil, Riwayat Membership, Cuti Membership, Paket, QR Tersimpan) live in a dropdown off the **Profil** tab's caret in the bottom bar instead of a link list.
+- The login screen remembers the phone number across logout and prefills it — a real OTP is still required every time; there is and will be no stored/default OTP.
 
 The gym API has no attendance history, so visits come from the app: one-tap check-in plus class registrations the app performs.
 
-Data is **offline-first**: every change is applied and stored on the device at once, queued, and pushed to Supabase (schema `grit`) when online with a valid session and the member's consent (they can choose "device only"). Logout pushes what is queued, then wipes the local copy.
+Data is **offline-first**: every change is applied and stored on the device at once, queued, and pushed to Supabase (schema `grit`) when online with the member's consent (they can choose "device only"). Logout pushes what is queued, revokes the device's grit session, then wipes the local copy.
 
-- Code: `src/lib/tracker.ts` (pure maths), `src/lib/trackerData.ts` (outbox/merge), `src/lib/supabase.ts` (PostgREST client), `src/stores/tracker.ts`, `src/data/motivation.json` (editable Indonesian messages).
-- Server setup (shared Supabase project, isolated `grit` schema, `grit-auth` Edge Function): **`docs/grit-supabase.md`**. Without `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` the app runs in device-only mode.
-- GitHub Pages build reads the two values from repository **variables** (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`); they are public values. Set them only after the SQL and the function are deployed.
+The gym's own bearer token lasts 5 hours and has no refresh mechanism. So the tracker doesn't need a fresh gym
+OTP login just to keep syncing, consenting to cloud sync also mints a 60-day **grit session** (an opaque,
+rotating refresh token, stored only as its hash). The tracker keeps syncing on that alone — check-ins, backfilled
+activities, everything — even once the gym token has expired, with no dependency on the gym API at all once the
+session exists. QR, bookings, bills and payments are unaffected: they still need the gym's own live token exactly
+as before.
+
+- Code: `src/lib/tracker.ts` (pure maths), `src/lib/trackerData.ts` (outbox/merge), `src/lib/budget.ts` (spend vs GritFitness activities), `src/lib/supabase.ts` (PostgREST client + grit-session handling), `src/lib/lastPhone.ts`, `src/stores/tracker.ts`, `src/data/motivation.json` (editable Indonesian messages).
+- Server setup (shared Supabase project, isolated `grit` schema, `grit-auth` + `grit-refresh` Edge Functions): **`docs/grit-supabase.md`**. Without `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` the app runs in device-only mode.
+- GitHub Pages build reads the two values from repository **variables** (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`); they are public values. Set them only after the SQL and the functions are deployed.
 
 ## Tests
 
-    npm run test:unit      # pure logic: tracker, outbox/merge, timetable, class info, QR cache, grit-auth function
+    npm run test:unit      # pure logic: tracker, outbox/merge, budget, timetable, class info, QR cache, grit-auth/grit-refresh functions

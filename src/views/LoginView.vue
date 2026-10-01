@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { requestOtp } from '@/api/endpoints'
+import { clearLastPhone, getLastPhone } from '@/lib/lastPhone'
 import { hasValidQr } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
 
@@ -9,11 +10,18 @@ const auth = useAuth()
 const router = useRouter()
 const route = useRoute()
 
-const phone = ref('')
+const remembered = ref(getLastPhone())
+const phone = ref(remembered.value ?? '')
 const otp = ref('')
 const step = ref<'phone' | 'otp'>('phone')
 const busy = ref(false)
 const error = ref('')
+
+function forgetPhone() {
+  clearLastPhone()
+  remembered.value = null
+  phone.value = ''
+}
 
 async function send() {
   busy.value = true
@@ -53,6 +61,7 @@ async function verify() {
     <form v-if="step === 'phone'" class="space-y-4" @submit.prevent="send">
       <input v-model="phone" class="input" type="tel" inputmode="numeric" autocomplete="tel" placeholder="08xxxxxxxxxx" required />
       <button class="btn-primary w-full" :disabled="busy || phone.length < 9">{{ busy ? 'Mengirim…' : 'Kirim OTP' }}</button>
+      <button v-if="remembered" type="button" class="block w-full text-center text-xs text-white/50 underline" @click="forgetPhone">Bukan Anda? Ganti nomor</button>
     </form>
 
     <form v-else class="space-y-4" @submit.prevent="verify">

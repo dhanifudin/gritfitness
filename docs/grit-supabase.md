@@ -7,10 +7,10 @@ built so it cannot interfere with them, and so they cannot read grit's data.
 
 | Where | What |
 |---|---|
-| schema `grit` | 6 tables: `members`, `visits`, `class_signups`, `body_metrics`, `badges`, `migrations`, plus 2 helper functions |
+| schema `grit` | 7 tables: `members`, `visits`, `class_signups`, `body_metrics`, `badges`, `member_sessions`, `migrations`, plus 2 helper functions |
 | role | `grit_member` (NOLOGIN) and its membership in `authenticator`, so PostgREST can switch to it |
 | API settings | `grit` appended to **Exposed schemas** (Dashboard, API settings; keep `public`, `lulu`, `bomi`) |
-| Edge Function | `grit-auth` |
+| Edge Functions | `grit-auth`, `grit-refresh` |
 | Secret | `GRIT_JWT_SECRET` (and optionally `GRIT_ALLOWED_ORIGINS`) |
 
 How isolation works:
@@ -21,6 +21,12 @@ How isolation works:
 - Row Level Security: every table allows a member only rows whose `member_id` equals the `grit_member_id` claim
   of their token. The claim is minted by `grit-auth` only after it has asked the gym's own API
   (`/validate-token`) whether the member's gym token is valid.
+- The gym's own bearer token lasts 5 hours and has no refresh mechanism. So that the tracker doesn't need a
+  fresh gym OTP login just to keep syncing, `grit-auth` also issues a 60-day **grit session** (an opaque,
+  rotating refresh token; only its SHA-256 hash is stored, in `grit.member_sessions`). `grit-refresh` mints new
+  1-hour access tokens from it with **no gym API call at all** — it is independent of the gym token, scoped to
+  the member's own `grit` rows exactly like the access token it refreshes. `member_sessions` itself is reachable
+  by neither `grit_member` nor `anon`/`authenticated`: only the two Edge Functions (service role) touch it.
 - Migrations are plain SQL files tracked in `grit.migrations`. **Do not use `supabase db push`** on the shared
   project: its global migration history is already shared between lulu and bomi (see the `*_lulu_stub.sql` files
   in `../bomi/supabase/migrations`).
@@ -29,10 +35,11 @@ How isolation works:
 
 1. **Audit before** (optional but recommended): open the Supabase SQL editor, run `supabase/sql/grit_003_audit.sql`,
    keep the result.
-2. Run, in this order, in the SQL editor: `grit_001_schema.sql`, `grit_002_rls.sql`, then `grit_005_activities.sql` (activity types for visits; additive). Both are idempotent and
-   safe to re-run.
+2. Run, in this order, in the SQL editor: `grit_001_schema.sql`, `grit_002_rls.sql`, `grit_005_activities.sql`
+   (activity types for visits), then `grit_006_sessions.sql` (the grit-session/refresh-token table). All are
+   additive and idempotent, safe to re-run.
 3. Run `grit_003_audit.sql` again and compare with step 1. The only differences must be the new schema `grit`
-   (6 tables, 9 indexes, 2 functions) and the role `grit_member`. Steps 4 and 5 of the audit must return **no rows**
+   (7 tables, 13 indexes, 2 functions) and the role `grit_member`. Steps 4 and 5 of the audit must return **no rows**
    (step 4 compares with the anonymous role: Supabase extensions such as pg_cron/pg_net grant to every role by default).
 4. Run `grit_004_selftest.sql`. It proves RLS isolation in one atomic block and always rolls back. **Success is an
    error message** `grit selftest OK (rolled back)`; a failure says `FAIL: ...`.
@@ -81,9 +88,11 @@ supabase db query --linked -f supabase/sql/grit_003_audit.sql     # baseline
 supabase db query --linked -f supabase/sql/grit_001_schema.sql
 supabase db query --linked -f supabase/sql/grit_002_rls.sql
 supabase db query --linked -f supabase/sql/grit_005_activities.sql  # activity types / back-dated entries
+supabase db query --linked -f supabase/sql/grit_006_sessions.sql    # grit session (refresh token) table
 supabase db query --linked -f supabase/sql/grit_004_selftest.sql   # expect: grit selftest OK (rolled back)
 supabase secrets set --env-file <file with GRIT_JWT_SECRET=...>    # delete the file afterwards
 supabase functions deploy grit-auth --no-verify-jwt --use-api
+supabase functions deploy grit-refresh --no-verify-jwt --use-api
 ```
 
 Add `grit` to Exposed schemas in the dashboard (the only step the CLI cannot do).
@@ -110,3 +119,15 @@ If the legacy JWT secret is ever rotated, run `supabase secrets set GRIT_JWT_SEC
   `counts_toward_goal`, `duration_min`, `class_id` (+ 3 check constraints). Audit before/after: no change outside grit;
   self-test still passes. REST smoke test with the test member: past-dated custom (Hyrox) and class rows accepted, unknown
   activity and `other` without a name rejected (400), test rows deleted.
+
+### 2026-10-01 (later still): migration 006, grit sessions + `grit-refresh`
+
+- `grit_006_sessions.sql` applied: `grit.member_sessions` added (7 tables, 13 indexes, 2 functions total). Audit
+  diff showed only `grit:r` (6→7) and `grit:i` (9→13); nothing else changed. Self-test still passes, and
+  `grit_member` has zero privileges on `member_sessions` (confirmed directly against `information_schema`).
+- `grit-auth` redeployed (now also issues a session) and `grit-refresh` deployed; both bundle `_shared/grit.ts`.
+  `fetch-prayer-times`/`send-reminders` (lulu/bomi) untouched.
+- Live smoke test with the test member: `grit-auth` returns a `refresh_token`; `grit-refresh` rotates it (new
+  access token + new refresh token); the just-rotated-away token is then rejected (401); explicit
+  `{revoke:true}` works and a revoked token cannot be refreshed again; a garbage token is rejected (401), no
+  crash. Test rows (including the session) deleted afterward.

@@ -4,7 +4,9 @@ import { getToken, setToken } from '@/api/client'
 import * as ep from '@/api/endpoints'
 import type { User } from '@/api/types'
 import { clearAll as clearData } from '@/lib/dataCache'
+import { saveLastPhone } from '@/lib/lastPhone'
 import { clearQr } from '@/lib/qrCache'
+import { revokeTrackerSession } from '@/lib/supabase'
 
 const userKey = 'grit.user'
 const load = (): User | null => {
@@ -36,6 +38,7 @@ export const useAuth = defineStore('auth', () => {
     const { access_token, token_type, ...u } = await ep.verifyOtp(noHp, otp)
     void token_type
     if (user.value && user.value.id !== u.id) {
+      void revokeTrackerSession(user.value.id) // shared-device hygiene: don't leave a stray grit session behind
       clearData()
       clearQr()
     }
@@ -43,6 +46,7 @@ export const useAuth = defineStore('auth', () => {
     token.value = access_token
     user.value = u
     localStorage.setItem(userKey, JSON.stringify(u))
+    saveLastPhone(u.no_hp) // convenience only: remembered across logout, never used to skip OTP
     // tracker: load this member's local copy and push anything recorded while logged out
     const { useTracker } = await import('./tracker')
     const tracker = useTracker()
@@ -69,7 +73,7 @@ export const useAuth = defineStore('auth', () => {
     const tracker = useTracker()
     tracker.init(user.value?.id ?? null)
     if (tokenValid.value) await tracker.flushBeforeLogout() // push queued check-ins first
-    tracker.wipe()
+    await tracker.wipe()
     if (tokenValid.value) await ep.logout().catch(() => {})
     setToken(null)
     token.value = null

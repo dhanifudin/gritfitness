@@ -10,3 +10,7 @@ extra_search_path = ["public", "extensions"]
 [functions.grit-auth]
 # Called with the gym's own bearer token, not a Supabase JWT.
 verify_jwt = false
+
+[functions.grit-refresh]
+# Called with an opaque grit session (refresh) token in the request body, not a Supabase JWT.
+verify_jwt = false

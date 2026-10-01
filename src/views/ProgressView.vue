@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { tagihan } from '@/api/endpoints'
 import ActivitySheet from '@/components/ActivitySheet.vue'
 import BadgeGrid from '@/components/BadgeGrid.vue'
 import DaySheet from '@/components/DaySheet.vue'
@@ -8,7 +9,10 @@ import MetricChart from '@/components/MetricChart.vue'
 import MonthHeatmap from '@/components/MonthHeatmap.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import WeekBars from '@/components/WeekBars.vue'
+import { rupiah, useAsync } from '@/composables/useAsync'
 import { activityLabel, activityMeta } from '@/lib/activities'
+import { costPerVisit, monthlySpend, totalSpent, unpaidSummary } from '@/lib/budget'
+import { CK } from '@/lib/dataCache'
 import { activityBreakdown, counts, parseYmd, weekCounts, weekdayHistogram, ymd, type Visit } from '@/lib/tracker'
 import { weightChange } from '@/lib/trackerData'
 import { useTracker } from '@/stores/tracker'
@@ -19,10 +23,11 @@ onMounted(() => {
   void tracker.sync()
 })
 
-type Tab = 'ringkasan' | 'badge' | 'tubuh' | 'catatan'
+type Tab = 'ringkasan' | 'badge' | 'anggaran' | 'tubuh' | 'catatan'
 const tabs: { key: Tab; label: string }[] = [
   { key: 'ringkasan', label: 'Ringkasan' },
   { key: 'badge', label: 'Badge' },
+  { key: 'anggaran', label: 'Anggaran' },
   { key: 'tubuh', label: 'Tubuh' },
   { key: 'catatan', label: 'Catatan' },
 ]
@@ -41,6 +46,16 @@ const openEdit = (visit: Visit) => {
   editSheet.value = { visit }
 }
 const breakdown = computed(() => activityBreakdown(tracker.visits, tracker.now, 30))
+
+// ---- anggaran (bills vs GritFitness-tracked activities only; custom entries like Hyrox are excluded) ----
+const { data: bills } = useAsync(tagihan, [], { key: CK.bills })
+const spendMonths = computed(() => monthlySpend(bills.value, tracker.now, 6))
+const spendMax = computed(() => Math.max(1, ...spendMonths.value.map((m) => m.total)))
+const spentThisYear = computed(() => totalSpent(bills.value, { from: `${tracker.now.getFullYear()}-01-01`, to: today.value }))
+const cpv = computed(() => costPerVisit(bills.value, tracker.visits, tracker.now, 30))
+const unpaid = computed(() => unpaidSummary(bills.value))
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5, 7)) - 1]
 
 // ---- ringkasan ----
 const s = computed(() => tracker.stats)
@@ -95,10 +110,10 @@ const timeLabel = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeStri
 <template>
   <PageHeader title="Progres" :subtitle="`Target ${goal}x seminggu · ${syncLabel}`" />
 
-  <div class="mx-5 mb-4 grid grid-cols-4 gap-1 rounded-xl bg-white/5 p-1" role="tablist">
+  <div class="mx-5 mb-4 grid grid-cols-5 gap-1 rounded-xl bg-white/5 p-1" role="tablist">
     <button
       v-for="t in tabs" :key="t.key" role="tab" :aria-selected="tab === t.key"
-      class="rounded-lg py-2 text-xs font-semibold transition" :class="tab === t.key ? 'bg-brand-400 text-white' : 'text-white/60'"
+      class="rounded-lg px-0.5 py-2 text-[10.5px] font-semibold transition" :class="tab === t.key ? 'bg-brand-400 text-white' : 'text-white/60'"
       @click="tab = t.key"
     >{{ t.label }}</button>
   </div>
@@ -160,6 +175,39 @@ const timeLabel = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeStri
   <div v-else-if="tab === 'badge'" class="px-5" data-testid="tab-badge">
     <p class="mb-3 text-sm text-white/55">{{ tracker.badgeList.filter((b) => b.unlocked).length }} dari {{ tracker.badgeList.length }} pencapaian terbuka</p>
     <BadgeGrid :badges="tracker.badgeList" />
+  </div>
+
+  <!-- ANGGARAN -->
+  <div v-else-if="tab === 'anggaran'" class="space-y-3 px-5" data-testid="tab-anggaran">
+    <div class="grid grid-cols-2 gap-3">
+      <div class="card p-3"><p class="text-xs text-white/50">Tahun ini</p><p class="font-display text-xl" data-testid="spent-year">{{ rupiah(spentThisYear) }}</p></div>
+      <div class="card p-3">
+        <p class="text-xs text-white/50">Rp / latihan (30 hari)</p>
+        <p class="font-display text-xl" data-testid="cost-per-visit">{{ cpv.perVisit != null ? rupiah(cpv.perVisit) : '-' }}</p>
+      </div>
+    </div>
+
+    <section v-if="unpaid.count" class="card border-amber-400/30 bg-amber-500/10 p-4" data-testid="unpaid-card">
+      <p class="font-semibold text-amber-200">{{ unpaid.count }} tagihan belum dibayar</p>
+      <p class="mt-0.5 text-sm text-amber-100/80">Total {{ rupiah(unpaid.total) }}</p>
+      <RouterLink to="/bills" class="btn-ghost mt-3 w-full !border-amber-400/40 !py-2 !text-amber-200">Lihat tagihan</RouterLink>
+    </section>
+    <p v-else class="text-sm text-emerald-300" data-testid="unpaid-card">Semua tagihan lunas ✓</p>
+
+    <section class="card p-4">
+      <h2 class="mb-3 text-sm font-semibold">Pengeluaran 6 bulan terakhir</h2>
+      <div class="flex h-28 items-end gap-2">
+        <div v-for="m in spendMonths" :key="m.month" class="flex flex-1 flex-col items-center justify-end">
+          <span class="mb-1 text-[10px] text-white/55">{{ m.total ? rupiah(m.total) : '' }}</span>
+          <div class="w-full rounded-t-md bg-brand-400" :style="{ height: (m.total / spendMax) * 5 + 'rem', minHeight: m.total ? '0.2rem' : '0.1rem' }" :class="!m.total ? '!bg-white/15' : ''" />
+          <span class="mt-1 text-[10px] text-white/45">{{ monthLabel(m.month) }}</span>
+        </div>
+      </div>
+    </section>
+
+    <p class="px-1 text-xs leading-relaxed text-white/45">
+      Dihitung dari tagihan yang sudah lunas dan hari latihan GritFitness (Gym, Kelas, Personal Trainer, Pemulihan). Tidak termasuk aktivitas di luar GritFitness, misalnya Hyrox.
+    </p>
   </div>
 
   <!-- TUBUH -->

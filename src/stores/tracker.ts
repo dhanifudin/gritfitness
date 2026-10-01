@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { remote, SyncError, trackerConfigured } from '@/lib/supabase'
+import { hasSyncCredential, remote, revokeTrackerSession, setActiveMember, SyncError, trackerConfigured } from '@/lib/supabase'
 import { cachedQrOwner } from '@/lib/qrCache'
 import motivationData from '@/data/motivation.json'
 import { defaultCounts, type Activity } from '@/lib/activities'
@@ -154,6 +154,7 @@ export const useTracker = defineStore('tracker', () => {
     now.value = new Date()
     if (memberId.value === target) return true
     memberId.value = target
+    setActiveMember(target) // scopes the grit session + cached access token to this member from here on
     reset()
     bootstrapDone.value = !trackerConfigured || !navigator.onLine
     try {
@@ -341,7 +342,10 @@ export const useTracker = defineStore('tracker', () => {
 
   async function sync() {
     if (!trackerConfigured || syncing.value || memberId.value == null) return
-    if (!navigator.onLine || !useAuth().loggedIn) return
+    if (!navigator.onLine) return
+    // a live gym session is not required: a stored grit session keeps syncing on its own, independent
+    // of the gym's 5-hour token (which has no refresh of its own)
+    if (!hasSyncCredential(memberId.value)) return
     if (!consented.value && !localOnly.value && !bootstrapDone.value) {
       syncing.value = true
       await bootstrap()
@@ -379,9 +383,10 @@ export const useTracker = defineStore('tracker', () => {
     await Promise.race([sync(), new Promise((r) => setTimeout(r, 4000))])
   }
 
-  /** Remove this member's local copy (logout). */
-  function wipe() {
+  /** Remove this member's local copy (logout): revokes the grit session server-side (best effort) too. */
+  async function wipe() {
     if (memberId.value != null) {
+      await revokeTrackerSession(memberId.value)
       try {
         localStorage.removeItem(storageKey(memberId.value))
       } catch {
@@ -389,6 +394,7 @@ export const useTracker = defineStore('tracker', () => {
       }
     }
     memberId.value = null
+    setActiveMember(null)
     reset()
   }
 
