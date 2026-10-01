@@ -73,3 +73,34 @@ ok('dailyInsight: brand-new member -> null', i.dailyInsight({ visits: [], now: N
   ])
   ok('dailyInsight: rotates across days among eligible candidates', kinds.size > 1, JSON.stringify([...kinds]))
 }
+
+// favouriteClassToday -------------------------------------------------------------------------------
+const zumbaSlot = { wd: 3, start: '17:00', end: '18:00', name: 'ZUMBA PARTY', kelas: 'Zumba', instructor: null, packageId: 1, weeks: 4 }
+const classVisit = (d: string) => ({ client_id: 'cv' + d, visited_on: d, source: 'class' as const, activity: 'class' as const, class_name: 'ZUMBA PARTY' })
+{
+  const visits = [classVisit('2026-09-10'), classVisit('2026-09-17'), classVisit('2026-09-24')]
+  const res = i.favouriteClassToday({ visits, now: NOW, slots: [zumbaSlot], signups: [] })
+  ok('favouriteClassToday: favourite predicted today, not signed up -> match', res?.className === 'ZUMBA PARTY' && res?.start === '17:00', JSON.stringify(res))
+}
+{
+  const visits = [classVisit('2026-09-10'), classVisit('2026-09-17'), classVisit('2026-09-24')]
+  const signups = [{ schedule_id: 1, class_name: 'ZUMBA PARTY', scheduled_on: '2026-10-01', start_time: '17:00', status: 'planned' as const }]
+  const res = i.favouriteClassToday({ visits, now: NOW, slots: [zumbaSlot], signups })
+  ok('favouriteClassToday: already signed up today -> null', res === null, JSON.stringify(res))
+}
+{
+  const visits = [classVisit('2026-09-10'), classVisit('2026-09-17'), classVisit('2026-09-24')]
+  const res = i.favouriteClassToday({ visits, now: NOW, slots: [], signups: [] })
+  ok('favouriteClassToday: no matching slot today -> null', res === null, JSON.stringify(res))
+}
+{
+  const visits = [classVisit('2026-09-10'), classVisit('2026-09-17')] // only 2x, below the confidence threshold
+  const res = i.favouriteClassToday({ visits, now: NOW, slots: [zumbaSlot], signups: [] })
+  ok('favouriteClassToday: below count threshold -> null', res === null, JSON.stringify(res))
+}
+
+// noTrackingNudge -------------------------------------------------------------------------------------
+ok('noTrackingNudge: no history -> null', i.noTrackingNudge(null) === null)
+ok('noTrackingNudge: below threshold -> null', i.noTrackingNudge(2) === null)
+ok('noTrackingNudge: at threshold -> text', i.noTrackingNudge(3)?.includes('3 hari'))
+ok('noTrackingNudge: well past threshold -> text', i.noTrackingNudge(10)?.includes('10 hari'))

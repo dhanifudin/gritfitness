@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AccountMenu from '@/components/AccountMenu.vue'
 import CelebrationSheet from '@/components/CelebrationSheet.vue'
 import TabBar from '@/components/TabBar.vue'
 import { useAuth } from '@/stores/auth'
@@ -32,13 +33,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="mx-auto flex h-full max-w-md flex-col bg-ink-950">
+  <div class="relative mx-auto flex h-full max-w-md flex-col bg-ink-950">
     <div v-if="!online" class="safe-t bg-amber-500/90 px-4 py-1.5 text-center text-xs font-semibold text-black">
       Offline — menampilkan data terakhir
     </div>
     <main class="flex-1 overflow-y-auto pt-[env(safe-area-inset-top)]" :class="showTabs ? 'pb-28' : ''">
       <RouterView />
     </main>
+    <AccountMenu v-if="showTabs" />
     <button
       v-if="needRefresh"
       class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl bg-lime-grit px-4 py-3 text-sm font-semibold text-black shadow-lg"
