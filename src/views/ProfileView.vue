@@ -6,10 +6,13 @@ import PageHeader from '@/components/PageHeader.vue'
 import { useAsync } from '@/composables/useAsync'
 import { checkForUpdate } from '@/composables/useSw'
 import { CK } from '@/lib/dataCache'
+import { disablePush, enablePush, isStandalone, permissionState, pushSupported, wasEnabled } from '@/lib/push'
 import { daysLeft, parseExpiry } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
+import { useTracker } from '@/stores/tracker'
 
 const auth = useAuth()
+const tracker = useTracker()
 const router = useRouter()
 const uid = auth.user!.id
 const rows = () => [
@@ -24,6 +27,31 @@ const rows = () => [
 const { data: gym } = useAsync(() => memberAktif(uid), null as Awaited<ReturnType<typeof memberAktif>> | null, { key: CK.memberGym })
 const { data: pt } = useAsync(() => memberPtAktif(uid), null as Awaited<ReturnType<typeof memberPtAktif>> | null, { key: CK.memberPt })
 const membershipDaysLeft = computed(() => (gym.value && !gym.value.error ? daysLeft({ expiresAt: parseExpiry(gym.value.tanggal_selesai) }) : null))
+
+// ---- push notifications: cloud sync required (subscriptions live alongside the rest of the tracker data) ----
+const pushOn = ref(wasEnabled())
+const pushBusy = ref(false)
+const pushError = ref('')
+const pushBlocked = computed(() => {
+  if (!tracker.consented) return 'Aktifkan sinkronisasi cloud dulu untuk menerima notifikasi.'
+  if (!pushSupported()) return 'Browser ini tidak mendukung notifikasi push.'
+  if (!isStandalone()) return 'Pasang aplikasi ke layar utama dulu, lalu buka dari sana untuk mengaktifkan.'
+  if (permissionState() === 'denied') return 'Izin notifikasi diblokir — aktifkan lewat pengaturan browser/perangkat.'
+  return null
+})
+async function togglePush() {
+  pushError.value = ''
+  pushBusy.value = true
+  if (pushOn.value) {
+    await disablePush()
+    pushOn.value = false
+  } else {
+    const r = await enablePush()
+    if (r.ok) pushOn.value = true
+    else pushError.value = r.reason
+  }
+  pushBusy.value = false
+}
 
 const version = __APP_VERSION__
 const checking = ref(false)
@@ -73,6 +101,26 @@ async function out() {
         <p class="mt-1 font-semibold">{{ pt.nama_paket }}</p>
         <p class="text-sm text-white/60">s.d. {{ pt.tanggal_selesai }}</p>
       </div>
+    </div>
+
+    <div class="card mt-3 p-5" data-testid="push-settings">
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="font-semibold">Notifikasi latihan</p>
+          <p class="mt-0.5 text-xs text-white/55">Kelas favorit yang terlewat, dan pengingat kalau belum tercatat beberapa hari.</p>
+        </div>
+        <button
+          type="button" role="switch" :aria-checked="pushOn" data-testid="push-toggle"
+          class="relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-40"
+          :class="pushOn ? 'bg-lime-grit' : 'bg-white/15'"
+          :disabled="pushBusy || (!pushOn && !!pushBlocked)"
+          @click="togglePush"
+        >
+          <span class="absolute top-1 h-5 w-5 rounded-full bg-white transition" :class="pushOn ? 'left-6' : 'left-1'" />
+        </button>
+      </div>
+      <p v-if="!pushOn && pushBlocked" class="mt-2 text-xs text-amber-200/80">{{ pushBlocked }}</p>
+      <p v-if="pushError" class="mt-2 text-xs text-red-300">{{ pushError }}</p>
     </div>
 
     <button class="btn-ghost mt-5 w-full !text-red-300" @click="out">Keluar</button>

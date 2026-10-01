@@ -21,7 +21,7 @@ export interface BadgeRow {
   unlocked_at: string
 }
 
-export type Table = 'visits' | 'body_metrics' | 'members' | 'class_signups' | 'badges'
+export type Table = 'visits' | 'body_metrics' | 'members' | 'class_signups' | 'badges' | 'push_subscriptions'
 
 export interface Op {
   table: Table
@@ -54,6 +54,8 @@ export const CONFLICT: Record<Table, string> = {
   members: 'member_id',
   class_signups: 'member_id,schedule_id',
   badges: 'member_id,badge_key',
+  // not part of the offline outbox (device-specific, not a member's tracker data): written directly, not queued
+  push_subscriptions: 'endpoint',
 }
 
 /** Add an op to the queue, coalescing with a pending op on the same row (the newest intent wins). */

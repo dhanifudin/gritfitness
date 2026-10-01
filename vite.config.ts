@@ -62,6 +62,9 @@ export default defineConfig({
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
         clientsClaim: true,
+        // additive push/notificationclick handling, spliced in rather than replacing the
+        // generated SW (see public/push-sw.js for why)
+        importScripts: ['push-sw.js'],
         runtimeCaching: [
           // /api/* is deliberately not cached here: the app keeps its own per-user cache (src/lib/dataCache.ts)
           {

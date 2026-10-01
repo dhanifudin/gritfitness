@@ -26,9 +26,10 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          # public values (the anon/publishable key is shipped in the bundle by design); set as repository variables
+          # public values (the anon/publishable key and the VAPID public key are shipped in the bundle by design)
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_VAPID_PUBLIC_KEY: ${{ vars.VITE_VAPID_PUBLIC_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

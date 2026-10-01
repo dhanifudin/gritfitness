@@ -28,7 +28,9 @@ m = d.mergeServer(server, []); ok('empty outbox = server data', m.visits.length 
 m = d.mergeServer(server, [up('2026-09-01', { weight_kg: 79.5 }, 'body_metrics')])
 ok('metric overlay by date', m.metrics.length === 1 && m.metrics[0].weight_kg === 79.5)
 m = d.mergeServer(server, [up('me', { goal_per_week: 5 }, 'members')]); ok('pending settings win', m.settings.goal_per_week === 5)
-ok('conflict targets include member_id', Object.values(d.CONFLICT).every((c: any) => c.startsWith('member_id')))
+// push_subscriptions is the one deliberate exception: it's device-scoped (unique on endpoint alone),
+// never flows through the offline outbox, and is written directly (see trackerData.ts's CONFLICT comment).
+ok('conflict targets include member_id, except the one device-scoped table', Object.entries(d.CONFLICT).every(([t, c]: any) => t === 'push_subscriptions' ? c === 'endpoint' : c.startsWith('member_id')))
 ok('sortVisits newest first', d.sortVisits([V('a', '2026-09-01'), V('b', '2026-09-30')])[0].client_id === 'b')
 const NOW = new Date(2026, 9, 1)
 const mm = [{ measured_on: '2026-08-05', weight_kg: 82 }, { measured_on: '2026-09-10', weight_kg: 80 }, { measured_on: '2026-09-30', weight_kg: 79.2, waist_cm: 90 }, { measured_on: '2026-09-30x', waist_cm: 1 }]

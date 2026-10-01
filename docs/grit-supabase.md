@@ -7,11 +7,12 @@ built so it cannot interfere with them, and so they cannot read grit's data.
 
 | Where | What |
 |---|---|
-| schema `grit` | 7 tables: `members`, `visits`, `class_signups`, `body_metrics`, `badges`, `member_sessions`, `migrations`, plus 2 helper functions |
+| schema `grit` | 9 tables: `members`, `visits`, `class_signups`, `body_metrics`, `badges`, `member_sessions`, `push_subscriptions`, `push_log`, `migrations`, plus 2 helper functions |
 | role | `grit_member` (NOLOGIN) and its membership in `authenticator`, so PostgREST can switch to it |
 | API settings | `grit` appended to **Exposed schemas** (Dashboard, API settings; keep `public`, `lulu`, `bomi`) |
-| Edge Functions | `grit-auth`, `grit-refresh` |
-| Secret | `GRIT_JWT_SECRET` (and optionally `GRIT_ALLOWED_ORIGINS`) |
+| Edge Functions | `grit-auth`, `grit-refresh`, `grit-push-check` |
+| Secrets | `GRIT_JWT_SECRET`, `GRIT_CRON_SECRET`, `GRIT_VAPID_PUBLIC_KEY`, `GRIT_VAPID_PRIVATE_KEY`, `GRIT_VAPID_SUBJECT` (optionally `GRIT_ALLOWED_ORIGINS`) |
+| Scheduling | one `pg_cron` job, `grit-push-check` (every 30 min), named to match lulu's `lulu-reminder-*` convention so the two don't collide |
 
 How isolation works:
 
@@ -89,6 +90,8 @@ supabase db query --linked -f supabase/sql/grit_001_schema.sql
 supabase db query --linked -f supabase/sql/grit_002_rls.sql
 supabase db query --linked -f supabase/sql/grit_005_activities.sql  # activity types / back-dated entries
 supabase db query --linked -f supabase/sql/grit_006_sessions.sql    # grit session (refresh token) table
+supabase db query --linked -f supabase/sql/grit_007_visit_cost.sql  # optional cost on non-Grit activities
+supabase db query --linked -f supabase/sql/grit_008_push_subscriptions.sql  # push subscriptions + de-dupe log
 supabase db query --linked -f supabase/sql/grit_004_selftest.sql   # expect: grit selftest OK (rolled back)
 supabase secrets set --env-file <file with GRIT_JWT_SECRET=...>    # delete the file afterwards
 supabase functions deploy grit-auth --no-verify-jwt --use-api
@@ -96,6 +99,33 @@ supabase functions deploy grit-refresh --no-verify-jwt --use-api
 ```
 
 Add `grit` to Exposed schemas in the dashboard (the only step the CLI cannot do).
+
+### Push notifications (grit-push-check)
+
+Favourite-class and no-tracking nudges, delivered as real OS push even when the app is closed. Setup:
+
+```bash
+npx web-push generate-vapid-keys --json                            # once; public key is not secret
+cat > /tmp/vapid.env <<EOF
+GRIT_VAPID_PRIVATE_KEY=<private key>
+GRIT_VAPID_PUBLIC_KEY=<public key>
+GRIT_VAPID_SUBJECT=mailto:<contact address>
+GRIT_CRON_SECRET=<a random 32-byte value, e.g. from \`openssl rand -base64 32\`>
+EOF
+supabase secrets set --env-file /tmp/vapid.env --project-ref <ref>  # delete the file afterwards
+supabase functions deploy grit-push-check --no-verify-jwt --use-api --project-ref <ref>
+
+gh variable set VITE_VAPID_PUBLIC_KEY --body "<the same public key>"  # public, goes in the client bundle
+```
+
+Then schedule the cron job: copy `supabase/sql/grit_009_push_cron.sql`, replace `<<CRON_SECRET>>` with the
+real `GRIT_CRON_SECRET` value in a throwaway local copy (never commit the real value), and run it with
+`supabase db query --linked -f <that copy>`, then delete the copy. It's idempotent — re-running with a new
+secret rotates both the Vault entry and the scheduled job. `grit-push-check` fetches the deployed
+`timetable.json` at call time rather than bundling its own copy, so there's nothing to keep in sync.
+
+Smoke test: `curl -s -X POST "$VITE_SUPABASE_URL/functions/v1/grit-push-check" -H "x-cron-secret: <secret>"`
+→ `{"checked":N,"sent":N,"pruned":N}`. A call with no/wrong header → 401.
 
 ## Setup log (2026-10-01)
 
@@ -131,3 +161,31 @@ If the legacy JWT secret is ever rotated, run `supabase secrets set GRIT_JWT_SEC
   access token + new refresh token); the just-rotated-away token is then rejected (401); explicit
   `{revoke:true}` works and a revoked token cannot be refreshed again; a garbage token is rejected (401), no
   crash. Test rows (including the session) deleted afterward.
+
+### 2026-10-01 (later still): migration 007, visit cost
+
+- `grit_007_visit_cost.sql` applied: `grit.visits` gained a nullable `cost` column (+ check constraint).
+  Audit before/after: no change outside grit; self-test still passes.
+
+### 2026-10-01 (later still): migration 008 + grit-push-check (push notifications)
+
+- `grit_008_push_subscriptions.sql` applied: `grit.push_subscriptions` (self-service, same RLS pattern as
+  `visits`) and `grit.push_log` (service-role only, like `member_sessions`) added (7→9 tables, 13→18 indexes).
+  Audit diff: only those two tables and their indexes; `grit_member` confirmed to have zero privileges on
+  `push_log` directly against `information_schema`. Self-test still passes.
+- VAPID keys generated; `GRIT_VAPID_PUBLIC_KEY`/`GRIT_VAPID_PRIVATE_KEY`/`GRIT_VAPID_SUBJECT`/`GRIT_CRON_SECRET`
+  set as secrets. `npm:web-push` spiked under a plain Deno container first (VAPID JWT signing + a send
+  attempt) to confirm Node-crypto compat before relying on it in the function — worked cleanly.
+- `grit-push-check` deployed (service role; imports `src/lib/insight.ts`/`tracker.ts`/`timetable.ts` directly
+  via relative paths — the CLI's `--use-api` bundler walks the import graph wherever it leads, confirmed by
+  the upload log listing those files as bundled assets). Smoke test: missing/wrong `x-cron-secret` → 401;
+  correct secret with no subscriptions → `{"checked":0,"sent":0,"pruned":0}`.
+- `grit_009_push_cron.sql` run with the real secret substituted (never committed): scheduled `grit-push-check`
+  as a `pg_cron` job (`grit-push-check`, every 30 min, named to avoid colliding with lulu's `lulu-reminder-*`
+  jobs), secret referenced via Supabase Vault rather than embedded in `cron.job`'s SQL text.
+- End-to-end delivery test: subscribed a real headless-Chromium instance (push subscription only works in a
+  non-incognito browser profile) to get a genuine FCM endpoint, registered it for the test member alongside
+  one deliberately old test visit (to trigger the no-tracking condition — the account otherwise had zero
+  `grit.visits` rows), invoked `grit-push-check` live → `sent:1` (FCM accepted the push). A second call within
+  the 3-day cooldown correctly sent nothing (de-dupe via `grit.push_log` confirmed working). Test visit,
+  subscription and log row all deleted afterward; zero grit rows left for the test member.

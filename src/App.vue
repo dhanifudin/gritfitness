@@ -6,6 +6,7 @@ import CelebrationSheet from '@/components/CelebrationSheet.vue'
 import TabBar from '@/components/TabBar.vue'
 import { useAuth } from '@/stores/auth'
 import { useOnline, useUpdater } from '@/composables/useSw'
+import { syncPushSubscription } from '@/lib/push'
 import { useTracker } from '@/stores/tracker'
 
 const route = useRoute()
@@ -23,6 +24,7 @@ const resync = () => {
 }
 onMounted(() => {
   if (tracker.init()) void tracker.sync()
+  void syncPushSubscription()
   window.addEventListener('online', resync)
   document.addEventListener('visibilitychange', resync)
 })

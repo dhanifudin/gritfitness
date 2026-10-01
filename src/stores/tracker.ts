@@ -40,6 +40,7 @@ const DELETE_COLUMN: Record<Table, string> = {
   class_signups: 'schedule_id',
   badges: 'badge_key',
   members: 'member_id',
+  push_subscriptions: 'endpoint', // not used via the outbox (see trackerData.ts's CONFLICT comment); kept for type completeness
 }
 const VISIT_COLS = 'client_id,visited_on,visited_at,source,class_name,note,energy,activity,activity_name,counts_toward_goal,duration_min,class_id,cost'
 

@@ -66,7 +66,7 @@ export const ACCESS_TTL_SECONDS = 60 * 60 // Supabase access JWT lifetime
 export const SESSION_TTL_SECONDS = 60 * 24 * 60 * 60 // grit session (refresh token) lifetime: 60 days
 
 /** PostgREST against schema grit, authenticated with the service-role key (bypasses RLS). */
-async function gritServiceRequest(path: string, init: { method: string; body?: unknown; prefer?: string }): Promise<Response> {
+export async function gritServiceRequest(path: string, init: { method: string; body?: unknown; prefer?: string }): Promise<Response> {
   const url = Deno.env.get('SUPABASE_URL')
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   if (!url || !key) throw new Error('service role not configured')
