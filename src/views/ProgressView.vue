@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import ActivitySheet from '@/components/ActivitySheet.vue'
 import BadgeGrid from '@/components/BadgeGrid.vue'
+import DaySheet from '@/components/DaySheet.vue'
 import ConsentSheet from '@/components/ConsentSheet.vue'
 import MetricChart from '@/components/MetricChart.vue'
 import MonthHeatmap from '@/components/MonthHeatmap.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import WeekBars from '@/components/WeekBars.vue'
-import { parseYmd, weekCounts, weekdayHistogram, ymd } from '@/lib/tracker'
+import { activityLabel, activityMeta } from '@/lib/activities'
+import { activityBreakdown, counts, parseYmd, weekCounts, weekdayHistogram, ymd, type Visit } from '@/lib/tracker'
 import { weightChange } from '@/lib/trackerData'
 import { useTracker } from '@/stores/tracker'
 
@@ -25,6 +28,19 @@ const tabs: { key: Tab; label: string }[] = [
 ]
 const tab = ref<Tab>('ringkasan')
 const today = computed(() => ymd(tracker.now))
+
+// ---- activity entry (add / edit / day sheet) ----
+const daySheet = ref<string | null>(null)
+const editSheet = ref<{ visit?: Visit; date?: string } | null>(null)
+const openAdd = (date?: string) => {
+  daySheet.value = null
+  editSheet.value = { date }
+}
+const openEdit = (visit: Visit) => {
+  daySheet.value = null
+  editSheet.value = { visit }
+}
+const breakdown = computed(() => activityBreakdown(tracker.visits, tracker.now, 30))
 
 // ---- ringkasan ----
 const s = computed(() => tracker.stats)
@@ -71,15 +87,9 @@ function saveGoalWeight() {
 }
 
 // ---- catatan ----
-const manual = ref({ date: today.value, note: '' })
-function addManual() {
-  tracker.addManualVisit(manual.value.date, { note: manual.value.note.trim() || null })
-  manual.value = { date: today.value, note: '' }
-}
 const ENERGY = ['', '😴', '😐', '🙂', '💪', '🔥']
 const dayLabel = (d: string) => parseYmd(d).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })
 const timeLabel = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '')
-const SOURCE = { checkin: 'Check-in', class: 'Kelas', manual: 'Manual' } as const
 </script>
 
 <template>
@@ -103,7 +113,7 @@ const SOURCE = { checkin: 'Check-in', class: 'Kelas', manual: 'Manual' } as cons
     </div>
 
     <section class="card p-4"><h2 class="mb-3 text-sm font-semibold">8 minggu terakhir</h2><WeekBars :weeks="weeks" :goal="goal" /></section>
-    <section class="card p-4"><MonthHeatmap :visits="tracker.visits" :now="tracker.now" :planned="planned" /></section>
+    <section class="card p-4"><MonthHeatmap :visits="tracker.visits" :now="tracker.now" :planned="planned" @select="daySheet = $event" /></section>
 
     <section class="card p-4">
       <h2 class="text-sm font-semibold">Hari favoritmu</h2>
@@ -114,6 +124,18 @@ const SOURCE = { checkin: 'Check-in', class: 'Kelas', manual: 'Manual' } as cons
           <span class="mt-1 text-[10px] text-white/45">{{ DAY_SHORT[i] }}</span>
         </div>
       </div>
+    </section>
+
+    <section class="card p-4" data-testid="activity-card">
+      <h2 class="text-sm font-semibold">Aktivitas 30 hari terakhir</h2>
+      <p v-if="!breakdown.total" class="mt-1 text-xs text-white/50">Belum ada aktivitas tercatat.</p>
+      <ul v-else class="mt-2 space-y-1.5">
+        <li v-for="i in breakdown.items" :key="i.key" class="flex items-center justify-between text-sm">
+          <span><span aria-hidden="true">{{ i.emoji }}</span> {{ i.label }}</span><span class="font-semibold">{{ i.count }}x</span>
+        </li>
+      </ul>
+      <p v-if="breakdown.topClass" class="mt-2 text-xs text-white/50">Kelas favorit: {{ breakdown.topClass.name }} ({{ breakdown.topClass.count }}x)</p>
+      <button class="btn-ghost mt-3 w-full !py-2" data-testid="add-activity" @click="openAdd()">Tambah aktivitas</button>
     </section>
 
     <section class="card space-y-4 p-4">
@@ -184,29 +206,28 @@ const SOURCE = { checkin: 'Check-in', class: 'Kelas', manual: 'Manual' } as cons
 
   <!-- CATATAN -->
   <div v-else class="space-y-3 px-5" data-testid="tab-catatan">
-    <form class="card space-y-3 p-4" @submit.prevent="addManual">
-      <h2 class="text-sm font-semibold">Tambah latihan manual</h2>
-      <div class="grid grid-cols-[auto_1fr] gap-2">
-        <input v-model="manual.date" type="date" :max="today" class="input" required />
-        <input v-model="manual.note" maxlength="500" class="input" placeholder="Catatan (opsional)" />
-      </div>
-      <button class="btn-ghost w-full" data-testid="manual-add">Tambahkan</button>
-    </form>
+    <button class="btn-primary w-full" data-testid="notes-add" @click="openAdd()">Tambah aktivitas (tanggal mana pun)</button>
 
     <ul v-if="tracker.visits.length" class="space-y-2" data-testid="visit-list">
       <li v-for="v in tracker.visits.slice(0, 60)" :key="v.client_id" class="card px-4 py-3">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="text-sm font-medium">{{ dayLabel(v.visited_on) }}<span v-if="v.visited_at" class="font-normal text-white/50"> · {{ timeLabel(v.visited_at) }}</span></p>
-            <p class="text-xs text-white/55">{{ SOURCE[v.source] }}<template v-if="v.class_name"> · {{ v.class_name }}</template> <span v-if="v.energy" aria-hidden="true">{{ ENERGY[v.energy] }}</span></p>
+            <p class="text-xs text-white/55"><span aria-hidden="true">{{ activityMeta(v.activity).emoji }}</span> {{ activityLabel(v) }}<template v-if="v.duration_min"> · {{ v.duration_min }} mnt</template><template v-if="!counts(v)"> · tidak dihitung</template> <span v-if="v.energy" aria-hidden="true">{{ ENERGY[v.energy] }}</span></p>
           </div>
-          <button class="shrink-0 text-xs text-red-300" :aria-label="`Hapus latihan ${v.visited_on}`" @click="tracker.removeVisit(v.client_id)">Hapus</button>
+          <div class="flex shrink-0 gap-3 text-xs">
+            <button class="text-brand-300" :aria-label="`Ubah aktivitas ${v.visited_on}`" @click="openEdit(v)">Ubah</button>
+            <button class="text-red-300" :aria-label="`Hapus latihan ${v.visited_on}`" @click="tracker.removeVisit(v.client_id)">Hapus</button>
+          </div>
         </div>
         <p v-if="v.note" class="mt-1.5 text-sm text-white/75">{{ v.note }}</p>
       </li>
     </ul>
     <p v-else class="py-6 text-center text-sm text-white/50">Belum ada latihan tercatat. Mulai dari tombol “Catat latihan” di Beranda.</p>
   </div>
+
+  <DaySheet v-if="daySheet" :date="daySheet" @close="daySheet = null" @add="openAdd($event)" @edit="openEdit($event)" />
+  <ActivitySheet v-if="editSheet" :visit="editSheet.visit" :date="editSheet.date" @close="editSheet = null" />
 
   <ConsentSheet v-if="tracker.needsConsent && tracker.memberId != null" />
 </template>

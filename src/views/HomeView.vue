@@ -4,6 +4,7 @@ import { memberAktif, memberPtAktif } from '@/api/endpoints'
 import CheckInButton from '@/components/CheckInButton.vue'
 import ConsentSheet from '@/components/ConsentSheet.vue'
 import GoalRing from '@/components/GoalRing.vue'
+import MissingDays from '@/components/MissingDays.vue'
 import MotivationCard from '@/components/MotivationCard.vue'
 import { useAsync } from '@/composables/useAsync'
 import { useInstall } from '@/composables/useSw'
@@ -82,6 +83,8 @@ const links = [
     </p>
 
     <CheckInButton class="mt-4" />
+
+    <MissingDays />
 
     <section v-if="todaySignups.length" class="card mt-3 p-4" data-testid="today-classes">
       <p class="text-xs font-semibold tracking-wide text-white/50 uppercase">Kelas hari ini</p>

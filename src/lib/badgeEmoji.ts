@@ -6,4 +6,6 @@ export const badgeEmoji = (key: string) =>
   : key === 'week_5' ? '💥'
   : key === 'early_bird' ? '🌅'
   : key === 'comeback' ? '🔄'
+  : key === 'versatile' ? '🌈'
+  : key === 'class_explorer' ? '🧭'
   : '⭐'

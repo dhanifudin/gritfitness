@@ -29,7 +29,7 @@ How isolation works:
 
 1. **Audit before** (optional but recommended): open the Supabase SQL editor, run `supabase/sql/grit_003_audit.sql`,
    keep the result.
-2. Run, in this order, in the SQL editor: `grit_001_schema.sql`, then `grit_002_rls.sql`. Both are idempotent and
+2. Run, in this order, in the SQL editor: `grit_001_schema.sql`, `grit_002_rls.sql`, then `grit_005_activities.sql` (activity types for visits; additive). Both are idempotent and
    safe to re-run.
 3. Run `grit_003_audit.sql` again and compare with step 1. The only differences must be the new schema `grit`
    (6 tables, 9 indexes, 2 functions) and the role `grit_member`. Steps 4 and 5 of the audit must return **no rows**
@@ -80,6 +80,7 @@ With `supabase login` done once on the machine and `supabase link --project-ref 
 supabase db query --linked -f supabase/sql/grit_003_audit.sql     # baseline
 supabase db query --linked -f supabase/sql/grit_001_schema.sql
 supabase db query --linked -f supabase/sql/grit_002_rls.sql
+supabase db query --linked -f supabase/sql/grit_005_activities.sql  # activity types / back-dated entries
 supabase db query --linked -f supabase/sql/grit_004_selftest.sql   # expect: grit selftest OK (rolled back)
 supabase secrets set --env-file <file with GRIT_JWT_SECRET=...>    # delete the file afterwards
 supabase functions deploy grit-auth --no-verify-jwt --use-api
@@ -102,3 +103,10 @@ Add `grit` to Exposed schemas in the dashboard (the only step the CLI cannot do)
   `permission denied for schema ...`. Test rows were deleted.
 
 If the legacy JWT secret is ever rotated, run `supabase secrets set GRIT_JWT_SECRET=...` again with the new value.
+
+### 2026-10-01 (later): migration 005, activity types
+
+- `grit_005_activities.sql` applied to the real project: `grit.visits` gained `activity`, `activity_name`,
+  `counts_toward_goal`, `duration_min`, `class_id` (+ 3 check constraints). Audit before/after: no change outside grit;
+  self-test still passes. REST smoke test with the test member: past-dated custom (Hyrox) and class rows accepted, unknown
+  activity and `other` without a name rejected (400), test rows deleted.

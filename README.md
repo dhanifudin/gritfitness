@@ -52,6 +52,7 @@ Beyond QR and bookings, the app is a self-tracker that helps members build a hea
 
 - **Beranda**: weekly goal ring, weekly-goal streak, a motivation message that fits the situation (ahead, one visit left, behind, comeback, streak), one-tap **"Catat latihan hari ini"**, today's registered classes ("Jadi ikut kelas?"), and an in-app reminder when the goal is at risk.
 - **QR screens** also have the check-in button (also on the cached saved-QR view, so it works without logging in).
+- **Past days and other activities**: any past date can be filled in (Beranda nudges "Kemarin belum tercatat", tap a day in the Progres calendar, or **Tambah aktivitas** in Catatan). Activity types: Gym, Kelas (pick from the gym's 28 classes), Personal Trainer, Pemulihan, and **Lainnya** with your own name (Hyrox, lari, renang…). Only workouts count toward the weekly goal and streak; recovery is recorded but not counted.
 - **Progres**: frequency stats, 8-week bars, month calendar, favourite weekdays, goal and reminder settings; **Badge** milestones; **Tubuh** (weight / waist / body fat with trend and target); **Catatan** (per-visit notes and energy, manual entries).
 
 The gym API has no attendance history, so visits come from the app: one-tap check-in plus class registrations the app performs.

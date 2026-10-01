@@ -2,6 +2,8 @@
 // Pure functions of (visits, now): no Vue, no I/O, so they can be unit-tested with plain Node.
 // A "week" is Monday..Sunday (same as the class schedule); several logs on one day count as one visit.
 
+import { activityMeta } from './activities.ts'
+
 export interface Visit {
   client_id: string
   visited_on: string // local date, YYYY-MM-DD
@@ -10,6 +12,13 @@ export interface Visit {
   class_name?: string | null
   note?: string | null
   energy?: number | null // 1..5
+  /** what was done; missing on old rows = 'gym' ('class' when source is 'class') */
+  activity?: 'gym' | 'class' | 'pt' | 'recovery' | 'other'
+  activity_name?: string | null // custom name for 'other' (e.g. Hyrox)
+  /** only workouts count toward the weekly goal / streak; missing = counts */
+  counts_toward_goal?: boolean
+  duration_min?: number | null
+  class_id?: number | null
 }
 
 export interface Settings {
@@ -34,7 +43,13 @@ export const mondayOf = (d: Date) => addDays(new Date(d.getFullYear(), d.getMont
 const dayDiff = (a: Date, b: Date) => Math.round((parseYmd(ymd(b)).getTime() - parseYmd(ymd(a)).getTime()) / 86_400_000)
 
 // ---- core ---------------------------------------------------------------------------------------------
-export const visitDays = (visits: Visit[]) => new Set(visits.map((v) => v.visited_on))
+/** Does this entry count toward the weekly goal / streak / stats? (recovery and opted-out custom entries do not) */
+export const counts = (v: Visit) => v.counts_toward_goal !== false
+
+/** Days with at least one counted workout. */
+export const visitDays = (visits: Visit[]) => new Set(visits.filter(counts).map((v) => v.visited_on))
+/** Days with any recorded activity, counted or not. */
+export const anyDays = (visits: Visit[]) => new Set(visits.map((v) => v.visited_on))
 
 export interface WeekCount {
   weekStart: string // Monday, YYYY-MM-DD
@@ -133,7 +148,8 @@ export interface Cell {
   date: string
   day: number
   inMonth: boolean
-  visited: boolean
+  visited: boolean // a counted workout
+  other: boolean // only non-counting activity (e.g. recovery)
   isToday: boolean
   future: boolean
 }
@@ -141,6 +157,7 @@ export interface Cell {
 /** Calendar rows (Mon..Sun) covering `month` (0-11) of `year`. */
 export function monthGrid(visits: Visit[], year: number, month: number, now: Date): Cell[][] {
   const days = visitDays(visits)
+  const any = anyDays(visits)
   const today = ymd(now)
   const first = new Date(year, month, 1)
   const last = new Date(year, month + 1, 0)
@@ -150,7 +167,7 @@ export function monthGrid(visits: Visit[], year: number, month: number, now: Dat
       Array.from({ length: 7 }, (_, i) => {
         const d = addDays(cur, i)
         const key = ymd(d)
-        return { date: key, day: d.getDate(), inMonth: d.getMonth() === month, visited: days.has(key), isToday: key === today, future: key > today }
+        return { date: key, day: d.getDate(), inMonth: d.getMonth() === month, visited: days.has(key), other: !days.has(key) && any.has(key), isToday: key === today, future: key > today }
       }),
     )
   }
@@ -181,9 +198,17 @@ export function badgesFor(visits: Visit[], goal: number, now: Date): Badge[] {
   const total = totalVisitDays(visits)
   const { best } = streaks(visits, goal, now)
   const bestWeek = Math.max(0, ...weekCounts(visits, now, 520).map((w) => w.count)) // up to 10 years
-  const early = new Set(visits.filter((v) => (hourOf(v) ?? 99) < 8).map((v) => v.visited_on)).size
+  const early = new Set(visits.filter((v) => counts(v) && (hourOf(v) ?? 99) < 8).map((v) => v.visited_on)).size
   const gap = longestGap(visits)
   const hitGoalOnce = weekCounts(visits, now, 520).some((w) => w.count >= goal)
+  const typeKey = (v: Visit) => (v.activity === 'other' ? `other:${(v.activity_name ?? '').toLowerCase()}` : (v.activity ?? (v.source === 'class' ? 'class' : 'gym')))
+  const byMonth = new Map<string, Set<string>>()
+  for (const v of visits) {
+    const m = v.visited_on.slice(0, 7)
+    byMonth.set(m, (byMonth.get(m) ?? new Set()).add(typeKey(v)))
+  }
+  const versatile = Math.max(0, ...[...byMonth.values()].map((x) => x.size))
+  const classesTried = new Set(visits.filter((v) => (v.activity === 'class' || v.source === 'class') && (v.class_id != null || v.class_name)).map((v) => v.class_id ?? v.class_name!.toLowerCase())).size
   const mk = (key: string, title: string, desc: string, value: number, target: number): Badge => ({ key, title, desc, value: Math.min(value, target), target, unlocked: value >= target })
   return [
     mk('first_visit', 'Langkah pertama', 'Catat latihan pertamamu', total, 1),
@@ -200,6 +225,8 @@ export function badgesFor(visits: Visit[], goal: number, now: Date): Badge[] {
     mk('week_5', 'Minggu padat', '5 hari latihan dalam satu minggu', bestWeek, 5),
     mk('early_bird', 'Si pagi', '5 latihan sebelum jam 08.00', early, 5),
     mk('comeback', 'Bangkit lagi', 'Kembali berlatih setelah jeda 14 hari atau lebih', gap >= 14 ? 1 : 0, 1),
+    mk('versatile', 'Serba bisa', '3 jenis aktivitas berbeda dalam satu bulan', versatile, 3),
+    mk('class_explorer', 'Pencoba kelas', 'Coba 5 kelas yang berbeda', classesTried, 5),
   ]
 }
 
@@ -284,4 +311,55 @@ export function reminder(visits: Visit[], settings: Settings, now: Date): Remind
     return { show: true, reason: 'usual_day', text: 'Biasanya kamu latihan di hari ini. Sudah latihan? Catat atau sempatkan sebentar.' }
   }
   return none
+}
+
+// ---- activity breakdown and missing days -----------------------------------------------------------------
+export interface BreakdownItem {
+  key: string
+  label: string
+  emoji: string
+  count: number
+}
+
+/** Entries per activity in the last `days` days (today included), plus the most frequent class. */
+export function activityBreakdown(visits: Visit[], now: Date, days = 30): { items: BreakdownItem[]; total: number; topClass: { name: string; count: number } | null } {
+  const from = ymd(addDays(now, -(days - 1)))
+  const to = ymd(now)
+  const items = new Map<string, BreakdownItem>()
+  const classes = new Map<string, { name: string; count: number }>()
+  let total = 0
+  for (const v of visits) {
+    if (v.visited_on < from || v.visited_on > to) continue
+    total++
+    const a = v.activity ?? (v.source === 'class' ? 'class' : 'gym')
+    const key = a === 'other' ? `other:${(v.activity_name ?? '').toLowerCase()}` : a
+    const meta = activityMeta(a)
+    const cur = items.get(key) ?? { key, label: a === 'other' ? v.activity_name || 'Lainnya' : meta.label, emoji: meta.emoji, count: 0 }
+    cur.count++
+    items.set(key, cur)
+    if (a === 'class' && v.class_name) {
+      const c = classes.get(v.class_name.toLowerCase()) ?? { name: v.class_name, count: 0 }
+      c.count++
+      classes.set(v.class_name.toLowerCase(), c)
+    }
+  }
+  const top = [...classes.values()].sort((x, y) => y.count - x.count || x.name.localeCompare(y.name))[0] ?? null
+  return { items: [...items.values()].sort((x, y) => y.count - x.count || x.label.localeCompare(y.label)), total, topClass: top }
+}
+
+/**
+ * Past days (yesterday backwards, at most `n`) with no recorded activity at all. Empty for a member with no
+ * entries yet, and never reaches back before their first entry.
+ */
+export function missingDays(visits: Visit[], now: Date, n = 7): string[] {
+  const days = anyDays(visits)
+  const first = [...days].sort()[0]
+  if (!first) return []
+  const out: string[] = []
+  for (let i = 1; i <= n; i++) {
+    const d = ymd(addDays(now, -i))
+    if (d < first) break
+    if (!days.has(d)) out.push(d)
+  }
+  return out
 }

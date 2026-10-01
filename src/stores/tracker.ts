@@ -3,13 +3,17 @@ import { computed, ref } from 'vue'
 import { remote, SyncError, trackerConfigured } from '@/lib/supabase'
 import { cachedQrOwner } from '@/lib/qrCache'
 import motivationData from '@/data/motivation.json'
+import { defaultCounts, type Activity } from '@/lib/activities'
 import {
   badgesFor,
   computeStats,
+  counts,
+  missingDays,
   DEFAULT_SETTINGS,
   motivation as pickMotivation,
   reminder as pickReminder,
   visitedToday,
+  addDays,
   ymd,
   type Messages,
   type Settings,
@@ -37,7 +41,10 @@ const DELETE_COLUMN: Record<Table, string> = {
   badges: 'badge_key',
   members: 'member_id',
 }
-const VISIT_COLS = 'client_id,visited_on,visited_at,source,class_name,note,energy'
+const VISIT_COLS = 'client_id,visited_on,visited_at,source,class_name,note,energy,activity,activity_name,counts_toward_goal,duration_min,class_id'
+
+/** Rows from older versions (or the server defaults) get explicit activity fields. */
+const normalizeVisit = (v: Visit): Visit => ({ ...v, activity: v.activity ?? (v.source === 'class' ? 'class' : 'gym'), counts_toward_goal: v.counts_toward_goal ?? true })
 const visitRow = (v: Visit): Record<string, unknown> => ({
   client_id: v.client_id,
   visited_on: v.visited_on,
@@ -46,6 +53,11 @@ const visitRow = (v: Visit): Record<string, unknown> => ({
   class_name: v.class_name ?? null,
   note: v.note ?? null,
   energy: v.energy ?? null,
+  activity: v.activity ?? 'gym',
+  activity_name: v.activity_name ?? null,
+  counts_toward_goal: v.counts_toward_goal ?? true,
+  duration_min: v.duration_min ?? null,
+  class_id: v.class_id ?? null,
 })
 const metricRow = (m: Metric): Record<string, unknown> => ({
   measured_on: m.measured_on,
@@ -81,6 +93,7 @@ export const useTracker = defineStore('tracker', () => {
   const badges = ref<BadgeRow[]>([])
   const outbox = ref<Op[]>([])
   const localOnly = ref(false)
+  const dismissedMissing = ref<string[]>([])
   const lastSyncAt = ref(0)
   const syncing = ref(false)
   const syncError = ref('')
@@ -98,7 +111,14 @@ export const useTracker = defineStore('tracker', () => {
   const motivation = computed(() => pickMotivation(stats.value, now.value, motivationData as Messages))
   const reminder = computed(() => pickReminder(visits.value, settings.value, now.value))
   const checkedInToday = computed(() => visitedToday(visits.value, now.value))
-  const todayVisit = computed(() => visits.value.find((v) => v.visited_on === ymd(now.value)) ?? null)
+  const todayVisit = computed(() => visits.value.find((v) => v.visited_on === ymd(now.value) && counts(v)) ?? null)
+  /** past days (up to 7) with nothing recorded that the member has not dismissed; only yesterday is nudged on Home */
+  const missing = computed(() => missingDays(visits.value, now.value, 7).filter((d) => !dismissedMissing.value.includes(d)))
+  const pastSignups = computed(() => {
+    const from = ymd(addDays(now.value, -7))
+    const today = ymd(now.value)
+    return signups.value.filter((x) => x.status === 'planned' && x.scheduled_on >= from && x.scheduled_on < today)
+  })
   const pending = computed(() => outbox.value.length)
 
   function persist() {
@@ -106,7 +126,7 @@ export const useTracker = defineStore('tracker', () => {
     try {
       localStorage.setItem(
         storageKey(memberId.value),
-        JSON.stringify({ visits: visits.value, metrics: metrics.value, settings: settings.value, signups: signups.value, badges: badges.value, outbox: outbox.value, localOnly: localOnly.value, lastSyncAt: lastSyncAt.value }),
+        JSON.stringify({ visits: visits.value, metrics: metrics.value, settings: settings.value, signups: signups.value, badges: badges.value, outbox: outbox.value, localOnly: localOnly.value, lastSyncAt: lastSyncAt.value, dismissedMissing: dismissedMissing.value }),
       )
     } catch {
       /* storage full or blocked: the in-memory state still works for this session */
@@ -123,6 +143,7 @@ export const useTracker = defineStore('tracker', () => {
     localOnly.value = false
     lastSyncAt.value = 0
     syncError.value = ''
+    dismissedMissing.value = []
   }
 
   /** Load the local copy for this member (call with the gym member id). Safe to call repeatedly. */
@@ -138,7 +159,7 @@ export const useTracker = defineStore('tracker', () => {
     try {
       const raw = JSON.parse(localStorage.getItem(storageKey(target)) ?? 'null')
       if (raw) {
-        visits.value = raw.visits ?? []
+        visits.value = (raw.visits ?? []).map(normalizeVisit)
         metrics.value = raw.metrics ?? []
         settings.value = { ...DEFAULT_SETTINGS, ...(raw.settings ?? {}) }
         signups.value = raw.signups ?? []
@@ -146,6 +167,7 @@ export const useTracker = defineStore('tracker', () => {
         outbox.value = raw.outbox ?? []
         localOnly.value = !!raw.localOnly
         lastSyncAt.value = raw.lastSyncAt ?? 0
+        dismissedMissing.value = raw.dismissedMissing ?? []
       }
     } catch {
       /* corrupt local copy: start empty, the server copy comes back on the next sync */
@@ -165,25 +187,55 @@ export const useTracker = defineStore('tracker', () => {
     const existing = todayVisit.value
     if (existing && (o.onlyOnce ?? source === 'checkin')) return existing
     const t = new Date()
-    const v: Visit = { client_id: crypto.randomUUID(), visited_on: ymd(t), visited_at: t.toISOString(), source, class_name: o.class_name ?? null, note: o.note ?? null, energy: o.energy ?? null }
+    const activity: Activity = source === 'class' ? 'class' : 'gym'
+    const v: Visit = { client_id: crypto.randomUUID(), visited_on: ymd(t), visited_at: t.toISOString(), source, class_name: o.class_name ?? null, note: o.note ?? null, energy: o.energy ?? null, activity, counts_toward_goal: true }
     visits.value = sortVisits([v, ...visits.value])
     queue({ table: 'visits', kind: 'upsert', key: v.client_id, row: visitRow(v) })
     return v
   }
 
-  /** Back-dated or extra visit entered by hand. */
+  /** Any activity on any (past) day, entered by hand: the backfill path. */
+  function addActivity(o: {
+    date: string
+    activity: Activity
+    activity_name?: string | null
+    class_id?: number | null
+    class_name?: string | null
+    counts?: boolean
+    duration_min?: number | null
+    time?: string | null // 'HH:MM' local
+    energy?: number | null
+    note?: string | null
+  }): Visit {
+    const v: Visit = {
+      client_id: crypto.randomUUID(),
+      visited_on: o.date,
+      visited_at: o.time ? new Date(`${o.date}T${o.time}:00`).toISOString() : null,
+      source: 'manual',
+      activity: o.activity,
+      activity_name: o.activity === 'other' ? o.activity_name?.trim() || null : null,
+      class_id: o.activity === 'class' ? o.class_id ?? null : null,
+      class_name: o.activity === 'class' ? o.class_name ?? null : null,
+      counts_toward_goal: o.counts ?? defaultCounts(o.activity),
+      duration_min: o.duration_min ?? null,
+      note: o.note?.trim() || null,
+      energy: o.energy ?? null,
+    }
+    visits.value = sortVisits([v, ...visits.value])
+    queue({ table: 'visits', kind: 'upsert', key: v.client_id, row: visitRow(v) })
+    return v
+  }
+
+  /** Kept for callers that only know a date and a note. */
   function addManualVisit(date: string, o: { class_name?: string | null; energy?: number | null; note?: string | null } = {}): Visit {
-    const v: Visit = { client_id: crypto.randomUUID(), visited_on: date, visited_at: null, source: 'manual', class_name: o.class_name ?? null, note: o.note ?? null, energy: o.energy ?? null }
-    visits.value = sortVisits([v, ...visits.value])
-    queue({ table: 'visits', kind: 'upsert', key: v.client_id, row: visitRow(v) })
-    return v
+    return addActivity({ date, activity: 'gym', energy: o.energy, note: o.note })
   }
 
-  function updateVisit(clientId: string, patch: Partial<Pick<Visit, 'note' | 'energy' | 'class_name'>>) {
+  function updateVisit(clientId: string, patch: Partial<Omit<Visit, 'client_id' | 'source'>>) {
     const i = visits.value.findIndex((v) => v.client_id === clientId)
     if (i < 0) return
     const next = { ...visits.value[i], ...patch }
-    visits.value = visits.value.map((v, j) => (j === i ? next : v))
+    visits.value = sortVisits(visits.value.map((v, j) => (j === i ? next : v)))
     queue({ table: 'visits', kind: 'upsert', key: clientId, row: visitRow(next) })
   }
 
@@ -249,8 +301,14 @@ export const useTracker = defineStore('tracker', () => {
   function attendClass(scheduleId: number) {
     const s = signups.value.find((x) => x.schedule_id === scheduleId)
     if (!s) return
-    checkIn({ source: 'class', class_name: s.class_name, onlyOnce: false })
+    if (s.scheduled_on === ymd(new Date())) checkIn({ source: 'class', class_name: s.class_name, onlyOnce: false })
+    else addActivity({ date: s.scheduled_on, activity: 'class', class_name: s.class_name, time: s.start_time?.slice(0, 5) ?? null })
     setSignupStatus(scheduleId, 'attended')
+  }
+
+  function dismissMissing(date: string) {
+    if (!dismissedMissing.value.includes(date)) dismissedMissing.value = [...dismissedMissing.value, date].slice(-60)
+    persist()
   }
 
   // ---- sync -------------------------------------------------------------------------------------------------
@@ -302,7 +360,7 @@ export const useTracker = defineStore('tracker', () => {
         persist()
       }
       const merged = mergeServer(await pull(), outbox.value)
-      visits.value = sortVisits(merged.visits)
+      visits.value = sortVisits(merged.visits.map(normalizeVisit))
       metrics.value = sortMetrics(merged.metrics)
       signups.value = merged.signups
       badges.value = merged.badges
@@ -336,8 +394,8 @@ export const useTracker = defineStore('tracker', () => {
 
   return {
     memberId, visits, metrics, settings, signups, badges, outbox, syncing, syncError, lastSyncAt, now,
-    consented, needsConsent, localOnly, stats, badgeList, newBadges, motivation, reminder, checkedInToday, todayVisit, pending,
-    init, checkIn, addManualVisit, updateVisit, removeVisit, saveMetric, removeMetric, setSettings, consent, stayLocal,
+    consented, needsConsent, localOnly, stats, badgeList, newBadges, motivation, reminder, checkedInToday, todayVisit, pending, missing, pastSignups,
+    init, checkIn, addActivity, addManualVisit, updateVisit, dismissMissing, removeVisit, saveMetric, removeMetric, setSettings, consent, stayLocal,
     ackBadges, trackSignup, setSignupStatus, attendClass, sync, flushBeforeLogout, wipe,
   }
 })
