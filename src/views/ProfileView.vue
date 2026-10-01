@@ -111,12 +111,15 @@ async function out() {
         </div>
         <button
           type="button" role="switch" :aria-checked="pushOn" data-testid="push-toggle"
-          class="relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-40"
+          class="relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-60"
           :class="pushOn ? 'bg-lime-grit' : 'bg-white/15'"
-          :disabled="pushBusy || (!pushOn && !!pushBlocked)"
+          :disabled="pushBusy"
           @click="togglePush"
         >
-          <span class="absolute top-1 h-5 w-5 rounded-full bg-white transition" :class="pushOn ? 'left-6' : 'left-1'" />
+          <span v-if="pushBusy" class="absolute inset-0 flex items-center justify-center">
+            <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          </span>
+          <span v-else class="absolute top-1 h-5 w-5 rounded-full bg-white transition" :class="pushOn ? 'left-6' : 'left-1'" />
         </button>
       </div>
       <p v-if="!pushOn && pushBlocked" class="mt-2 text-xs text-amber-200/80">{{ pushBlocked }}</p>

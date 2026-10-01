@@ -36,6 +36,19 @@ function subRow(sub: PushSubscription): Record<string, unknown> {
   return { endpoint: sub.endpoint, p256dh: json.keys?.p256dh, auth: json.keys?.auth }
 }
 
+class TimeoutError extends Error {}
+
+/** A real-device subscribe() can hang indefinitely with no rejection; never leave the caller waiting forever. */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new TimeoutError()), ms))])
+}
+
+async function subscribeAndStore(): Promise<void> {
+  const reg = await navigator.serviceWorker.ready
+  const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource }))
+  await remote.upsert('push_subscriptions', subRow(sub))
+}
+
 /** Request permission (if needed) and subscribe this device, upserting the subscription to the server. */
 export async function enablePush(): Promise<{ ok: true } | { ok: false; reason: string }> {
   if (!pushSupported()) return { ok: false, reason: 'Notifikasi tidak didukung di perangkat/browser ini.' }
@@ -46,13 +59,12 @@ export async function enablePush(): Promise<{ ok: true } | { ok: false; reason: 
   if (perm !== 'granted') return { ok: false, reason: 'Izin notifikasi tidak diberikan.' }
 
   try {
-    const reg = await navigator.serviceWorker.ready
-    const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) as BufferSource }))
-    await remote.upsert('push_subscriptions', subRow(sub))
+    await withTimeout(subscribeAndStore(), 15000)
     localStorage.setItem(ENABLED_KEY, '1')
     return { ok: true }
   } catch (e) {
-    return { ok: false, reason: e instanceof Error ? e.message : 'Gagal mengaktifkan notifikasi.' }
+    const reason = e instanceof TimeoutError ? 'Waktu habis, coba lagi.' : e instanceof Error ? e.message : 'Gagal mengaktifkan notifikasi.'
+    return { ok: false, reason }
   }
 }
 
