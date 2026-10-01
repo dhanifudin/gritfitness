@@ -12,7 +12,7 @@ begin;
 
 create table if not exists grit.push_subscriptions (
   id         uuid primary key default gen_random_uuid(),
-  member_id  bigint not null,
+  member_id  bigint not null default grit.current_member(),
   endpoint   text not null unique,
   p256dh     text not null,
   auth       text not null,

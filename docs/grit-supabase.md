@@ -189,3 +189,17 @@ If the legacy JWT secret is ever rotated, run `supabase secrets set GRIT_JWT_SEC
   `grit.visits` rows), invoked `grit-push-check` live → `sent:1` (FCM accepted the push). A second call within
   the 3-day cooldown correctly sent nothing (de-dupe via `grit.push_log` confirmed working). Test visit,
   subscription and log row all deleted afterward; zero grit rows left for the test member.
+
+### 2026-10-01 (later still): migration 010, fixing a 403 on push_subscriptions
+
+- Bug: `grit_008`'s `push_subscriptions.member_id` was `not null` with **no default**, unlike every other
+  member-owned table (`members`/`visits`/`class_signups`/`body_metrics`/`badges` all default it to
+  `grit.current_member()`). The client never sends `member_id` (same convention as those tables), so every
+  insert arrived with it `NULL`, and the RLS `with check (member_id = grit.current_member())` rejected it
+  with 403 before the not-null constraint was even reached — found live, from the push toggle in Profil.
+- `grit_010_push_subscriptions_default.sql` applied: `alter table grit.push_subscriptions alter column
+  member_id set default grit.current_member();`. Audit before/after: identical table/index/function counts,
+  isolation checks still 0 rows; self-test still passes. `grit_008`'s own `create table` statement was also
+  corrected so a fresh install doesn't hit the same bug.
+- Live re-test: subscribed a real browser again → `POST push_subscriptions` now returns `201` (was `403`).
+  Test subscription row deleted afterward.
