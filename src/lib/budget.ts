@@ -80,3 +80,17 @@ export function unpaidSummary(bills: BillLike[]): UnpaidSummary {
   const unpaid = bills.filter((b) => !isPaid(b.status))
   return { count: unpaid.length, total: unpaid.reduce((sum, b) => sum + amount(b), 0) }
 }
+
+export interface OtherActivitySpend {
+  total: number
+  /** entries with a cost entered; a custom activity logged without one isn't counted, not assumed free */
+  count: number
+}
+
+/** Spend on non-GritFitness ('other') activities with a cost entered, over the trailing `days` days (today included). */
+export function otherActivitySpend(visits: Visit[], now: Date, days = 30): OtherActivitySpend {
+  const from = ymd(addDays(now, -(days - 1)))
+  const to = ymd(now)
+  const costed = visits.filter((v) => !isGritActivity(v) && v.visited_on >= from && v.visited_on <= to && v.cost != null)
+  return { total: costed.reduce((sum, v) => sum + (v.cost ?? 0), 0), count: costed.length }
+}

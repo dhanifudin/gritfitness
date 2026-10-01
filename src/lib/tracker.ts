@@ -19,6 +19,8 @@ export interface Visit {
   counts_toward_goal?: boolean
   duration_min?: number | null
   class_id?: number | null
+  /** what this one session cost, typically used for non-GritFitness ('other') activities */
+  cost?: number | null
 }
 
 export interface Settings {

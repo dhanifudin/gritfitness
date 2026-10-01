@@ -53,3 +53,16 @@ const us = b.unpaidSummary(bills)
 ok('unpaidSummary: counts and sums only non-paid statuses', us.count === 1 && us.total === 999999)
 ok('unpaidSummary: all paid -> zero', b.unpaidSummary([bill('2026-09-01 00:00:00', '100', 'Lunas')]).count === 0)
 ok('unpaidSummary: empty -> zero', b.unpaidSummary([]).count === 0 && b.unpaidSummary([]).total === 0)
+
+// ---- otherActivitySpend ----
+const Vc = (day: string, activity: string, cost: number | null) => ({ client_id: 'c' + vid++, visited_on: day, source: 'manual' as const, activity, cost })
+{
+  const v = [Vc('2026-09-28', 'other', 150000), Vc('2026-09-29', 'other', 50000), Vc('2026-09-29', 'gym', 999999), Vc('2026-09-30', 'other', null)]
+  const os = b.otherActivitySpend(v, NOW, 30)
+  ok('otherActivitySpend: sums only non-Grit entries with a cost entered', os.total === 200000 && os.count === 2, JSON.stringify(os))
+}
+ok('otherActivitySpend: no entries -> zero, not missing', b.otherActivitySpend([], NOW, 30).total === 0 && b.otherActivitySpend([], NOW, 30).count === 0)
+{
+  const v = [Vc('2026-01-01', 'other', 100000)] // outside the trailing-30-day window
+  ok('otherActivitySpend: respects the date window', b.otherActivitySpend(v, NOW, 30).count === 0)
+}

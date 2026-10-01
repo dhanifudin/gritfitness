@@ -26,6 +26,7 @@ const time = ref(v0?.visited_at ? new Date(v0.visited_at).toTimeString().slice(0
 const duration = ref(v0?.duration_min != null ? String(v0.duration_min) : '')
 const energy = ref<number | null>(v0?.energy ?? null)
 const note = ref(v0?.note ?? '')
+const cost = ref(v0?.cost != null ? String(v0.cost) : '')
 const query = ref('')
 const error = ref('')
 
@@ -59,6 +60,8 @@ function save() {
   if (activity.value === 'other' && !customName.value.trim()) return void (error.value = 'Tulis nama aktivitasnya, misalnya Hyrox.')
   const dur = duration.value.trim() === '' ? null : Number(duration.value)
   if (dur != null && !(Number.isInteger(dur) && dur >= 1 && dur <= 600)) return void (error.value = 'Durasi harus 1–600 menit.')
+  const costVal = cost.value.trim() === '' ? null : Number(cost.value)
+  if (costVal != null && !(costVal >= 0)) return void (error.value = 'Biaya tidak boleh negatif.')
   const patch = {
     visited_on: date.value,
     visited_at: time.value ? new Date(`${date.value}T${time.value}:00`).toISOString() : null,
@@ -70,12 +73,13 @@ function save() {
     duration_min: dur,
     energy: energy.value,
     note: note.value.trim() || null,
+    cost: activity.value === 'other' ? costVal : null,
   }
   if (editing && v0) {
     tracker.updateVisit(v0.client_id, patch)
     emit('saved', null)
   } else {
-    emit('saved', tracker.addActivity({ date: date.value, activity: activity.value, activity_name: patch.activity_name, class_id: patch.class_id, class_name: patch.class_name, counts: counted.value, duration_min: dur, time: time.value || null, energy: energy.value, note: patch.note }))
+    emit('saved', tracker.addActivity({ date: date.value, activity: activity.value, activity_name: patch.activity_name, class_id: patch.class_id, class_name: patch.class_name, counts: counted.value, duration_min: dur, time: time.value || null, energy: energy.value, note: patch.note, cost: patch.cost }))
   }
   emit('close')
 }
@@ -135,6 +139,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
         <!-- custom -->
         <div v-if="activity === 'other'" class="mt-3 space-y-2">
           <input v-model="customName" maxlength="60" class="input" placeholder="Nama aktivitas (mis. Hyrox)" data-testid="act-name" />
+          <input v-model="cost" inputmode="numeric" class="input" placeholder="Biaya, Rp (opsional)" data-testid="act-cost" />
         </div>
         <label v-if="activity === 'other'" class="mt-2 flex items-center gap-2 text-sm text-white/70">
           <input v-model="counted" type="checkbox" class="h-4 w-4 accent-[#6f63f0]" data-testid="act-counts" /> Hitung sebagai latihan (untuk target mingguan)

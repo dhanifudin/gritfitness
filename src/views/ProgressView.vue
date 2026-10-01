@@ -11,7 +11,7 @@ import PageHeader from '@/components/PageHeader.vue'
 import WeekBars from '@/components/WeekBars.vue'
 import { rupiah, useAsync } from '@/composables/useAsync'
 import { activityLabel, activityMeta } from '@/lib/activities'
-import { costPerVisit, monthlySpend, totalSpent, unpaidSummary } from '@/lib/budget'
+import { costPerVisit, monthlySpend, otherActivitySpend, totalSpent, unpaidSummary } from '@/lib/budget'
 import { CK } from '@/lib/dataCache'
 import { activityBreakdown, counts, parseYmd, weekCounts, weekdayHistogram, ymd, type Visit } from '@/lib/tracker'
 import { weightChange } from '@/lib/trackerData'
@@ -54,6 +54,7 @@ const spendMax = computed(() => Math.max(1, ...spendMonths.value.map((m) => m.to
 const spentThisYear = computed(() => totalSpent(bills.value, { from: `${tracker.now.getFullYear()}-01-01`, to: today.value }))
 const cpv = computed(() => costPerVisit(bills.value, tracker.visits, tracker.now, 30))
 const unpaid = computed(() => unpaidSummary(bills.value))
+const otherSpend = computed(() => otherActivitySpend(tracker.visits, tracker.now, 30))
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5, 7)) - 1]
 
@@ -208,6 +209,11 @@ const timeLabel = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeStri
     <p class="px-1 text-xs leading-relaxed text-white/45">
       Dihitung dari tagihan yang sudah lunas dan hari latihan GritFitness (Gym, Kelas, Personal Trainer, Pemulihan). Tidak termasuk aktivitas di luar GritFitness, misalnya Hyrox.
     </p>
+
+    <div v-if="otherSpend.count" class="card p-3" data-testid="other-spend">
+      <p class="text-xs text-white/50">Di luar GritFitness, 30 hari ({{ otherSpend.count }} aktivitas)</p>
+      <p class="font-display text-xl">{{ rupiah(otherSpend.total) }}</p>
+    </div>
   </div>
 
   <!-- TUBUH -->

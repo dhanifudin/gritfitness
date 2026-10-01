@@ -41,7 +41,7 @@ const DELETE_COLUMN: Record<Table, string> = {
   badges: 'badge_key',
   members: 'member_id',
 }
-const VISIT_COLS = 'client_id,visited_on,visited_at,source,class_name,note,energy,activity,activity_name,counts_toward_goal,duration_min,class_id'
+const VISIT_COLS = 'client_id,visited_on,visited_at,source,class_name,note,energy,activity,activity_name,counts_toward_goal,duration_min,class_id,cost'
 
 /** Rows from older versions (or the server defaults) get explicit activity fields. */
 const normalizeVisit = (v: Visit): Visit => ({ ...v, activity: v.activity ?? (v.source === 'class' ? 'class' : 'gym'), counts_toward_goal: v.counts_toward_goal ?? true })
@@ -58,6 +58,7 @@ const visitRow = (v: Visit): Record<string, unknown> => ({
   counts_toward_goal: v.counts_toward_goal ?? true,
   duration_min: v.duration_min ?? null,
   class_id: v.class_id ?? null,
+  cost: v.cost ?? null,
 })
 const metricRow = (m: Metric): Record<string, unknown> => ({
   measured_on: m.measured_on,
@@ -207,6 +208,7 @@ export const useTracker = defineStore('tracker', () => {
     time?: string | null // 'HH:MM' local
     energy?: number | null
     note?: string | null
+    cost?: number | null
   }): Visit {
     const v: Visit = {
       client_id: crypto.randomUUID(),
@@ -221,6 +223,7 @@ export const useTracker = defineStore('tracker', () => {
       duration_min: o.duration_min ?? null,
       note: o.note?.trim() || null,
       energy: o.energy ?? null,
+      cost: o.activity === 'other' ? o.cost ?? null : null,
     }
     visits.value = sortVisits([v, ...visits.value])
     queue({ table: 'visits', kind: 'upsert', key: v.client_id, row: visitRow(v) })
