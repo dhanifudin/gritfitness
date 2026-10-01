@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import CelebrationSheet from '@/components/CelebrationSheet.vue'
 import TabBar from '@/components/TabBar.vue'
 import { useAuth } from '@/stores/auth'
 import { useOnline, useUpdater } from '@/composables/useSw'
+import { useTracker } from '@/stores/tracker'
 
 const route = useRoute()
 const auth = useAuth()
@@ -12,6 +14,21 @@ const online = useOnline()
 const { needRefresh, update, applyIfSafe } = useUpdater()
 // a waiting update is applied on the next navigation (never while typing)
 useRouter().afterEach(() => applyIfSafe())
+
+// tracker: load this member's local copy and keep it in sync (online again / back in the app)
+const tracker = useTracker()
+const resync = () => {
+  if (document.visibilityState === 'visible') void tracker.sync()
+}
+onMounted(() => {
+  if (tracker.init()) void tracker.sync()
+  window.addEventListener('online', resync)
+  document.addEventListener('visibilitychange', resync)
+})
+onUnmounted(() => {
+  window.removeEventListener('online', resync)
+  document.removeEventListener('visibilitychange', resync)
+})
 </script>
 
 <template>
@@ -30,5 +47,6 @@ useRouter().afterEach(() => applyIfSafe())
       Versi baru siap — ketuk untuk memperbarui sekarang
     </button>
     <TabBar v-if="showTabs" />
+    <CelebrationSheet v-if="showTabs && !tracker.needsConsent" />
   </div>
 </template>

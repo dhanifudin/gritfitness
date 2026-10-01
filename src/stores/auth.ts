@@ -43,6 +43,11 @@ export const useAuth = defineStore('auth', () => {
     token.value = access_token
     user.value = u
     localStorage.setItem(userKey, JSON.stringify(u))
+    // tracker: load this member's local copy and push anything recorded while logged out
+    const { useTracker } = await import('./tracker')
+    const tracker = useTracker()
+    tracker.init(u.id)
+    void tracker.sync()
   }
 
   function patchUser(patch: Partial<User>) {
@@ -60,6 +65,11 @@ export const useAuth = defineStore('auth', () => {
 
   /** Deliberate logout: also wipes every locally cached personal datum. */
   async function logout() {
+    const { useTracker } = await import('./tracker')
+    const tracker = useTracker()
+    tracker.init(user.value?.id ?? null)
+    if (tokenValid.value) await tracker.flushBeforeLogout() // push queued check-ins first
+    tracker.wipe()
     if (tokenValid.value) await ep.logout().catch(() => {})
     setToken(null)
     token.value = null

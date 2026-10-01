@@ -11,6 +11,7 @@ export const router = createRouter({
     { path: '/qr', name: 'qr', component: () => import('@/views/QrView.vue') },
     // cache-only: no API calls, reachable in every session state (public => no tab bar)
     { path: '/saved-qr', name: 'saved-qr', component: () => import('@/views/SavedQrView.vue'), meta: { public: true } },
+    { path: '/progress', name: 'progress', component: () => import('@/views/ProgressView.vue') },
     { path: '/classes', name: 'classes', component: () => import('@/views/ClassesView.vue') },
     { path: '/classes/:id', name: 'class-detail', component: () => import('@/views/ClassDetailView.vue') },
     { path: '/bills', name: 'bills', component: () => import('@/views/BillsView.vue') },

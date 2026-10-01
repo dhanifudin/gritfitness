@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { memberAktif, memberPtAktif } from '@/api/endpoints'
+import CheckInButton from '@/components/CheckInButton.vue'
 import QrCard from '@/components/QrCard.vue'
 import { hasValidQr, loadQr, syncQr, type QrEntry, type QrKind } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
@@ -84,6 +85,8 @@ const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' 
       Scan QR ini saat masuk/keluar gym.
       <template v-if="cur"><br />Disimpan {{ stamp(cur.savedAt) }}<template v-if="failed"> · mode offline</template></template>
     </p>
+    <CheckInButton class="mt-4" />
+
     <button class="btn-ghost mt-3 w-full" @click="load">Muat ulang</button>
     <RouterLink v-if="hasValidQr()" to="/saved-qr" class="mt-3 block text-center text-xs text-white/50 underline">Lihat QR tersimpan</RouterLink>
   </div>

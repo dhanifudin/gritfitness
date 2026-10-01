@@ -1,0 +1,58 @@
+{
+  "start": [
+    "Mulai dari satu langkah kecil. Catat latihan pertamamu hari ini.",
+    "Semua orang mulai dari nol. Datang, bergerak, dan catat di sini.",
+    "Target {goal} kali seminggu itu realistis. Mulai dengan satu sesi hari ini."
+  ],
+  "done_today": [
+    "Latihan hari ini sudah tercatat. Kerja bagus, tubuhmu berterima kasih.",
+    "Satu sesi selesai. Minum air dan istirahat yang cukup.",
+    "Mantap, hari ini sudah kamu menangkan."
+  ],
+  "goal_met": [
+    "Target minggu ini tercapai ({n}/{goal}). Hebat, jaga ritmenya.",
+    "{n} latihan minggu ini, target terlampaui. Tubuhmu makin kuat.",
+    "Target selesai lebih awal. Istirahat juga bagian dari latihan."
+  ],
+  "one_left": [
+    "Tinggal 1 latihan lagi untuk target minggu ini. Kamu hampir sampai!",
+    "{n} dari {goal}: satu sesi lagi dan targetmu beres.",
+    "Sedikit lagi. Satu latihan menutup minggu ini dengan bangga."
+  ],
+  "behind": [
+    "Minggu ini baru {n} dari {goal}. Belum terlambat, mulai dari hari ini.",
+    "Hari tersisa mulai menipis. Sesi singkat 30 menit pun sudah sangat berarti.",
+    "Jangan tunggu sempurna. Datang saja dulu, sisanya mengikuti."
+  ],
+  "comeback": [
+    "Sudah {days} hari sejak latihan terakhir. Selamat datang kembali dimulai dari sesi ringan.",
+    "Jeda itu wajar. Yang penting kamu kembali, pelan-pelan saja.",
+    "Tubuhmu ingat. Mulai dengan sesi ringan hari ini."
+  ],
+  "streak_keep": [
+    "Kamu sedang {streak} minggu berturut-turut. Jaga rantainya dengan latihan hari ini.",
+    "Rantai {streak} minggu menunggu lanjutannya. Satu sesi untuk memulai minggu ini.",
+    "Konsistensimu {streak} minggu. Jangan putus sekarang."
+  ],
+  "steady": [
+    "Ritme yang bagus: {n} dari {goal} minggu ini. Teruskan.",
+    "Konsisten kecil mengalahkan semangat besar yang sebentar.",
+    "Kemajuan itu pelan tapi pasti. Lanjutkan."
+  ],
+  "tips": [
+    "Siapkan tas latihan sehari sebelumnya supaya berangkat terasa lebih mudah.",
+    "Pemanasan 5 menit mengurangi risiko cedera.",
+    "Minum air sebelum, selama, dan sesudah latihan.",
+    "Tidur 7-8 jam membantu otot pulih dan tubuh lebih bertenaga.",
+    "Pilih jadwal tetap di kalender, lalu anggap seperti janji penting.",
+    "Latihan bersama teman atau ikut kelas membuat lebih konsisten.",
+    "Tidak ada hari gagal: sesi singkat tetap lebih baik daripada tidak sama sekali.",
+    "Catat perasaanmu setelah latihan; itu motivasi terbaik di hari malas.",
+    "Naikkan beban atau durasi sedikit demi sedikit, bukan sekaligus.",
+    "Peregangan ringan setelah latihan membantu otot terasa lebih nyaman.",
+    "Sarapan atau camilan ringan sebelum latihan menjaga tenaga.",
+    "Ukur kemajuan bukan hanya dari berat badan, tapi juga energi dan kekuatan.",
+    "Hari istirahat adalah bagian dari program, bukan kemalasan.",
+    "Mulai dari kelas yang kamu suka; menikmati prosesnya membuat bertahan lama."
+  ]
+}

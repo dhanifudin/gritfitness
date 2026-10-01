@@ -11,6 +11,9 @@ import { assetUrl, useAsync } from '@/composables/useAsync'
 import classInfo from '@/data/classInfo.json'
 import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
 import { CK, invalidate } from '@/lib/dataCache'
+import { parseDmy } from '@/lib/timetable'
+import { ymd } from '@/lib/tracker'
+import { useTracker } from '@/stores/tracker'
 import { useOnline } from '@/composables/useSw'
 
 type Kind = 'register' | 'waiting' | 'cancel'
@@ -18,6 +21,7 @@ type Kind = 'register' | 'waiting' | 'cancel'
 const route = useRoute()
 const { data: c, loading, error, savedAt, stale, reload } = useAsync(() => classDetail(route.params.id as string), null, { key: () => CK.classDetail(route.params.id as string) })
 const online = useOnline()
+const tracker = useTracker()
 const about = computed(() =>
   c.value ? classInfoFor(classInfo as unknown as ClassInfoData, { packageId: c.value.id_paket_kelas, kelas: c.value.nama_kelas }) : null,
 )
@@ -69,6 +73,13 @@ async function confirm() {
   sheet.value = false
   reason.value = ''
   invalidate('classes') // list counts and status changed
+  // tracker: remember classes the member signed up for, so Home can ask "Jadi ikut kelas?" on the day
+  tracker.init()
+  if (k === 'register') {
+    tracker.trackSignup({ schedule_id: id, class_name: c.value.nama_jadwal_kelas, scheduled_on: ymd(parseDmy(c.value.tanggal)), start_time: c.value.jam_awal, status: 'planned' })
+  } else if (k === 'cancel') {
+    tracker.setSignupStatus(id, 'cancelled')
+  }
   done.value = res.message || 'Berhasil'
   await reload()
 }

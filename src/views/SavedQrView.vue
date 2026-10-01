@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import CheckInButton from '@/components/CheckInButton.vue'
 import QrCard from '@/components/QrCard.vue'
 import { cachedQrOwner, daysLeft, loadQr, type QrEntry, type QrKind } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
@@ -84,6 +85,8 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
       <p class="font-semibold">Belum ada QR tersimpan</p>
       <p class="mt-1 text-sm text-white/60">Masuk sekali dan buka QR Anda, maka QR akan tersimpan untuk dipakai tanpa masuk lagi.</p>
     </div>
+
+    <CheckInButton class="mt-4" />
 
     <div class="mt-5 grid gap-3">
       <template v-if="auth.loggedIn">

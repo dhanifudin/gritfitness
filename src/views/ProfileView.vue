@@ -19,6 +19,7 @@ const links = [
   { to: '/profile/edit', label: 'Ubah Profil' },
   { to: '/memberships', label: 'Riwayat Membership' },
   { to: '/leave', label: 'Cuti Membership' },
+  { to: '/bills', label: 'Tagihan' },
   { to: '/packages', label: 'Paket' },
   { to: '/saved-qr', label: 'QR Tersimpan (offline)' },
 ]

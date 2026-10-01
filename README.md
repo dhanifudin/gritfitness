@@ -45,3 +45,23 @@ Schedule cards open a "Tentang kelas" sheet (and `/classes/:id` shows a "Tentang
     npm run gen:classinfo
 
 Refreshes the file from the site (it refuses to overwrite it if the page layout changed). Four classes currently have no description on the site and show only their category text.
+
+## Self-tracker (progress and motivation)
+
+Beyond QR and bookings, the app is a self-tracker that helps members build a healthy habit:
+
+- **Beranda**: weekly goal ring, weekly-goal streak, a motivation message that fits the situation (ahead, one visit left, behind, comeback, streak), one-tap **"Catat latihan hari ini"**, today's registered classes ("Jadi ikut kelas?"), and an in-app reminder when the goal is at risk.
+- **QR screens** also have the check-in button (also on the cached saved-QR view, so it works without logging in).
+- **Progres**: frequency stats, 8-week bars, month calendar, favourite weekdays, goal and reminder settings; **Badge** milestones; **Tubuh** (weight / waist / body fat with trend and target); **Catatan** (per-visit notes and energy, manual entries).
+
+The gym API has no attendance history, so visits come from the app: one-tap check-in plus class registrations the app performs.
+
+Data is **offline-first**: every change is applied and stored on the device at once, queued, and pushed to Supabase (schema `grit`) when online with a valid session and the member's consent (they can choose "device only"). Logout pushes what is queued, then wipes the local copy.
+
+- Code: `src/lib/tracker.ts` (pure maths), `src/lib/trackerData.ts` (outbox/merge), `src/lib/supabase.ts` (PostgREST client), `src/stores/tracker.ts`, `src/data/motivation.json` (editable Indonesian messages).
+- Server setup (shared Supabase project, isolated `grit` schema, `grit-auth` Edge Function): **`docs/grit-supabase.md`**. Without `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` the app runs in device-only mode.
+- GitHub Pages build reads the two values from repository **variables** (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`); they are public values. Set them only after the SQL and the function are deployed.
+
+## Tests
+
+    npm run test:unit      # pure logic: tracker, outbox/merge, timetable, class info, QR cache, grit-auth function
