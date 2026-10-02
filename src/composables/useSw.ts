@@ -35,7 +35,7 @@ const isTyping = () => {
  * while an installed app stays open for days. Call once, from App.vue.
  */
 export function useUpdater() {
-  const { needRefresh, updateServiceWorker } = useRegisterSW({
+  const { needRefresh, offlineReady, updateServiceWorker } = useRegisterSW({
     immediate: true,
     onRegisteredSW(_url, reg) {
       registration = reg
@@ -54,7 +54,7 @@ export function useUpdater() {
   }
   onMounted(() => document.addEventListener('visibilitychange', onVisible))
   onUnmounted(() => document.removeEventListener('visibilitychange', onVisible))
-  return { needRefresh, update, applyIfSafe }
+  return { needRefresh, offlineReady, update, applyIfSafe }
 }
 
 /** Manual "Periksa pembaruan": 'latest' | 'available' (waiting or installing) | 'unsupported'. */

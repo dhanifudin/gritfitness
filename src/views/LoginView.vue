@@ -51,7 +51,7 @@ async function verify() {
 </script>
 
 <template>
-  <div class="safe-t flex min-h-full flex-col justify-center bg-gradient-to-b from-ink-800 to-ink-950 px-6 py-10">
+  <div class="safe-t flex min-h-full flex-col justify-center px-6 py-10">
     <div class="mx-auto mb-8 rounded-2xl bg-white px-5 py-3"><img src="/logo.png" alt="GritFitness" class="h-14" /></div>
     <h1 class="font-display text-3xl font-semibold">Masuk member</h1>
     <p class="mt-1 mb-6 text-sm text-white/60">
@@ -59,21 +59,27 @@ async function verify() {
     </p>
 
     <form v-if="step === 'phone'" class="space-y-4" @submit.prevent="send">
-      <input v-model="phone" class="input" type="tel" inputmode="numeric" autocomplete="tel" placeholder="08xxxxxxxxxx" required />
+      <label class="block">
+        <span class="sr-only">Nomor WhatsApp</span>
+        <input v-model="phone" class="input" type="tel" inputmode="numeric" autocomplete="tel" placeholder="08xxxxxxxxxx" required />
+      </label>
       <button class="btn-primary w-full" :disabled="busy || phone.length < 9">{{ busy ? 'Mengirim…' : 'Kirim OTP' }}</button>
       <button v-if="remembered" type="button" class="block w-full text-center text-xs text-white/50 underline" @click="forgetPhone">Bukan Anda? Ganti nomor</button>
     </form>
 
     <form v-else class="space-y-4" @submit.prevent="verify">
-      <input
-        v-model="otp"
-        class="input text-center font-display text-2xl tracking-[.5em]"
-        inputmode="numeric"
-        autocomplete="one-time-code"
-        maxlength="6"
-        placeholder="••••"
-        required
-      />
+      <label class="block">
+        <span class="sr-only">Kode OTP</span>
+        <input
+          v-model="otp"
+          class="input text-center font-display text-2xl tracking-[.5em]"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="6"
+          placeholder="••••"
+          required
+        />
+      </label>
       <button class="btn-primary w-full" :disabled="busy || otp.length < 4">{{ busy ? 'Memeriksa…' : 'Masuk' }}</button>
       <button type="button" class="btn-ghost w-full" @click="step = 'phone'">Ganti nomor</button>
     </form>

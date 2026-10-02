@@ -28,7 +28,7 @@ const link = (id: number) => (tab.value === 'class' ? `/packages/class/${id}` : 
     <button
       v-for="t in tabs"
       :key="t.key"
-      class="rounded-lg py-2 text-sm font-semibold"
+      class="min-h-11 rounded-lg py-2 text-sm font-semibold"
       :class="tab === t.key ? 'bg-brand-400' : 'text-white/60'"
       @click="tab = t.key"
     >

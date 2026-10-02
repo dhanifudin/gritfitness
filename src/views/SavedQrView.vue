@@ -88,12 +88,9 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
 
     <CheckInButton class="mt-4" />
 
-    <div class="mt-5 grid gap-3">
-      <template v-if="auth.loggedIn">
-        <RouterLink to="/qr" class="btn-primary">Buka QR terbaru</RouterLink>
-        <RouterLink to="/" class="btn-ghost">Beranda</RouterLink>
-      </template>
-      <RouterLink v-else :to="{ name: 'login', query: { redirect: '/qr' } }" :class="cur ? 'btn-ghost' : 'btn-primary'">
+    <!-- logged in: the bottom tab bar already offers QR/Beranda navigation, nothing extra needed here -->
+    <div v-if="!auth.loggedIn" class="mt-5 grid gap-3">
+      <RouterLink :to="{ name: 'login', query: { redirect: '/qr' } }" :class="cur ? 'btn-ghost' : 'btn-primary'">
         {{ cur ? 'Masuk untuk memperbarui' : 'Masuk' }}
       </RouterLink>
     </div>

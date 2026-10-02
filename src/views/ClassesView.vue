@@ -62,9 +62,9 @@ const badgeText = { confirmed: 'Terjadwal', predicted: 'Perkiraan', ended: 'Sele
   <PageHeader title="Kelas" :subtitle="weekLabel(dates)" />
 
   <div class="mb-3 flex items-center justify-between px-5">
-    <button class="btn-ghost !px-3 !py-1.5 disabled:opacity-30" :disabled="offset === 0" aria-label="Minggu sebelumnya" @click="go(-1)">‹</button>
+    <button class="btn-ghost min-h-11 !px-3 !py-1.5 disabled:opacity-30" :disabled="offset === 0" aria-label="Minggu sebelumnya" @click="go(-1)">‹</button>
     <span class="text-xs text-white/50">{{ offset === 0 ? 'Minggu ini' : offset === 1 ? 'Minggu depan' : `${offset} minggu lagi` }}</span>
-    <button class="btn-ghost !px-3 !py-1.5 disabled:opacity-30" :disabled="offset === MAX_OFFSET" aria-label="Minggu berikutnya" @click="go(1)">›</button>
+    <button class="btn-ghost min-h-11 !px-3 !py-1.5 disabled:opacity-30" :disabled="offset === MAX_OFFSET" aria-label="Minggu berikutnya" @click="go(1)">›</button>
   </div>
 
   <div class="mb-4 grid grid-cols-7 gap-1.5 px-5" role="tablist">

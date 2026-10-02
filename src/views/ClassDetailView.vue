@@ -25,6 +25,7 @@ const tracker = useTracker()
 const about = computed(() =>
   c.value ? classInfoFor(classInfo as unknown as ClassInfoData, { packageId: c.value.id_paket_kelas, kelas: c.value.nama_kelas }) : null,
 )
+const classMeta = computed(() => [about.value?.category?.name, about.value?.cls.minutes ? `${about.value.cls.minutes} menit` : null].filter(Boolean).join(', '))
 const { busy, error: actionError, run } = useAction()
 
 const notices: Record<string, string> = {
@@ -110,13 +111,9 @@ async function confirm() {
       <div v-if="about" class="card mt-5 overflow-hidden">
         <img v-if="about.cls.photo" :src="assetUrl(about.cls.photo)" :alt="about.cls.name" loading="lazy" class="h-36 w-full object-cover" />
         <div class="p-4">
-          <p class="text-xs font-semibold tracking-wide text-white/50 uppercase">Tentang kelas</p>
+          <p class="text-xs text-white/50">Tentang kelas</p>
           <p class="mt-1 font-display text-lg">{{ about.cls.name }}</p>
-          <p class="mt-1 text-xs text-white/55">
-            <template v-if="about.category">{{ about.category.name }}</template>
-            <template v-if="about.category && about.cls.minutes"> · </template>
-            <template v-if="about.cls.minutes">{{ about.cls.minutes }} menit</template>
-          </p>
+          <p v-if="classMeta" class="mt-1 text-xs text-white/55">{{ classMeta }}</p>
           <p v-if="about.cls.description" class="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/80">{{ about.cls.description }}</p>
           <p v-else-if="about.category" class="mt-3 text-sm leading-relaxed text-white/65">{{ about.category.tagline }}</p>
         </div>
@@ -127,7 +124,7 @@ async function confirm() {
   <ConfirmSheet
     :open="sheet"
     :title="action?.label ?? ''"
-    :message="action?.kind === 'cancel' ? 'Tuliskan alasan pembatalan.' : `${c?.nama_jadwal_kelas} · ${c?.tanggal} ${c?.jam_awal}`"
+    :message="action?.kind === 'cancel' ? 'Tuliskan alasan pembatalan.' : `Konfirmasi untuk ${c?.nama_jadwal_kelas}, ${c?.tanggal} pukul ${c?.jam_awal}.`"
     :confirm-label="action?.kind === 'cancel' ? 'Batalkan' : 'Ya, daftar'"
     :danger="action?.danger"
     :busy="busy || !canConfirm"

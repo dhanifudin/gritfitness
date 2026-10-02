@@ -8,6 +8,7 @@ import ConsentSheet from '@/components/ConsentSheet.vue'
 import MetricChart from '@/components/MetricChart.vue'
 import MonthHeatmap from '@/components/MonthHeatmap.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import StateBox from '@/components/StateBox.vue'
 import WeekBars from '@/components/WeekBars.vue'
 import { rupiah, useAsync } from '@/composables/useAsync'
 import { activityLabel, activityMeta } from '@/lib/activities'
@@ -48,7 +49,7 @@ const openEdit = (visit: Visit) => {
 const breakdown = computed(() => activityBreakdown(tracker.visits, tracker.now, 30))
 
 // ---- anggaran (bills vs GritFitness-tracked activities only; custom entries like Hyrox are excluded) ----
-const { data: bills } = useAsync(tagihan, [], { key: CK.bills })
+const { data: bills, loading: billsLoading, error: billsError, savedAt: billsSavedAt, stale: billsStale, reload: reloadBills } = useAsync(tagihan, [], { key: CK.bills })
 const spendMonths = computed(() => monthlySpend(bills.value, tracker.now, 6))
 const spendMax = computed(() => Math.max(1, ...spendMonths.value.map((m) => m.total)))
 const spentThisYear = computed(() => totalSpent(bills.value, { from: `${tracker.now.getFullYear()}-01-01`, to: today.value }))
@@ -101,11 +102,16 @@ function saveGoalWeight() {
   const v = num(goalWeight.value)
   tracker.setSettings({ goal_weight_kg: v != null && v >= 20 && v <= 400 ? v : null })
 }
+const metricLine = (m: (typeof tracker.metrics)[number]) =>
+  [m.weight_kg != null ? `${m.weight_kg} kg` : null, m.waist_cm != null ? `pinggang ${m.waist_cm} cm` : null, m.body_fat_pct != null ? `lemak ${m.body_fat_pct}%` : null]
+    .filter(Boolean)
+    .join(', ')
 
 // ---- catatan ----
 const ENERGY = ['', '😴', '😐', '🙂', '💪', '🔥']
 const dayLabel = (d: string) => parseYmd(d).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' })
 const timeLabel = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '')
+const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duration_min} mnt` : null, !counts(v) ? 'tidak dihitung' : null].filter(Boolean).join(', ')
 </script>
 
 <template>
@@ -114,19 +120,21 @@ const timeLabel = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeStri
   <div class="mx-5 mb-4 grid grid-cols-5 gap-1 rounded-xl bg-white/5 p-1" role="tablist">
     <button
       v-for="t in tabs" :key="t.key" role="tab" :aria-selected="tab === t.key"
-      class="rounded-lg px-0.5 py-2 text-[10.5px] font-semibold transition" :class="tab === t.key ? 'bg-brand-400 text-white' : 'text-white/60'"
+      class="min-h-11 rounded-lg px-0.5 py-2 text-[10.5px] font-semibold transition" :class="tab === t.key ? 'bg-brand-400 text-white' : 'text-white/60'"
       @click="tab = t.key"
     >{{ t.label }}</button>
   </div>
 
   <!-- RINGKASAN -->
   <div v-if="tab === 'ringkasan'" class="space-y-3 px-5" data-testid="tab-ringkasan">
-    <div class="grid grid-cols-2 gap-3">
-      <div class="card p-3"><p class="text-xs text-white/50">Minggu ini</p><p class="font-display text-2xl">{{ s.week.count }}<span class="text-base text-white/40">/{{ s.week.goal }}</span></p></div>
-      <div class="card p-3"><p class="text-xs text-white/50">Rata-rata 4 minggu</p><p class="font-display text-2xl" data-testid="avg4">{{ s.avg4.toFixed(1) }}<span class="text-base text-white/40">/minggu</span></p></div>
-      <div class="card p-3"><p class="text-xs text-white/50">Rantai terbaik</p><p class="font-display text-2xl">{{ s.streak.best }}<span class="text-base text-white/40"> minggu</span></p></div>
-      <div class="card p-3"><p class="text-xs text-white/50">Total latihan</p><p class="font-display text-2xl" data-testid="total">{{ s.total }}<span class="text-base text-white/40"> hari</span></p></div>
-    </div>
+    <section class="card p-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div><p class="text-xs text-white/50">Minggu ini</p><p class="font-display text-2xl">{{ s.week.count }}<span class="text-base text-white/40">/{{ s.week.goal }}</span></p></div>
+        <div><p class="text-xs text-white/50">Rata-rata 4 minggu</p><p class="font-display text-2xl" data-testid="avg4">{{ s.avg4.toFixed(1) }}<span class="text-base text-white/40">/minggu</span></p></div>
+        <div><p class="text-xs text-white/50">Rantai terbaik</p><p class="font-display text-2xl">{{ s.streak.best }}<span class="text-base text-white/40"> minggu</span></p></div>
+        <div><p class="text-xs text-white/50">Total latihan</p><p class="font-display text-2xl" data-testid="total">{{ s.total }}<span class="text-base text-white/40"> hari</span></p></div>
+      </div>
+    </section>
 
     <section class="card p-4"><h2 class="mb-3 text-sm font-semibold">8 minggu terakhir</h2><WeekBars :weeks="weeks" :goal="goal" /></section>
     <section class="card p-4"><MonthHeatmap :visits="tracker.visits" :now="tracker.now" :planned="planned" @select="daySheet = $event" /></section>
@@ -179,41 +187,45 @@ const timeLabel = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeStri
   </div>
 
   <!-- ANGGARAN -->
-  <div v-else-if="tab === 'anggaran'" class="space-y-3 px-5" data-testid="tab-anggaran">
-    <div class="grid grid-cols-2 gap-3">
-      <div class="card p-3"><p class="text-xs text-white/50">Tahun ini</p><p class="font-display text-xl" data-testid="spent-year">{{ rupiah(spentThisYear) }}</p></div>
-      <div class="card p-3">
-        <p class="text-xs text-white/50">Rp / latihan (30 hari)</p>
-        <p class="font-display text-xl" data-testid="cost-per-visit">{{ cpv.perVisit != null ? rupiah(cpv.perVisit) : '-' }}</p>
+  <div v-else-if="tab === 'anggaran'" data-testid="tab-anggaran">
+    <StateBox :loading="billsLoading" :stale="billsStale" :saved-at="billsSavedAt" :error="billsError" @retry="reloadBills">
+      <div class="space-y-3 px-5">
+        <section class="card p-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div><p class="text-xs text-white/50">Tahun ini</p><p class="font-display text-xl" data-testid="spent-year">{{ rupiah(spentThisYear) }}</p></div>
+            <div>
+              <p class="text-xs text-white/50">Rp / latihan (30 hari)</p>
+              <p class="font-display text-xl" data-testid="cost-per-visit">{{ cpv.perVisit != null ? rupiah(cpv.perVisit) : '-' }}</p>
+            </div>
+          </div>
+        </section>
+
+        <RouterLink v-if="unpaid.count" to="/bills" class="flex items-center justify-between gap-3 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm" data-testid="unpaid-card">
+          <span class="text-amber-100">{{ unpaid.count }} tagihan belum dibayar, total {{ rupiah(unpaid.total) }}.</span>
+          <span class="text-amber-200/70">›</span>
+        </RouterLink>
+        <p v-else class="px-1 text-sm text-emerald-300" data-testid="unpaid-card">Semua tagihan lunas ✓</p>
+
+        <section class="card p-4">
+          <h2 class="mb-3 text-sm font-semibold">Pengeluaran 6 bulan terakhir</h2>
+          <div class="flex h-28 items-end gap-2">
+            <div v-for="m in spendMonths" :key="m.month" class="flex flex-1 flex-col items-center justify-end">
+              <span class="mb-1 text-[10px] text-white/55">{{ m.total ? rupiah(m.total) : '' }}</span>
+              <div class="w-full rounded-t-md bg-brand-400" :style="{ height: (m.total / spendMax) * 5 + 'rem', minHeight: m.total ? '0.2rem' : '0.1rem' }" :class="!m.total ? '!bg-white/15' : ''" />
+              <span class="mt-1 text-[10px] text-white/45">{{ monthLabel(m.month) }}</span>
+            </div>
+          </div>
+        </section>
+
+        <p class="px-1 text-xs leading-relaxed text-white/45">
+          Dihitung dari tagihan yang sudah lunas dan hari latihan GritFitness (Gym, Kelas, Personal Trainer, Pemulihan). Tidak termasuk aktivitas di luar GritFitness, misalnya Hyrox.
+        </p>
+
+        <p v-if="otherSpend.count" class="px-1 text-sm text-white/70" data-testid="other-spend">
+          Di luar GritFitness, 30 hari ({{ otherSpend.count }} aktivitas): <span class="font-semibold text-white">{{ rupiah(otherSpend.total) }}</span>
+        </p>
       </div>
-    </div>
-
-    <section v-if="unpaid.count" class="card border-amber-400/30 bg-amber-500/10 p-4" data-testid="unpaid-card">
-      <p class="font-semibold text-amber-200">{{ unpaid.count }} tagihan belum dibayar</p>
-      <p class="mt-0.5 text-sm text-amber-100/80">Total {{ rupiah(unpaid.total) }}</p>
-      <RouterLink to="/bills" class="btn-ghost mt-3 w-full !border-amber-400/40 !py-2 !text-amber-200">Lihat tagihan</RouterLink>
-    </section>
-    <p v-else class="text-sm text-emerald-300" data-testid="unpaid-card">Semua tagihan lunas ✓</p>
-
-    <section class="card p-4">
-      <h2 class="mb-3 text-sm font-semibold">Pengeluaran 6 bulan terakhir</h2>
-      <div class="flex h-28 items-end gap-2">
-        <div v-for="m in spendMonths" :key="m.month" class="flex flex-1 flex-col items-center justify-end">
-          <span class="mb-1 text-[10px] text-white/55">{{ m.total ? rupiah(m.total) : '' }}</span>
-          <div class="w-full rounded-t-md bg-brand-400" :style="{ height: (m.total / spendMax) * 5 + 'rem', minHeight: m.total ? '0.2rem' : '0.1rem' }" :class="!m.total ? '!bg-white/15' : ''" />
-          <span class="mt-1 text-[10px] text-white/45">{{ monthLabel(m.month) }}</span>
-        </div>
-      </div>
-    </section>
-
-    <p class="px-1 text-xs leading-relaxed text-white/45">
-      Dihitung dari tagihan yang sudah lunas dan hari latihan GritFitness (Gym, Kelas, Personal Trainer, Pemulihan). Tidak termasuk aktivitas di luar GritFitness, misalnya Hyrox.
-    </p>
-
-    <div v-if="otherSpend.count" class="card p-3" data-testid="other-spend">
-      <p class="text-xs text-white/50">Di luar GritFitness, 30 hari ({{ otherSpend.count }} aktivitas)</p>
-      <p class="font-display text-xl">{{ rupiah(otherSpend.total) }}</p>
-    </div>
+    </StateBox>
   </div>
 
   <!-- TUBUH -->
@@ -246,13 +258,9 @@ const timeLabel = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeStri
       <li v-for="m in tracker.metrics.slice(0, 30)" :key="m.measured_on" class="card flex items-center justify-between px-4 py-3 text-sm">
         <div>
           <p class="font-medium">{{ dayLabel(m.measured_on) }}</p>
-          <p class="text-xs text-white/55">
-            <template v-if="m.weight_kg != null">{{ m.weight_kg }} kg </template>
-            <template v-if="m.waist_cm != null">· pinggang {{ m.waist_cm }} cm </template>
-            <template v-if="m.body_fat_pct != null">· lemak {{ m.body_fat_pct }}%</template>
-          </p>
+          <p class="text-xs text-white/55">{{ metricLine(m) }}</p>
         </div>
-        <button class="text-xs text-red-300" :aria-label="`Hapus ${m.measured_on}`" @click="tracker.removeMetric(m.measured_on)">Hapus</button>
+        <button class="rounded-lg px-3 py-2 text-xs text-red-300" :aria-label="`Hapus ${m.measured_on}`" @click="tracker.removeMetric(m.measured_on)">Hapus</button>
       </li>
     </ul>
     <p v-else class="py-6 text-center text-sm text-white/50">Belum ada catatan ukuran tubuh.</p>
@@ -267,11 +275,11 @@ const timeLabel = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeStri
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="text-sm font-medium">{{ dayLabel(v.visited_on) }}<span v-if="v.visited_at" class="font-normal text-white/50"> · {{ timeLabel(v.visited_at) }}</span></p>
-            <p class="text-xs text-white/55"><span aria-hidden="true">{{ activityMeta(v.activity).emoji }}</span> {{ activityLabel(v) }}<template v-if="v.duration_min"> · {{ v.duration_min }} mnt</template><template v-if="!counts(v)"> · tidak dihitung</template> <span v-if="v.energy" aria-hidden="true">{{ ENERGY[v.energy] }}</span></p>
+            <p class="text-xs text-white/55"><span aria-hidden="true">{{ activityMeta(v.activity).emoji }}</span> {{ visitMeta(v) }} <span v-if="v.energy" aria-hidden="true">{{ ENERGY[v.energy] }}</span></p>
           </div>
-          <div class="flex shrink-0 gap-3 text-xs">
-            <button class="text-brand-300" :aria-label="`Ubah aktivitas ${v.visited_on}`" @click="openEdit(v)">Ubah</button>
-            <button class="text-red-300" :aria-label="`Hapus latihan ${v.visited_on}`" @click="tracker.removeVisit(v.client_id)">Hapus</button>
+          <div class="flex shrink-0 gap-1 text-xs">
+            <button class="rounded-lg px-3 py-2 text-brand-300" :aria-label="`Ubah aktivitas ${v.visited_on}`" @click="openEdit(v)">Ubah</button>
+            <button class="rounded-lg px-3 py-2 text-red-300" :aria-label="`Hapus latihan ${v.visited_on}`" @click="tracker.removeVisit(v.client_id)">Hapus</button>
           </div>
         </div>
         <p v-if="v.note" class="mt-1.5 text-sm text-white/75">{{ v.note }}</p>
