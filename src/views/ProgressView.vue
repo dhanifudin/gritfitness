@@ -120,7 +120,7 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
   <div class="mx-5 mb-4 grid grid-cols-5 gap-1 rounded-xl bg-white/5 p-1" role="tablist">
     <button
       v-for="t in tabs" :key="t.key" role="tab" :aria-selected="tab === t.key"
-      class="min-h-11 rounded-lg px-0.5 py-2 text-[10.5px] font-semibold transition" :class="tab === t.key ? 'bg-brand-400 text-white' : 'text-white/60'"
+      class="min-h-11 rounded-lg px-0.5 py-2 text-[11px] leading-tight font-semibold transition" :class="tab === t.key ? 'bg-brand-400 text-white' : 'text-white/60'"
       @click="tab = t.key"
     >{{ t.label }}</button>
   </div>
@@ -131,7 +131,7 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
       <div class="grid grid-cols-2 gap-4">
         <div><p class="text-xs text-white/50">Minggu ini</p><p class="font-display text-2xl">{{ s.week.count }}<span class="text-base text-white/40">/{{ s.week.goal }}</span></p></div>
         <div><p class="text-xs text-white/50">Rata-rata 4 minggu</p><p class="font-display text-2xl" data-testid="avg4">{{ s.avg4.toFixed(1) }}<span class="text-base text-white/40">/minggu</span></p></div>
-        <div><p class="text-xs text-white/50">Rantai terbaik</p><p class="font-display text-2xl">{{ s.streak.best }}<span class="text-base text-white/40"> minggu</span></p></div>
+        <div><p class="text-xs text-white/50">Rantai terbaik</p><p class="font-display text-3xl text-lime-grit">{{ s.streak.best }}<span class="text-base text-white/40"> minggu</span></p></div>
         <div><p class="text-xs text-white/50">Total latihan</p><p class="font-display text-2xl" data-testid="total">{{ s.total }}<span class="text-base text-white/40"> hari</span></p></div>
       </div>
     </section>

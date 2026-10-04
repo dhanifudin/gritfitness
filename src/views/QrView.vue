@@ -6,10 +6,12 @@ import CheckInButton from '@/components/CheckInButton.vue'
 import QrCard from '@/components/QrCard.vue'
 import { hasValidQr, loadQr, syncQr, type QrEntry, type QrKind } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
+import { useWakeLock } from '@/composables/useWakeLock'
 
 // Live QR (needs a session). Every successful load refreshes the cache that SavedQrView shows.
 const auth = useAuth()
 const router = useRouter()
+useWakeLock() // this is the gym-door screen: don't let it dim/sleep mid-scan
 
 const kinds = [
   { key: 'gym', label: 'Membership', fetch: memberAktif },
@@ -77,7 +79,8 @@ const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' 
     </div>
     <QrCard v-else-if="cur" :entry="cur" class="mt-5" />
     <div v-else class="mt-5 rounded-3xl bg-white p-6 py-10 text-center text-ink-900">
-      <p class="font-semibold">{{ noPackageText }}</p>
+      <svg viewBox="0 0 24 24" class="mx-auto h-10 w-10 text-ink-700/40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M20 14v3h-3M14 20h3" /></svg>
+      <p class="mt-3 font-semibold">{{ noPackageText }}</p>
       <RouterLink to="/packages" class="btn-primary mt-4">Lihat paket</RouterLink>
     </div>
 

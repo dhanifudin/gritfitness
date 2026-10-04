@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CelebrationSheet from '@/components/CelebrationSheet.vue'
+import MiniTabBar from '@/components/MiniTabBar.vue'
 import TabBar from '@/components/TabBar.vue'
 import { useAuth } from '@/stores/auth'
 import { useOnline, useUpdater } from '@/composables/useSw'
@@ -15,6 +16,9 @@ const NO_CHROME = new Set(['login', 'register'])
 const route = useRoute()
 const auth = useAuth()
 const showTabs = computed(() => auth.loggedIn && !NO_CHROME.has(String(route.name)))
+// no session, but a cached QR is still being shown offline: a minimal 2-item bar (QR + Masuk), not the
+// full tab bar whose other destinations need a real session to do anything.
+const showMiniTabs = computed(() => !auth.loggedIn && route.name === 'saved-qr')
 const online = useOnline()
 const { needRefresh, update, applyIfSafe, offlineReady } = useUpdater()
 // a waiting update is applied on the next navigation (never while typing)
@@ -51,7 +55,7 @@ onUnmounted(() => {
     <div v-if="!online" class="safe-t bg-amber-500/90 px-4 py-1.5 text-center text-xs font-semibold text-black">
       Offline — menampilkan data terakhir
     </div>
-    <main class="safe-t flex-1 overflow-y-auto" :class="showTabs ? 'pb-28' : ''">
+    <main class="safe-t flex-1 overflow-y-auto" :class="showTabs || showMiniTabs ? 'pb-28' : ''">
       <RouterView />
     </main>
     <button
@@ -68,6 +72,7 @@ onUnmounted(() => {
       Siap dipakai offline
     </p>
     <TabBar v-if="showTabs" />
+    <MiniTabBar v-else-if="showMiniTabs" />
     <CelebrationSheet v-if="showTabs && !tracker.needsConsent" />
   </div>
 </template>

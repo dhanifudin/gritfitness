@@ -4,10 +4,12 @@ import CheckInButton from '@/components/CheckInButton.vue'
 import QrCard from '@/components/QrCard.vue'
 import { cachedQrOwner, daysLeft, loadQr, type QrEntry, type QrKind } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
+import { useWakeLock } from '@/composables/useWakeLock'
 
 // Cache-only view: reads what earlier successful loads stored, never calls the API,
 // so it works offline and after the login session has expired.
 const auth = useAuth()
+useWakeLock() // this is the gym-door screen too (the offline fallback): don't let it dim/sleep mid-scan
 
 const kinds = [
   { key: 'gym', label: 'Membership' },
@@ -82,17 +84,18 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
     </template>
 
     <div v-else class="mt-8 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-      <p class="font-semibold">Belum ada QR tersimpan</p>
+      <svg viewBox="0 0 24 24" class="mx-auto h-10 w-10 text-white/25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M20 14v3h-3M14 20h3" /></svg>
+      <p class="mt-3 font-semibold">Belum ada QR tersimpan</p>
       <p class="mt-1 text-sm text-white/60">Masuk sekali dan buka QR Anda, maka QR akan tersimpan untuk dipakai tanpa masuk lagi.</p>
     </div>
 
     <CheckInButton class="mt-4" />
 
-    <!-- logged in: the bottom tab bar already offers QR/Beranda navigation, nothing extra needed here -->
-    <div v-if="!auth.loggedIn" class="mt-5 grid gap-3">
-      <RouterLink :to="{ name: 'login', query: { redirect: '/qr' } }" :class="cur ? 'btn-ghost' : 'btn-primary'">
-        {{ cur ? 'Masuk untuk memperbarui' : 'Masuk' }}
-      </RouterLink>
-    </div>
+    <!-- logged in: the bottom tab bar already offers QR/Beranda navigation.
+         logged out: the mini bottom bar's own "Masuk" covers the plain case; this stays only when it's
+         saying something more specific than that (log in to get a fresh QR, not just "log in"). -->
+    <RouterLink v-if="!auth.loggedIn && cur" :to="{ name: 'login', query: { redirect: '/qr' } }" class="btn-ghost mt-5 w-full">
+      Masuk untuk memperbarui
+    </RouterLink>
   </div>
 </template>

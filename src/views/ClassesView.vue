@@ -17,7 +17,13 @@ const info = classInfo as unknown as ClassInfoData
 
 // What the class is (description, category), joined on the class package id.
 const matchOf = (it: DayItem) => classInfoFor(info, { packageId: it.packageId, kelas: it.kelas })
-const CAT_DOT: Record<string, string> = { '2': 'bg-pink-grit', '4': 'bg-brand-300', '5': 'bg-lime-grit' }
+// One small icon per class category (Cardio/Flexibility/Strength — the full set, confirmed via classInfo.json)
+// instead of a plain colored dot: a pulse line, a stretch figure, a dumbbell.
+const CAT_ICON: Record<string, { path: string; color: string }> = {
+  '2': { path: 'M3 12h4l2-5 4 10 2-5h6', color: 'text-pink-grit' }, // Cardio: pulse line
+  '4': { path: 'M12 5v5M7 8l5 2.5L17 8M9 20l3-7 3 7', color: 'text-brand-300' }, // Flexibility: stretch figure
+  '5': { path: 'M4 9v6M20 9v6M7 12h10', color: 'text-lime-grit' }, // Strength: barbell
+}
 const opened = ref<DayItem | null>(null)
 const openedMatch = computed(() => (opened.value ? matchOf(opened.value) : null))
 
@@ -56,6 +62,8 @@ const badge = {
   ended: 'bg-white/8 text-white/40',
 } as const
 const badgeText = { confirmed: 'Terjadwal', predicted: 'Perkiraan', ended: 'Selesai' } as const
+// so status doesn't rely on color (or reading the Indonesian word) alone: check mark / clock / muted check
+const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as const
 </script>
 
 <template>
@@ -109,13 +117,21 @@ const badgeText = { confirmed: 'Terjadwal', predicted: 'Perkiraan', ended: 'Sele
           <div class="min-w-0 flex-1">
             <div class="flex items-start justify-between gap-2">
               <p class="truncate font-display text-lg leading-tight">{{ it.name }}</p>
-              <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="badge[it.status]">{{ badgeText[it.status] }}</span>
+              <span class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold" :class="badge[it.status]">
+                <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle v-if="badgeIcon[it.status] === 'clock'" cx="12" cy="12" r="9" />
+                  <path :d="badgeIcon[it.status] === 'clock' ? 'M12 7v5l3 3' : 'M20 6L9 17l-5-5'" />
+                </svg>
+                {{ badgeText[it.status] }}
+              </span>
             </div>
             <p class="truncate text-sm text-white/55">{{ it.kelas }}<template v-if="it.instructor"> · {{ it.instructor }}</template></p>
             <p class="mt-1 flex items-center gap-1.5 text-sm">
               {{ it.start }}–{{ it.end }}
               <template v-if="matchOf(it)?.category">
-                <span class="h-1.5 w-1.5 rounded-full" :class="CAT_DOT[String(matchOf(it)!.cls.categoryId)] ?? 'bg-white/30'" />
+                <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" :class="CAT_ICON[String(matchOf(it)!.cls.categoryId)]?.color ?? 'text-white/40'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path :d="CAT_ICON[String(matchOf(it)!.cls.categoryId)]?.path ?? 'M12 12h.01'" />
+                </svg>
                 <span class="text-xs text-white/55">{{ matchOf(it)!.category!.name }}</span>
               </template>
             </p>

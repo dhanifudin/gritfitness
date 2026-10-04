@@ -17,7 +17,10 @@ const hhmm = (t: number) => new Date(t).toLocaleTimeString('id-ID', { hour: '2-d
     <p v-if="stale && savedAt" class="mx-5 mb-3 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs text-amber-300">
       Tidak bisa memperbarui · data tersimpan {{ hhmm(savedAt) }}
     </p>
-    <p v-if="empty" class="px-5 py-10 text-center text-sm text-white/50">{{ emptyText ?? 'Belum ada data' }}</p>
+    <div v-if="empty" class="px-5 py-10 text-center">
+      <svg viewBox="0 0 24 24" class="mx-auto h-8 w-8 text-white/25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2" /><path d="M3 11h18M8 3v4M16 3v4" /></svg>
+      <p class="mt-2 text-sm text-white/50">{{ emptyText ?? 'Belum ada data' }}</p>
+    </div>
     <slot v-else />
   </template>
 </template>

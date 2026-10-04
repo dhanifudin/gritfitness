@@ -76,7 +76,11 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
         <div class="min-w-0 flex-1 space-y-2.5 text-sm">
           <div>
             <p class="text-xs text-white/50">Rantai target</p>
-            <p class="font-semibold" data-testid="streak">{{ s.streak.current }} minggu<span class="font-normal text-white/50"> · terbaik {{ s.streak.best }}</span></p>
+            <p
+              class="font-semibold"
+              :class="s.streak.best >= 2 && s.streak.current === s.streak.best ? 'font-display text-lg text-lime-grit' : ''"
+              data-testid="streak"
+            >{{ s.streak.current }} minggu<span class="font-normal text-white/50"> · terbaik {{ s.streak.best }}</span></p>
           </div>
           <div>
             <p class="text-xs text-white/50">Total latihan</p>
@@ -94,27 +98,35 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
 
     <MotivationCard :m="tracker.motivation" class="mt-3" data-testid="motivation" />
 
-    <p v-if="tracker.reminder.show" class="mt-3 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm text-amber-100" data-testid="reminder">
-      {{ tracker.reminder.text }}
-    </p>
+    <div v-if="tracker.reminder.show" class="mt-3 flex gap-2.5 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm text-amber-100" data-testid="reminder">
+      <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>
+      <p>{{ tracker.reminder.text }}</p>
+    </div>
 
-    <p v-if="trackingNudge" class="mt-3 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm text-amber-100" data-testid="tracking-nudge">
-      {{ trackingNudge }}
-    </p>
+    <div v-if="trackingNudge" class="mt-3 flex gap-2.5 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm text-amber-100" data-testid="tracking-nudge">
+      <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16l6-6 4 4 8-9M21 5v6h-6" /></svg>
+      <p>{{ trackingNudge }}</p>
+    </div>
 
-    <div v-if="favClass" class="mt-3 border-l-2 border-brand-400 bg-white/5 px-4 py-3" data-testid="favclass-nudge">
-      <p class="font-semibold">{{ favClass.className }}<span class="font-normal text-white/55"> · {{ favClass.start.slice(0, 5) }}</span></p>
-      <p class="mt-0.5 text-xs text-white/55">Kelas favoritmu ada hari ini — belum daftar.</p>
-      <RouterLink to="/classes" class="mt-2 inline-block text-xs font-semibold text-brand-300">Lihat jadwal ›</RouterLink>
+    <div v-if="favClass" class="mt-3 flex gap-2.5 border-l-2 border-brand-400 bg-white/5 px-4 py-3" data-testid="favclass-nudge">
+      <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0 text-brand-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M16 2.5v4M8 2.5v4M3 10h18" /></svg>
+      <div class="min-w-0">
+        <p class="font-semibold">{{ favClass.className }}<span class="font-normal text-white/55"> · {{ favClass.start.slice(0, 5) }}</span></p>
+        <p class="mt-0.5 text-xs text-white/55">Kelas favoritmu ada hari ini — belum daftar.</p>
+        <RouterLink to="/classes" class="mt-2 inline-block text-xs font-semibold text-brand-300">Lihat jadwal ›</RouterLink>
+      </div>
     </div>
 
     <section v-if="todaySignups.length" class="mt-3 space-y-3" data-testid="today-classes">
-      <div v-for="c in todaySignups" :key="c.schedule_id" class="border-l-2 border-brand-400 bg-white/5 px-4 py-3">
-        <p class="font-semibold">{{ c.class_name }}<span v-if="c.start_time" class="font-normal text-white/55"> · {{ c.start_time.slice(0, 5) }}</span></p>
-        <p class="mt-0.5 text-xs text-white/55">Jadi ikut kelas?</p>
-        <div class="mt-2 grid grid-cols-2 gap-2">
-          <button class="btn-primary !py-2" @click="tracker.attendClass(c.schedule_id)">Saya hadir</button>
-          <button class="btn-ghost !py-2" @click="tracker.setSignupStatus(c.schedule_id, 'cancelled')">Tidak jadi</button>
+      <div v-for="c in todaySignups" :key="c.schedule_id" class="flex gap-2.5 border-l-2 border-brand-400 bg-white/5 px-4 py-3">
+        <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0 text-brand-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M16 2.5v4M8 2.5v4M3 10h18" /></svg>
+        <div class="min-w-0 flex-1">
+          <p class="font-semibold">{{ c.class_name }}<span v-if="c.start_time" class="font-normal text-white/55"> · {{ c.start_time.slice(0, 5) }}</span></p>
+          <p class="mt-0.5 text-xs text-white/55">Jadi ikut kelas?</p>
+          <div class="mt-2 grid grid-cols-2 gap-2">
+            <button class="btn-primary !py-2" @click="tracker.attendClass(c.schedule_id)">Saya hadir</button>
+            <button class="btn-ghost !py-2" @click="tracker.setSignupStatus(c.schedule_id, 'cancelled')">Tidak jadi</button>
+          </div>
         </div>
       </div>
     </section>
@@ -131,9 +143,10 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
       </div>
     </section>
 
-    <RouterLink v-if="nextUnpaid" to="/bills" class="mt-3 flex items-center justify-between gap-3 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm" data-testid="unpaid-card">
-      <span class="text-amber-100">{{ unpaid.count }} tagihan belum dibayar, total {{ rupiah(unpaid.total) }} (termasuk Inv. {{ nextUnpaid.kode }}).</span>
-      <span class="text-amber-200/70">›</span>
+    <RouterLink v-if="nextUnpaid" to="/bills" class="mt-3 flex items-center gap-2.5 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm" data-testid="unpaid-card">
+      <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-amber-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>
+      <span class="min-w-0 flex-1 text-amber-100">{{ unpaid.count }} tagihan belum dibayar, total {{ rupiah(unpaid.total) }} (termasuk Inv. {{ nextUnpaid.kode }}).</span>
+      <span class="shrink-0 text-amber-200/70">›</span>
     </RouterLink>
 
     <p v-if="insight" class="mt-4 px-1 text-sm text-white/60" data-testid="insight">{{ insight.text }}</p>
