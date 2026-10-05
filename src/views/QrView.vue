@@ -91,6 +91,6 @@ const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' 
     <CheckInButton class="mt-4" />
 
     <button class="btn-ghost mt-3 w-full" @click="load">Muat ulang</button>
-    <RouterLink v-if="hasValidQr()" to="/saved-qr" class="mt-3 block text-center text-xs text-white/50 underline">Lihat QR tersimpan</RouterLink>
+    <RouterLink v-if="hasValidQr()" to="/saved-qr" class="btn-ghost mt-3 w-full">Lihat QR tersimpan</RouterLink>
   </div>
 </template>

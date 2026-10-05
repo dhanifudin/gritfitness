@@ -113,7 +113,7 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
       <div class="min-w-0">
         <p class="font-semibold">{{ favClass.className }}<span class="font-normal text-white/55"> · {{ favClass.start.slice(0, 5) }}</span></p>
         <p class="mt-0.5 text-xs text-white/55">Kelas favoritmu ada hari ini — belum daftar.</p>
-        <RouterLink to="/classes" class="mt-2 inline-block text-xs font-semibold text-brand-300">Lihat jadwal ›</RouterLink>
+        <RouterLink to="/classes" class="btn-ghost mt-2 min-h-11 !px-3 !py-1.5 text-xs">Lihat jadwal</RouterLink>
       </div>
     </div>
 

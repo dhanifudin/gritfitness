@@ -38,11 +38,11 @@ const saveNote = () => v.value && note.value.trim() !== (v.value.note ?? '') && 
     >
       <span aria-hidden="true">✅</span> {{ compact ? 'Catat latihan hari ini' : 'Sudah di gym? Catat latihan hari ini' }}
     </button>
-    <button v-if="!tracker.checkedInToday" class="mx-auto mt-2 block text-xs text-white/55 underline" data-testid="other-activity" @click="sheet = 'add'">Aktivitas lain atau tanggal lain</button>
+    <button v-if="!tracker.checkedInToday" class="btn-ghost mx-auto mt-2 !flex min-h-11 w-fit !px-4 !py-1.5 text-xs" data-testid="other-activity" @click="sheet = 'add'">Aktivitas lain atau tanggal lain</button>
     <div v-else class="card p-4" data-testid="checked-in">
       <div class="flex items-center justify-between gap-3">
         <p class="font-semibold text-lime-grit"><span aria-hidden="true">✓</span> Latihan hari ini tercatat<span v-if="time"> · {{ time }}</span></p>
-        <button class="text-xs text-white/50 underline" @click="open = !open">{{ open ? 'Tutup' : 'Tambah catatan' }}</button>
+        <button class="btn-ghost min-h-11 shrink-0 !px-3 !py-1.5 text-xs" @click="open = !open">{{ open ? 'Tutup' : 'Tambah catatan' }}</button>
       </div>
       <div v-if="open" class="mt-3 space-y-3">
         <div>
@@ -56,9 +56,9 @@ const saveNote = () => v.value && note.value.trim() !== (v.value.note ?? '') && 
           </div>
         </div>
         <textarea v-model="note" rows="2" maxlength="500" class="input" placeholder="Catatan latihan (opsional)" @blur="saveNote" />
-        <div class="flex justify-between text-xs">
-          <button class="text-brand-300 underline" data-testid="change-type" @click="sheet = 'edit'">Ubah jenis (Kelas, PT, lainnya)</button>
-          <button class="text-white/55 underline" @click="sheet = 'add'">Tambah aktivitas lain</button>
+        <div class="grid grid-cols-2 gap-2">
+          <button class="btn-ghost min-h-11 !px-3 !py-1.5 text-xs" data-testid="change-type" @click="sheet = 'edit'">Ubah jenis</button>
+          <button class="btn-ghost min-h-11 !px-3 !py-1.5 text-xs" @click="sheet = 'add'">Tambah aktivitas lain</button>
         </div>
       </div>
       <p v-if="tracker.pending" class="mt-2 text-[11px] text-white/40">Tersimpan di perangkat · menunggu sinkron ({{ tracker.pending }})</p>

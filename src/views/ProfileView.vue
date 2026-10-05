@@ -74,7 +74,10 @@ async function out() {
   <PageHeader title="Profil" />
   <div class="px-5">
     <div class="card p-5">
-      <p class="font-display text-xl">{{ auth.user?.nama }}</p>
+      <div class="flex items-start justify-between gap-3">
+        <p class="font-display text-xl">{{ auth.user?.nama }}</p>
+        <RouterLink to="/profile/edit" class="btn-ghost min-h-11 shrink-0 !px-3 !py-1.5 text-xs" data-testid="edit-profile">Ubah Profil</RouterLink>
+      </div>
       <dl class="mt-4 space-y-3 text-sm">
         <div v-for="[k, v] in rows()" :key="k" class="flex justify-between gap-4">
           <dt class="text-white/50">{{ k }}</dt>
@@ -128,7 +131,7 @@ async function out() {
 
     <button class="btn-ghost mt-5 w-full !text-red-300" @click="out">Keluar</button>
     <p class="mt-6 text-center text-xs text-white/40">Versi {{ version.sha }} · {{ version.date }}</p>
-    <button class="mx-auto mt-1 block text-xs text-brand-300 underline disabled:opacity-50" :disabled="checking" @click="checkUpdate">
+    <button class="btn-ghost mx-auto mt-2 !flex min-h-11 w-fit !px-4 !py-1.5 text-xs" :disabled="checking" @click="checkUpdate">
       {{ checking ? 'Memeriksa…' : 'Periksa pembaruan' }}
     </button>
     <p v-if="updateMsg" class="mt-1 text-center text-xs text-white/50">{{ updateMsg }}</p>

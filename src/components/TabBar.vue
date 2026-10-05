@@ -10,9 +10,9 @@ const tabs = [
 ]
 
 // Profil is first here since it no longer has its own bottom tab, followed by the rarely-used destinations.
+// Editing the profile is a button inside the Profil page itself, not a second menu row.
 const moreLinks = [
   { to: '/profile', label: 'Profil' },
-  { to: '/profile/edit', label: 'Ubah Profil' },
   { to: '/memberships', label: 'Riwayat Membership' },
   { to: '/leave', label: 'Cuti Membership' },
   { to: '/packages', label: 'Paket' },

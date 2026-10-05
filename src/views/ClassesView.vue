@@ -97,7 +97,7 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
 
   <p v-if="error" class="mx-5 mb-3 flex items-center justify-between rounded-lg bg-red-500/10 px-3 py-1.5 text-xs text-red-300">
     Jadwal terbaru tidak bisa dimuat.
-    <button class="underline" @click="reload">Coba lagi</button>
+    <button class="btn-ghost min-h-11 shrink-0 !px-3 !py-1.5 text-xs !text-red-300" @click="reload">Coba lagi</button>
   </p>
   <StateBox :stale="stale" :saved-at="savedAt" :empty="!items.length" empty-text="Tidak ada jadwal kelas di hari ini">
     <ul class="space-y-3 px-5">
