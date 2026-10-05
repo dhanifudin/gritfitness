@@ -274,7 +274,7 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
           <p class="font-medium">{{ dayLabel(m.measured_on) }}</p>
           <p class="text-xs text-white/55">{{ metricLine(m) }}</p>
         </div>
-        <button class="rounded-lg px-3 py-2 text-xs text-red-300" :aria-label="`Hapus ${m.measured_on}`" @click="tracker.removeMetric(m.measured_on)">Hapus</button>
+        <button class="btn-ghost min-h-11 shrink-0 !px-3 !py-1.5 text-xs !text-red-300" :aria-label="`Hapus ${m.measured_on}`" @click="tracker.removeMetric(m.measured_on)">Hapus</button>
       </li>
     </ul>
     <p v-else class="py-6 text-center text-sm text-white/50">Belum ada catatan ukuran tubuh.</p>
@@ -291,9 +291,9 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
             <p class="text-sm font-medium">{{ dayLabel(v.visited_on) }}<span v-if="v.visited_at" class="font-normal text-white/50"> · {{ timeLabel(v.visited_at) }}</span></p>
             <p class="text-xs text-white/55"><span aria-hidden="true">{{ activityMeta(v.activity).emoji }}</span> {{ visitMeta(v) }} <span v-if="v.energy" aria-hidden="true">{{ ENERGY[v.energy] }}</span></p>
           </div>
-          <div class="flex shrink-0 gap-1 text-xs">
-            <button class="rounded-lg px-3 py-2 text-brand-300" :aria-label="`Ubah aktivitas ${v.visited_on}`" @click="openEdit(v)">Ubah</button>
-            <button class="rounded-lg px-3 py-2 text-red-300" :aria-label="`Hapus latihan ${v.visited_on}`" @click="tracker.removeVisit(v.client_id)">Hapus</button>
+          <div class="flex shrink-0 gap-2">
+            <button class="btn-ghost min-h-11 !px-3 !py-1.5 text-xs" :aria-label="`Ubah aktivitas ${v.visited_on}`" @click="openEdit(v)">Ubah</button>
+            <button class="btn-ghost min-h-11 !px-3 !py-1.5 text-xs !text-red-300" :aria-label="`Hapus latihan ${v.visited_on}`" @click="tracker.removeVisit(v.client_id)">Hapus</button>
           </div>
         </div>
         <p v-if="v.note" class="mt-1.5 text-sm text-white/75">{{ v.note }}</p>

@@ -43,9 +43,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
                   <span v-if="v.energy" aria-hidden="true"> {{ ENERGY[v.energy] }}</span>
                 </p>
               </div>
-              <div class="flex shrink-0 gap-3 text-xs">
-                <button class="text-brand-300" data-testid="day-edit" @click="emit('edit', v)">Ubah</button>
-                <button class="text-red-300" data-testid="day-delete" @click="tracker.removeVisit(v.client_id)">Hapus</button>
+              <div class="flex shrink-0 gap-2">
+                <button class="btn-ghost min-h-11 !px-3 !py-1.5 text-xs" data-testid="day-edit" @click="emit('edit', v)">Ubah</button>
+                <button class="btn-ghost min-h-11 !px-3 !py-1.5 text-xs !text-red-300" data-testid="day-delete" @click="tracker.removeVisit(v.client_id)">Hapus</button>
               </div>
             </div>
             <p v-if="v.note" class="mt-1.5 text-sm text-white/75">{{ v.note }}</p>
