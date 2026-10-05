@@ -6,6 +6,7 @@ import MiniTabBar from '@/components/MiniTabBar.vue'
 import TabBar from '@/components/TabBar.vue'
 import { useAuth } from '@/stores/auth'
 import { useOnline, useUpdater } from '@/composables/useSw'
+import { hasValidQr } from '@/lib/qrCache'
 import { syncPushSubscription } from '@/lib/push'
 import { useClassWatch } from '@/stores/classWatch'
 import { useTracker } from '@/stores/tracker'
@@ -18,8 +19,10 @@ const route = useRoute()
 const auth = useAuth()
 const showTabs = computed(() => auth.loggedIn && !NO_CHROME.has(String(route.name)))
 // no session, but a cached QR is still being shown offline: a minimal 2-item bar (QR + Masuk), not the
-// full tab bar whose other destinations need a real session to do anything.
-const showMiniTabs = computed(() => !auth.loggedIn && route.name === 'saved-qr')
+// full tab bar whose other destinations need a real session to do anything. Also kept on /login when
+// there's a cached QR to fall back to, since that's reached by tapping "Masuk" right here — otherwise
+// this bar (and the bottom padding it drives) would abruptly vanish on that exact navigation.
+const showMiniTabs = computed(() => !auth.loggedIn && (route.name === 'saved-qr' || (route.name === 'login' && hasValidQr())))
 const online = useOnline()
 const { needRefresh, update, applyIfSafe, offlineReady } = useUpdater()
 // a waiting update is applied on the next navigation (never while typing)

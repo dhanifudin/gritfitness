@@ -24,7 +24,8 @@ const route = useRoute()
       <li class="flex justify-center">
         <RouterLink
           :to="{ name: 'login', query: { redirect: '/qr' } }"
-          class="flex flex-col items-center gap-0.5 px-2 py-1 text-[11px] font-medium text-white/50"
+          class="flex flex-col items-center gap-0.5 px-2 py-1 text-[11px] font-medium"
+          :class="route.name === 'login' ? 'text-lime-grit' : 'text-white/50'"
         >
           <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" />

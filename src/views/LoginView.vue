@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { requestOtp } from '@/api/endpoints'
 import { clearLastPhone, getLastPhone } from '@/lib/lastPhone'
@@ -16,6 +16,7 @@ const otp = ref('')
 const step = ref<'phone' | 'otp'>('phone')
 const busy = ref(false)
 const error = ref('')
+const otpInput = ref<HTMLInputElement | null>(null)
 
 function forgetPhone() {
   clearLastPhone()
@@ -29,6 +30,8 @@ async function send() {
   try {
     await requestOtp(phone.value.trim())
     step.value = 'otp'
+    await nextTick()
+    otpInput.value?.focus()
   } catch (e) {
     error.value = e instanceof Error ? e.message : 'Gagal mengirim OTP'
   } finally {
@@ -71,6 +74,7 @@ async function verify() {
       <label class="block">
         <span class="sr-only">Kode OTP</span>
         <input
+          ref="otpInput"
           v-model="otp"
           class="input text-center font-display text-2xl tracking-[.5em]"
           inputmode="numeric"

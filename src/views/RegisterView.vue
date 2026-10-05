@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { nextTick, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { regionSearch, register, registerOtp } from '@/api/endpoints'
 import type { Region } from '@/api/types'
@@ -17,6 +17,7 @@ const form = reactive({
 const foto = ref<File | null>(null)
 const fotoPelajar = ref<File | null>(null)
 const otpSent = ref(false)
+const otpInput = ref<HTMLInputElement | null>(null)
 
 const cityQuery = ref('')
 const cities = ref<Region[]>([])
@@ -32,6 +33,10 @@ const pickPelajar = (e: Event) => (fotoPelajar.value = (e.target as HTMLInputEle
 
 async function sendOtp() {
   otpSent.value = !!(await otpAction.run(() => registerOtp(form.noHp.trim())))
+  if (otpSent.value) {
+    await nextTick()
+    otpInput.value?.focus()
+  }
 }
 
 async function submit() {
@@ -78,7 +83,7 @@ async function submit() {
       {{ otpAction.busy.value ? 'Mengirim…' : otpSent ? 'Kirim ulang OTP' : 'Kirim OTP' }}
     </button>
     <p v-if="otpAction.error.value" class="text-sm text-red-300">{{ otpAction.error.value }}</p>
-    <input v-if="otpSent" v-model="form.otp" class="input text-center font-display text-2xl tracking-[.4em]" inputmode="numeric" maxlength="6" placeholder="OTP" required />
+    <input v-if="otpSent" ref="otpInput" v-model="form.otp" class="input text-center font-display text-2xl tracking-[.4em]" inputmode="numeric" maxlength="6" placeholder="OTP" required />
 
     <p v-if="submitAction.error.value" class="text-sm text-red-300">{{ submitAction.error.value }}</p>
     <button class="btn-primary w-full" :disabled="submitAction.busy.value || !otpSent || !form.otp">
