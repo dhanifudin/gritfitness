@@ -3,7 +3,6 @@ import { nextTick, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { requestOtp } from '@/api/endpoints'
 import { clearLastPhone, getLastPhone } from '@/lib/lastPhone'
-import { hasValidQr } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
 
 const auth = useAuth()
@@ -67,7 +66,7 @@ async function verify() {
         <input v-model="phone" class="input" type="tel" inputmode="numeric" autocomplete="tel" placeholder="08xxxxxxxxxx" required />
       </label>
       <button class="btn-primary w-full" :disabled="busy || phone.length < 9">{{ busy ? 'Mengirim…' : 'Kirim OTP' }}</button>
-      <button v-if="remembered" type="button" class="block w-full text-center text-xs text-white/50 underline" @click="forgetPhone">Bukan Anda? Ganti nomor</button>
+      <button v-if="remembered" type="button" class="btn-ghost w-full" @click="forgetPhone">Bukan Anda? Ganti nomor</button>
     </form>
 
     <form v-else class="space-y-4" @submit.prevent="verify">
@@ -88,12 +87,7 @@ async function verify() {
       <button type="button" class="btn-ghost w-full" @click="step = 'phone'">Ganti nomor</button>
     </form>
 
-    <RouterLink v-if="hasValidQr()" to="/saved-qr" class="btn-ghost mt-4 w-full !border-lime-grit/50 !text-lime-grit">Tampilkan QR (tanpa masuk)</RouterLink>
-
     <p v-if="route.query.registered" class="mt-4 text-center text-sm text-emerald-300">Pendaftaran berhasil. Silakan masuk.</p>
     <p v-if="error" class="mt-4 text-center text-sm text-red-300">{{ error }}</p>
-    <p class="mt-8 text-center text-sm text-white/60">
-      Belum jadi member? <RouterLink to="/register" class="font-semibold text-lime-grit">Daftar</RouterLink>
-    </p>
   </div>
 </template>
