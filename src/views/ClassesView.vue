@@ -162,6 +162,7 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
       time: `${opened.start}–${opened.end}`,
       instructor: opened.instructor,
       predicted: opened.status === 'predicted',
+      ended: opened.status === 'ended',
       weekday: weekdayOf(dates[selected]),
       start_time: opened.start,
       class_name: opened.name,

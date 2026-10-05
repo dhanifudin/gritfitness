@@ -14,6 +14,7 @@ const props = defineProps<{
     time: string
     instructor: string | null
     predicted: boolean
+    ended?: boolean
     weekday?: number
     start_time?: string
     class_name?: string
@@ -24,7 +25,11 @@ const emit = defineEmits<{ close: [] }>()
 
 const tracker = useTracker()
 const classWatch = useClassWatch()
-const canWatch = computed(() => props.session?.predicted && props.session.weekday != null && props.session.start_time && props.session.class_name && tracker.consented)
+// Not just predicted slots: a class already real for today (confirmed) can still have its own
+// registration window not open yet (e.g. an afternoon class that opens the same morning) — the
+// watchlist check always decides off the row's real window anyway, so gate this on "not already
+// over", not on the predicted/confirmed display badge.
+const canWatch = computed(() => !props.session?.ended && props.session?.weekday != null && props.session.start_time && props.session.class_name && tracker.consented)
 const watched = computed(() =>
   canWatch.value ? !!classWatch.activeFor(props.session!.weekday!, props.session!.start_time!, props.session!.class_name!) : false,
 )
@@ -83,7 +88,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
                 <span class="inline-block h-4 w-4 translate-x-0.5 rounded-full bg-white transition" :class="watched ? 'translate-x-4' : ''" />
               </span>
             </button>
-            <p v-else-if="session.predicted" class="mt-1 text-xs text-white/40">Aktifkan sinkronisasi di Progres untuk daftar otomatis.</p>
+            <p v-else-if="!session.ended" class="mt-1 text-xs text-white/40">Aktifkan sinkronisasi di Progres untuk daftar otomatis.</p>
           </div>
         </div>
       </div>
