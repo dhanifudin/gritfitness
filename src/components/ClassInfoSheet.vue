@@ -1,18 +1,45 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { assetUrl } from '@/composables/useAsync'
 import type { ClassMatch } from '@/lib/classInfo'
+import { useClassWatch } from '@/stores/classWatch'
+import { useTracker } from '@/stores/tracker'
 
 const props = defineProps<{
   match: ClassMatch | null
   title: string
-  /** the tapped session, shown under the class info */
-  session?: { time: string; instructor: string | null; predicted: boolean } | null
+  /** the tapped session, shown under the class info. weekday/start_time/class_name identify a
+   *  predicted slot for the auto-register watchlist (see src/stores/classWatch.ts). */
+  session?: {
+    time: string
+    instructor: string | null
+    predicted: boolean
+    weekday?: number
+    start_time?: string
+    class_name?: string
+    package_id?: number | null
+  } | null
 }>()
 const emit = defineEmits<{ close: [] }>()
 
+const tracker = useTracker()
+const classWatch = useClassWatch()
+const canWatch = computed(() => props.session?.predicted && props.session.weekday != null && props.session.start_time && props.session.class_name && tracker.consented)
+const watched = computed(() =>
+  canWatch.value ? !!classWatch.activeFor(props.session!.weekday!, props.session!.start_time!, props.session!.class_name!) : false,
+)
+async function toggleWatch() {
+  const s = props.session
+  if (!s || s.weekday == null || !s.start_time || !s.class_name) return
+  if (watched.value) await classWatch.unwatch(s.weekday, s.start_time, s.class_name)
+  else await classWatch.watch(s.weekday, s.start_time, s.class_name, s.package_id ?? null)
+}
+
 const onKey = (e: KeyboardEvent) => e.key === 'Escape' && emit('close')
-onMounted(() => document.addEventListener('keydown', onKey))
+onMounted(() => {
+  document.addEventListener('keydown', onKey)
+  if (tracker.consented) classWatch.load()
+})
 onUnmounted(() => document.removeEventListener('keydown', onKey))
 </script>
 
@@ -43,7 +70,20 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 
           <div v-if="session" class="mt-4 border-t border-white/10 pt-3 text-sm">
             <p class="text-white/80">{{ session.time }}<template v-if="session.instructor"> · {{ session.instructor }}</template></p>
-            <p v-if="session.predicted" class="mt-1 text-xs text-amber-200/80">Perkiraan — jadwal pasti biasanya dibuka sehari sebelumnya, cek lagi nanti.</p>
+            <p v-if="session.predicted" class="mt-1 text-xs text-amber-200/80">Perkiraan — jadwal pasti biasanya dibuka sehari sebelumnya.</p>
+            <button
+              v-if="canWatch"
+              type="button"
+              class="mt-3 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold"
+              :class="watched ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-white/70'"
+              @click="toggleWatch"
+            >
+              <span>{{ watched ? 'Daftar otomatis aktif' : 'Daftar otomatis saat dibuka' }}</span>
+              <span class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition" :class="watched ? 'bg-emerald-400' : 'bg-white/20'">
+                <span class="inline-block h-4 w-4 translate-x-0.5 rounded-full bg-white transition" :class="watched ? 'translate-x-4' : ''" />
+              </span>
+            </button>
+            <p v-else-if="session.predicted" class="mt-1 text-xs text-white/40">Aktifkan sinkronisasi di Progres untuk daftar otomatis.</p>
           </div>
         </div>
       </div>

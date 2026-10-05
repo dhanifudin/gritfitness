@@ -39,6 +39,7 @@ export interface Tagihan {
 }
 export interface JadwalKelas {
   id: number
+  id_paket_kelas?: number
   nama_jadwal_kelas: string
   nama_kelas: string
   instruktur: string | null
@@ -49,6 +50,10 @@ export interface JadwalKelas {
   peserta: number
   foto_url: string
   status_saya?: string
+  /** registration window, 'YYYY-MM-DD HH:MM:SS' — confirmed present on live responses though not
+   *  consistently 19:00-day-before/07:00-same-day; always trust these over any guessed clock time. */
+  tanggal_mulai_daftar?: string
+  tanggal_tutup_daftar?: string
 }
 export interface PaketMembership {
   id: number

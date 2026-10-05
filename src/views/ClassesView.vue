@@ -9,7 +9,7 @@ import { CK } from '@/lib/dataCache'
 import ClassInfoSheet from '@/components/ClassInfoSheet.vue'
 import classInfo from '@/data/classInfo.json'
 import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
-import { DAY_NAMES, mergeDay, sameDay, weekDates, weekLabel, type DayItem, type Slot } from '@/lib/timetable'
+import { DAY_NAMES, mergeDay, sameDay, weekDates, weekdayOf, weekLabel, type DayItem, type Slot } from '@/lib/timetable'
 
 const MAX_OFFSET = 3 // current week + 3 weeks ahead
 const slots = timetable.slots as Slot[]
@@ -158,7 +158,15 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
     v-if="opened"
     :match="openedMatch"
     :title="opened.name"
-    :session="{ time: `${opened.start}–${opened.end}`, instructor: opened.instructor, predicted: opened.status === 'predicted' }"
+    :session="{
+      time: `${opened.start}–${opened.end}`,
+      instructor: opened.instructor,
+      predicted: opened.status === 'predicted',
+      weekday: weekdayOf(dates[selected]),
+      start_time: opened.start,
+      class_name: opened.name,
+      package_id: opened.packageId,
+    }"
     @close="opened = null"
   />
 </template>

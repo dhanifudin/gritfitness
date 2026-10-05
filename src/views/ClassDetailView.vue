@@ -9,14 +9,13 @@ import StateBox from '@/components/StateBox.vue'
 import { useAction } from '@/composables/useAction'
 import { assetUrl, useAsync } from '@/composables/useAsync'
 import classInfo from '@/data/classInfo.json'
+import { classActionFor, classNoticeFor } from '@/lib/classAction'
 import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
 import { CK, invalidate } from '@/lib/dataCache'
 import { parseDmy } from '@/lib/timetable'
 import { ymd } from '@/lib/tracker'
 import { useTracker } from '@/stores/tracker'
 import { useOnline } from '@/composables/useSw'
-
-type Kind = 'register' | 'waiting' | 'cancel'
 
 const route = useRoute()
 const { data: c, loading, error, savedAt, stale, reload } = useAsync(() => classDetail(route.params.id as string), null, { key: () => CK.classDetail(route.params.id as string) })
@@ -28,35 +27,8 @@ const about = computed(() =>
 const classMeta = computed(() => [about.value?.category?.name, about.value?.cls.minutes ? `${about.value.cls.minutes} menit` : null].filter(Boolean).join(', '))
 const { busy, error: actionError, run } = useAction()
 
-const notices: Record<string, string> = {
-  'SUDAH TERDAFTAR': 'Anda sudah masuk waiting list kelas ini.',
-  'TERDAFTAR WAITING LIST': 'Anda terdaftar sebagai waiting list kelas ini.',
-  TIDAK: 'Anda bukan anggota premium, atau tidak terdaftar di paket kelas ini.',
-  PINALTI: 'Anda belum bisa mengikuti jadwal ini karena masih dalam masa penalti.',
-  DIBATALKAN: 'Anda sudah membatalkan kepesertaan di kelas ini.',
-  BAYAR: 'Kelas ini berbayar. Silakan hubungi front desk untuk mendaftar.',
-  'BAYAR WAITINGLIST': 'Pendaftaran Anda menunggu penyelesaian di front desk.',
-}
-
-const action = computed<{ kind: Kind; label: string; danger?: boolean } | null>(() => {
-  switch (c.value?.daftar) {
-    case 'YA':
-    case 'BELUM TERDAFTAR':
-      return { kind: 'register', label: 'Daftar Peserta' }
-    case 'DAFTAR WAITING LIST':
-      return { kind: 'waiting', label: 'Daftar Waiting List' }
-    case 'PESERTA':
-      return { kind: 'cancel', label: 'Batalkan Kepesertaan', danger: true }
-    default:
-      return null
-  }
-})
-const notice = computed(() => {
-  const d = c.value?.daftar ?? ''
-  if (d === 'PESERTA') return 'Anda sudah menjadi peserta kelas ini.'
-  if (d === 'DAFTAR WAITING LIST') return 'Kuota peserta sudah penuh. Daftar sebagai waiting list?'
-  return notices[d] ?? ''
-})
+const action = computed(() => classActionFor(c.value?.daftar))
+const notice = computed(() => classNoticeFor(c.value?.daftar))
 
 const sheet = ref(false)
 const reason = ref('')

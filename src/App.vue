@@ -7,6 +7,7 @@ import TabBar from '@/components/TabBar.vue'
 import { useAuth } from '@/stores/auth'
 import { useOnline, useUpdater } from '@/composables/useSw'
 import { syncPushSubscription } from '@/lib/push'
+import { useClassWatch } from '@/stores/classWatch'
 import { useTracker } from '@/stores/tracker'
 
 // meta.public is for the router guard's login-bypass only (see router/index.ts) — whether the tab bar
@@ -35,12 +36,16 @@ watch(offlineReady, (ready) => {
 
 // tracker: load this member's local copy and keep it in sync (online again / back in the app)
 const tracker = useTracker()
+const classWatch = useClassWatch()
 const resync = () => {
-  if (document.visibilityState === 'visible') void tracker.sync()
+  if (document.visibilityState !== 'visible') return
+  void tracker.sync()
+  void classWatch.checkAndRegister()
 }
 onMounted(() => {
   if (tracker.init()) void tracker.sync()
   void syncPushSubscription()
+  void classWatch.checkAndRegister()
   window.addEventListener('online', resync)
   document.addEventListener('visibilitychange', resync)
 })
@@ -48,6 +53,28 @@ onUnmounted(() => {
   window.removeEventListener('online', resync)
   document.removeEventListener('visibilitychange', resync)
 })
+
+// a watched class was just auto-registered (or the attempt failed) while the app was open
+const watchToast = ref('')
+const WATCH_MESSAGE: Record<string, (name: string) => string> = {
+  registered: (n) => `Terdaftar otomatis: ${n}`,
+  waiting: (n) => `Masuk waiting list otomatis: ${n}`,
+  full: (n) => `${n} sudah penuh, tidak bisa didaftar otomatis`,
+  failed: (n) => `Gagal mendaftar otomatis untuk ${n}, coba manual`,
+}
+watch(
+  () => classWatch.lastResults,
+  (results) => {
+    if (!results.length) return
+    const r = results[results.length - 1]
+    const text = WATCH_MESSAGE[r.result]?.(r.entry.class_name)
+    if (text) {
+      watchToast.value = text
+      setTimeout(() => (watchToast.value = ''), 5000)
+    }
+    classWatch.clearResults()
+  },
+)
 </script>
 
 <template>
@@ -70,6 +97,12 @@ onUnmounted(() => {
       class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-white/10 bg-ink-900/95 px-4 py-3 text-center text-sm text-white/80 shadow-lg backdrop-blur"
     >
       Siap dipakai offline
+    </p>
+    <p
+      v-if="watchToast"
+      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-white/10 bg-ink-900/95 px-4 py-3 text-center text-sm text-emerald-300 shadow-lg backdrop-blur"
+    >
+      {{ watchToast }}
     </p>
     <TabBar v-if="showTabs" />
     <MiniTabBar v-else-if="showMiniTabs" />
