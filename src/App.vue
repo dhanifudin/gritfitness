@@ -21,7 +21,7 @@ const showTabs = computed(() => auth.loggedIn && !NO_CHROME.has(String(route.nam
 // full tab bar whose other destinations need a real session to do anything. Also kept on /login so this
 // bar never abruptly vanishes on the saved-qr -> login navigation; MiniTabBar itself decides whether the
 // QR item applies there (only when there's actually something cached to show).
-const showMiniTabs = computed(() => !auth.loggedIn && (route.name === 'saved-qr' || route.name === 'login'))
+const showMiniTabs = computed(() => !auth.loggedIn && (route.name === 'saved-qr' || route.name === 'login' || route.name === 'register'))
 const online = useOnline()
 const { needRefresh, update, applyIfSafe, offlineReady } = useUpdater()
 // a waiting update is applied on the next navigation (never while typing)

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { memberAktif, memberPtAktif } from '@/api/endpoints'
+import ConfirmSheet from '@/components/ConfirmSheet.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { useAsync } from '@/composables/useAsync'
 import { checkForUpdate } from '@/composables/useSw'
@@ -64,9 +65,20 @@ async function checkUpdate() {
   checking.value = false
 }
 
+const confirmOut = ref(false)
+const outBusy = ref(false)
+const outMessage = computed(
+  () => 'QR offline di perangkat ini akan dihapus.' + (tracker.localOnly || !tracker.consented ? ' Progres yang hanya tersimpan di perangkat ini akan hilang permanen.' : ''),
+)
 async function out() {
-  await auth.logout()
-  router.replace({ name: 'login' })
+  outBusy.value = true
+  try {
+    await auth.logout()
+    router.replace({ name: 'login' })
+  } finally {
+    outBusy.value = false
+    confirmOut.value = false
+  }
 }
 </script>
 
@@ -129,11 +141,22 @@ async function out() {
       <p v-if="pushError" class="mt-2 text-xs text-red-300">{{ pushError }}</p>
     </div>
 
-    <button class="btn-ghost mt-5 w-full !text-red-300" @click="out">Keluar</button>
+    <button class="btn-ghost mt-8 w-full !text-red-300" data-testid="logout" @click="confirmOut = true">Keluar</button>
     <p class="mt-6 text-center text-xs text-white/40">Versi {{ version.sha }} · {{ version.date }}</p>
     <button class="btn-ghost mx-auto mt-2 !flex min-h-11 w-fit !px-4 !py-1.5 text-xs" :disabled="checking" @click="checkUpdate">
       {{ checking ? 'Memeriksa…' : 'Periksa pembaruan' }}
     </button>
     <p v-if="updateMsg" class="mt-1 text-center text-xs text-white/50">{{ updateMsg }}</p>
   </div>
+
+  <ConfirmSheet
+    :open="confirmOut"
+    title="Keluar dari akun?"
+    :message="outMessage"
+    confirm-label="Ya, keluar"
+    danger
+    :busy="outBusy"
+    @confirm="out"
+    @close="confirmOut = false"
+  />
 </template>
