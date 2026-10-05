@@ -77,6 +77,13 @@ const syncLabel = computed(() =>
   : tracker.lastSyncAt ? `Tersinkron ${new Date(tracker.lastSyncAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`
   : 'Menunggu sinkron',
 )
+const enablingSync = ref(false)
+async function enableCloudSync() {
+  enablingSync.value = true
+  tracker.consent(tracker.settings.goal_per_week)
+  await tracker.sync()
+  enablingSync.value = false
+}
 
 // ---- tubuh ----
 const form = ref({ date: today.value, weight: '', waist: '', fat: '' })
@@ -116,6 +123,13 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
 
 <template>
   <PageHeader title="Progres" :subtitle="`Target ${goal}x seminggu · ${syncLabel}`" />
+
+  <div v-if="tracker.localOnly" class="mx-5 mb-4 flex items-center justify-between gap-3 rounded-xl bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+    <span>Progres hanya tersimpan di perangkat ini — tidak muncul di perangkat/browser lain, dan fitur daftar otomatis kelas butuh ini aktif.</span>
+    <button class="btn-primary shrink-0 !px-3 !py-1.5 text-xs disabled:opacity-60" :disabled="enablingSync" data-testid="enable-cloud-sync" @click="enableCloudSync">
+      {{ enablingSync ? 'Mengaktifkan…' : 'Aktifkan' }}
+    </button>
+  </div>
 
   <div class="mx-5 mb-4 grid grid-cols-5 gap-1 rounded-xl bg-white/5 p-1" role="tablist">
     <button
