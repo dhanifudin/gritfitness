@@ -14,9 +14,10 @@ import { rupiah, useAsync } from '@/composables/useAsync'
 import { activityLabel, activityMeta } from '@/lib/activities'
 import { costPerVisit, monthlySpend, otherActivitySpend, totalSpent, unpaidSummary } from '@/lib/budget'
 import { useSyncLabel } from '@/composables/useSyncLabel'
+import { classEfficiency, classSavings } from '@/lib/classValue'
 import { CK } from '@/lib/dataCache'
 import { favouriteLabel, favouriteWeekdays } from '@/lib/insight'
-import { activityBreakdown, counts, parseYmd, weekCounts, weekdayHistogram, ymd, type Visit } from '@/lib/tracker'
+import { activityBreakdown, addDays, counts, parseYmd, weekCounts, weekdayHistogram, ymd, type Visit } from '@/lib/tracker'
 import { weightChange } from '@/lib/trackerData'
 import { useTracker } from '@/stores/tracker'
 
@@ -57,6 +58,9 @@ const spendMax = computed(() => Math.max(1, ...spendMonths.value.map((m) => m.to
 const spentThisYear = computed(() => totalSpent(bills.value, { from: `${tracker.now.getFullYear()}-01-01`, to: today.value }))
 const cpv = computed(() => costPerVisit(bills.value, tracker.visits, tracker.now, 30))
 const unpaid = computed(() => unpaidSummary(bills.value))
+// classes are free for members: the non-member price of each registered class is what the membership saved
+const savings = computed(() => classSavings(tracker.signups, ymd(addDays(tracker.now, -29)), ymd(tracker.now)))
+const efficiency = computed(() => classEfficiency({ saved: savings.value.saved, spent: cpv.value.spent, visits: cpv.value.visits }))
 const otherSpend = computed(() => otherActivitySpend(tracker.visits, tracker.now, 30))
 const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
 const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5, 7)) - 1]
@@ -171,6 +175,18 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
               <p class="font-display text-xl" data-testid="cost-per-visit">{{ cpv.perVisit != null ? rupiah(cpv.perVisit) : '-' }}</p>
             </div>
           </div>
+        </section>
+
+        <section v-if="savings.count" class="card p-4" data-testid="class-savings">
+          <h2 class="text-sm font-semibold">Hemat dari kelas (30 hari)</h2>
+          <p class="mt-2 font-display text-2xl text-lime-grit">{{ rupiah(savings.saved) }}</p>
+          <p class="text-xs text-white/55">dari {{ savings.count }} kelas yang gratis untuk member (tarif non-member).</p>
+          <p v-if="efficiency.paybackPct != null" class="mt-3 text-sm text-white/80">
+            {{ efficiency.exceedsCost ? 'Lebih besar dari biaya membership 30 hari.' : `Setara ${Math.round(efficiency.paybackPct)}% dari biaya membership 30 hari.` }}
+          </p>
+          <p v-if="efficiency.effectivePerVisit != null" class="mt-1 text-sm text-white/80">
+            Biaya efektif per latihan: <span class="font-semibold">{{ rupiah(efficiency.effectivePerVisit) }}</span>
+          </p>
         </section>
 
         <RouterLink v-if="unpaid.count" to="/bills" class="flex items-center justify-between gap-3 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm" data-testid="unpaid-card">

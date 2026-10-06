@@ -8,9 +8,10 @@ import DetailRow from '@/components/DetailRow.vue'
 import SafeImg from '@/components/SafeImg.vue'
 import StateBox from '@/components/StateBox.vue'
 import { useAction } from '@/composables/useAction'
-import { assetUrl, useAsync } from '@/composables/useAsync'
+import { assetUrl, rupiah, useAsync } from '@/composables/useAsync'
 import classInfo from '@/data/classInfo.json'
 import { classActionFor, classNoticeFor } from '@/lib/classAction'
+import { parsePrice } from '@/lib/classValue'
 import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
 import { CK, invalidate } from '@/lib/dataCache'
 import { parseDmy } from '@/lib/timetable'
@@ -34,12 +35,16 @@ const notice = computed(() => classNoticeFor(c.value?.daftar))
 const sheet = ref(false)
 const reason = ref('')
 const done = ref('')
+// classes are free for members, paid for non-members: the non-member price is what registering saves
+const price = computed(() => parsePrice(c.value?.harga))
+const freeSeat = computed(() => action.value?.kind === 'register' && price.value != null)
 const canConfirm = computed(() => action.value?.kind !== 'cancel' || reason.value.trim().length > 0)
 
 async function confirm() {
   if (!c.value || !action.value || !canConfirm.value) return
   const id = c.value.id
   const k = action.value.kind
+  const seatPrice = freeSeat.value ? price.value : null
   const res = await run(() =>
     k === 'register' ? classRegister(id) : k === 'waiting' ? classWaiting(id) : classCancel(c.value!.id_peserta!, reason.value.trim()),
   )
@@ -50,11 +55,11 @@ async function confirm() {
   // tracker: remember classes the member signed up for, so Home can ask "Jadi ikut kelas?" on the day
   tracker.init()
   if (k === 'register') {
-    tracker.trackSignup({ schedule_id: id, class_name: c.value.nama_jadwal_kelas, scheduled_on: ymd(parseDmy(c.value.tanggal)), start_time: c.value.jam_awal, status: 'planned' })
+    tracker.trackSignup({ schedule_id: id, class_name: c.value.nama_jadwal_kelas, scheduled_on: ymd(parseDmy(c.value.tanggal)), start_time: c.value.jam_awal, status: 'planned', price: seatPrice })
   } else if (k === 'cancel') {
     tracker.setSignupStatus(id, 'cancelled')
   }
-  done.value = res.message || 'Berhasil'
+  done.value = (res.message || 'Berhasil') + (k === 'register' && seatPrice ? ` · hemat ${rupiah(seatPrice)} (tarif non-member)` : '')
   await reload()
 }
 </script>
@@ -70,6 +75,7 @@ async function confirm() {
           <DetailRow label="Instruktur" :value="c.instruktur" />
           <DetailRow label="Peserta" :value="`${c.peserta} / ${c.max_member}`" />
           <DetailRow label="Waiting list" :value="c.waitinglist" />
+          <DetailRow v-if="freeSeat" label="Tarif non-member" :value="`${rupiah(price)} · gratis untuk member`" />
         </dl>
       </div>
 

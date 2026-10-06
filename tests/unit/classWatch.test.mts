@@ -59,3 +59,15 @@ ok('classActionFor: unknown/undefined -> no action', ca.classActionFor(undefined
 ok('classNoticeFor: PESERTA -> already a participant message', ca.classNoticeFor('PESERTA').includes('peserta'))
 ok('classNoticeFor: PINALTI -> penalty message', ca.classNoticeFor('PINALTI').includes('penalti'))
 ok('classNoticeFor: BELUM TERDAFTAR -> no notice (plain register case)', ca.classNoticeFor('BELUM TERDAFTAR') === '')
+
+// ---- nextOccurrence / watchWhen / watchStatus (Beranda list) ----
+const e2 = (over: Record<string, unknown> = {}) => ({ id: 'w', weekday: 0, start_time: '17:00', class_name: 'X', package_id: 1, active: true, last_attempt_date: null as string | null, last_attempt_result: null as string | null, ...over })
+ok('nextOccurrence: today = 0', cw.nextOccurrence({ weekday: 0 }, NOW) === 0)
+ok('nextOccurrence: tomorrow = 1', cw.nextOccurrence({ weekday: 1 }, NOW) === 1)
+ok('nextOccurrence: wraps past Sunday (Sunday slot on Monday = 6)', cw.nextOccurrence({ weekday: 6 }, NOW) === 6)
+ok('nextOccurrence: yesterday\'s weekday is 6 days away', cw.nextOccurrence({ weekday: 6 }, new Date(2026, 9, 5 + 7)) === 6)
+ok('watchWhen: today / tomorrow / weekday', cw.watchWhen(e2(), NOW) === 'Hari ini 17.00' && cw.watchWhen(e2({ weekday: 1, start_time: '07:30' }), NOW) === 'Besok 07.30' && cw.watchWhen(e2({ weekday: 3 }), NOW) === 'Kam 17.00')
+ok('watchStatus: attempted today -> result in words', cw.watchStatus(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'registered' }), NOW).text === 'Terdaftar otomatis' && cw.watchStatus(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'waiting' }), NOW).tone === 'warn')
+ok('watchStatus: failed/full are the bad tone', cw.watchStatus(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'full' }), NOW).tone === 'bad' && cw.watchStatus(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'failed' }), NOW).tone === 'bad')
+ok('watchStatus: old attempt falls back to the opening hint', cw.watchStatus(e2({ last_attempt_date: '2026-10-01', last_attempt_result: 'registered' }), NOW).text === 'Pendaftaran biasanya dibuka Senin 07.00')
+ok('watchStatus: morning class hint names the day before', cw.watchStatus(e2({ start_time: '08:00' }), NOW).text === 'Pendaftaran biasanya dibuka Minggu 15.00', cw.watchStatus(e2({ start_time: '08:00' }), NOW).text)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { tagihan } from '@/api/endpoints'
+import { computed, onMounted, watch } from 'vue'
+import { paketKelas, tagihan } from '@/api/endpoints'
 import CheckInButton from '@/components/CheckInButton.vue'
 import ConsentSheet from '@/components/ConsentSheet.vue'
 import GoalRing from '@/components/GoalRing.vue'
@@ -10,6 +10,8 @@ import WeekBars from '@/components/WeekBars.vue'
 import { rupiah, useAsync } from '@/composables/useAsync'
 import { useInstall } from '@/composables/useSw'
 import { costPerVisit, unpaidSummary } from '@/lib/budget'
+import { parsePrice } from '@/lib/classValue'
+import { nextOccurrence, watchStatus, watchWhen } from '@/lib/classWatch'
 import { CK } from '@/lib/dataCache'
 import SettingsButton from '@/components/SettingsButton.vue'
 import { dailyInsight, favouriteClassToday, noTrackingNudge, weekTrend } from '@/lib/insight'
@@ -18,18 +20,33 @@ import { parseYmd, weekCounts, ymd } from '@/lib/tracker'
 import timetable from '@/data/timetable.json'
 import type { Slot } from '@/lib/timetable'
 import { useAuth } from '@/stores/auth'
+import { useClassWatch } from '@/stores/classWatch'
 import { useTracker } from '@/stores/tracker'
 
 const auth = useAuth()
 const tracker = useTracker()
 const uid = auth.user!.id
 const install = useInstall()
+const classWatch = useClassWatch()
 
 onMounted(() => {
   tracker.init(uid)
   void tracker.sync()
   void prefetchAll({ id: uid, nama: auth.user!.nama })
 })
+
+// ---- auto-register list: classes marked "Daftar otomatis saat dibuka" (cloud-synced) ----
+watch(() => tracker.consented, (on) => on && void classWatch.load(), { immediate: true })
+const { data: classPackages } = useAsync(paketKelas, [], { key: CK.packages('class') })
+const WATCH_MAX = 4
+const watched = computed(() =>
+  classWatch.entries
+    .filter((e) => e.active)
+    .sort((a, b) => nextOccurrence(a, tracker.now) - nextOccurrence(b, tracker.now) || a.start_time.localeCompare(b.start_time)),
+)
+const watchedShown = computed(() => watched.value.slice(0, WATCH_MAX))
+const priceOf = (packageId: number | null) => parsePrice(classPackages.value.find((p) => p.id === packageId)?.harga)
+const TONE = { good: 'text-emerald-300', warn: 'text-amber-300', bad: 'text-red-300', info: 'text-white/50' } as const
 
 const first = computed(() => (auth.user!.nama.split(' ')[0] ?? '').toLowerCase().replace(/^\w/, (c) => c.toUpperCase()))
 const dateLabel = computed(() => tracker.now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }))
@@ -103,6 +120,23 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
     <CheckInButton class="mt-4" />
 
     <MotivationCard :m="tracker.motivation" class="mt-3" data-testid="motivation" />
+
+    <section v-if="tracker.consented && watched.length" class="mt-3" data-testid="watchlist">
+      <p class="px-1 text-xs text-white/50">Daftar otomatis</p>
+      <div class="mt-1.5 divide-y divide-white/8 rounded-2xl border border-white/8 bg-ink-900/60">
+        <div v-for="e in watchedShown" :key="e.id" class="px-4 py-2.5 text-sm" data-testid="watch-row">
+          <div class="flex items-center justify-between gap-3">
+            <span class="min-w-0 truncate font-medium">{{ e.class_name }}</span>
+            <span class="shrink-0 text-white/50">{{ watchWhen(e, tracker.now) }}</span>
+          </div>
+          <div class="mt-0.5 flex items-center justify-between gap-3 text-xs">
+            <span :class="TONE[watchStatus(e, tracker.now).tone]">{{ watchStatus(e, tracker.now).text }}</span>
+            <span v-if="priceOf(e.package_id)" class="shrink-0 text-lime-grit/80">hemat {{ rupiah(priceOf(e.package_id)) }}</span>
+          </div>
+        </div>
+        <p v-if="watched.length > WATCH_MAX" class="px-4 py-2 text-xs text-white/45">+{{ watched.length - WATCH_MAX }} kelas lainnya</p>
+      </div>
+    </section>
 
     <div v-if="tracker.reminder.show" class="mt-3 flex gap-2.5 border-l-2 border-amber-400 bg-amber-500/10 px-4 py-3 text-sm text-amber-100" data-testid="reminder">
       <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>

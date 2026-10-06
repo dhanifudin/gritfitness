@@ -6,6 +6,7 @@
 // ignored), so a future occurrence's real id genuinely doesn't exist yet. Each row that does exist
 // carries its own authoritative `tanggal_mulai_daftar`/`tanggal_tutup_daftar` window (confirmed live:
 // not a fixed clock time) — that window, not a guessed time, is what gates the attempt.
+import { opensLabel } from './classOpen.ts'
 import { ymd, weekdayOf } from './tracker.ts'
 
 export interface WatchEntry {
@@ -52,4 +53,30 @@ export function matchOpenRow(entry: WatchEntry, actual: JadwalRow[], now: Date):
   if (now < opens || now > closes) return null
 
   return row
+}
+
+type WatchResult = WatchEntry & { last_attempt_result?: string | null }
+
+/** Days until this weekly slot next happens (0 = today). */
+export const nextOccurrence = (entry: { weekday: number }, now: Date) => (entry.weekday - weekdayOf(now) + 7) % 7
+
+const SHORT_DAYS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+/** "Hari ini 17.00", "Besok 07.00", "Kam 08.00". */
+export function watchWhen(entry: { weekday: number; start_time: string }, now: Date): string {
+  const d = nextOccurrence(entry, now)
+  return `${d === 0 ? 'Hari ini' : d === 1 ? 'Besok' : SHORT_DAYS[entry.weekday]} ${entry.start_time.replace(':', '.')}`
+}
+
+const RESULTS: Record<string, { text: string; tone: 'good' | 'warn' | 'bad' }> = {
+  registered: { text: 'Terdaftar otomatis', tone: 'good' },
+  already: { text: 'Sudah terdaftar', tone: 'good' },
+  waiting: { text: 'Masuk waiting list', tone: 'warn' },
+  full: { text: 'Kelas penuh', tone: 'bad' },
+  failed: { text: 'Gagal, daftar manual', tone: 'bad' },
+}
+
+/** Second line of a watchlist row: today's attempt result, otherwise when registration usually opens. */
+export function watchStatus(entry: WatchResult, now: Date): { text: string; tone: 'good' | 'warn' | 'bad' | 'info' } {
+  const r = entry.last_attempt_date === ymd(now) && entry.last_attempt_result ? RESULTS[entry.last_attempt_result] : undefined
+  return r ?? { text: `Pendaftaran biasanya dibuka ${opensLabel(entry.weekday, entry.start_time)}`, tone: 'info' }
 }

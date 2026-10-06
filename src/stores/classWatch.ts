@@ -5,8 +5,10 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { jadwalKelas, classDetail, classRegister, classWaiting } from '@/api/endpoints'
 import { classActionFor } from '@/lib/classAction'
+import { parsePrice } from '@/lib/classValue'
 import { matchOpenRow, type WatchEntry } from '@/lib/classWatch'
 import { remote, trackerConfigured } from '@/lib/supabase'
+import { parseDmy } from '@/lib/timetable'
 import { ymd } from '@/lib/tracker'
 import { useAuth } from './auth'
 import { useTracker } from './tracker'
@@ -65,6 +67,8 @@ export const useClassWatch = defineStore('classWatch', () => {
         const res = await classRegister(row.id)
         result = 'registered'
         message = res.message
+        // same bookkeeping as a manual registration: shows under "Kelas terdaftar" and counts toward the savings
+        useTracker().trackSignup({ schedule_id: row.id, class_name: detail.nama_jadwal_kelas, scheduled_on: ymd(parseDmy(detail.tanggal)), start_time: detail.jam_awal, status: 'planned', price: parsePrice(detail.harga) })
       } else if (action?.kind === 'waiting') {
         const res = await classWaiting(row.id)
         result = 'waiting'

@@ -15,6 +15,8 @@ export interface Signup {
   scheduled_on: string
   start_time?: string | null
   status: 'planned' | 'attended' | 'cancelled'
+  /** non-member price of the class when the seat was registered (free for members): what the membership saved */
+  price?: number | null
 }
 export interface BadgeRow {
   badge_key: string

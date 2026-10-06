@@ -79,6 +79,8 @@ export interface ClassDetail {
   peserta: number
   waitinglist: number
   harga_rp?: string
+  /** raw non-member price, e.g. "75000.00" */
+  harga?: string
   daftar: string
   id_peserta?: number
 }

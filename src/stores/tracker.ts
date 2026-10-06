@@ -81,6 +81,7 @@ const signupRow = (s: Signup): Record<string, unknown> => ({
   scheduled_on: s.scheduled_on,
   start_time: s.start_time ?? null,
   status: s.status,
+  price: s.price ?? null,
 })
 
 /**
@@ -324,7 +325,7 @@ export const useTracker = defineStore('tracker', () => {
       remote.select<Visit>('visits', `select=${VISIT_COLS}&order=visited_on.desc&limit=3000`),
       remote.select<Metric>('body_metrics', 'select=measured_on,weight_kg,waist_cm,body_fat_pct,note&order=measured_on.desc&limit=1000'),
       remote.select<Settings>('members', 'select=goal_per_week,goal_weight_kg,reminder_hour,consented_at&limit=1'),
-      remote.select<Signup>('class_signups', `select=schedule_id,class_name,scheduled_on,start_time,status&scheduled_on=gte.${since}`),
+      remote.select<Signup>('class_signups', `select=schedule_id,class_name,scheduled_on,start_time,status,price&scheduled_on=gte.${since}`),
       remote.select<BadgeRow>('badges', 'select=badge_key,unlocked_at'),
     ])
     return { visits: v, metrics: m, signups: c, badges: b, settings: s[0] ? { ...DEFAULT_SETTINGS, ...s[0] } : settings.value }

@@ -56,6 +56,12 @@ onMounted(() => {
   window.addEventListener('online', resync)
   document.addEventListener('visibilitychange', resync)
 })
+// right after a (re)login the member is signed in and consent loads shortly after: check the watchlist then,
+// not only on the next app resume
+watch(
+  () => auth.loggedIn && tracker.consented,
+  (ready) => ready && void classWatch.checkAndRegister(),
+)
 onUnmounted(() => {
   window.removeEventListener('online', resync)
   document.removeEventListener('visibilitychange', resync)
