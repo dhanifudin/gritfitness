@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { memberAktif, memberPtAktif } from '@/api/endpoints'
 import CheckInButton from '@/components/CheckInButton.vue'
 import QrCard from '@/components/QrCard.vue'
+import SettingsButton from '@/components/SettingsButton.vue'
 import { hasValidQr, loadQr, syncQr, type QrEntry, type QrKind } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
 import { useWakeLock } from '@/composables/useWakeLock'
@@ -50,23 +51,31 @@ async function load() {
   loading.value = false
 }
 
-onMounted(load)
+const onVisible = () => document.visibilityState === 'visible' && load()
+onMounted(() => {
+  void load()
+  document.addEventListener('visibilitychange', onVisible)
+})
+onUnmounted(() => document.removeEventListener('visibilitychange', onVisible))
 
 const cur = computed(() => items.value[active.value])
+const both = computed(() => !!items.value.gym && !!items.value.pt)
 const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' ? 'Anda sedang cuti' : 'Tidak ada paket aktif'))
 </script>
 
 <template>
-  <div class="px-5 pt-8">
-    <h1 class="font-display text-2xl font-semibold">QR Check-in</h1>
-    <p class="text-sm text-white/55">{{ auth.user?.nama }}</p>
+  <div class="flex h-full flex-col px-5 pt-5">
+    <div class="flex items-center justify-between gap-3">
+      <p class="min-w-0 truncate font-display text-lg font-semibold">{{ auth.user?.nama }}</p>
+      <SettingsButton />
+    </div>
 
-    <div class="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-white/5 p-1">
+    <div v-if="both" class="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-white/5 p-1">
       <button
         v-for="k in kinds"
         :key="k.key"
-        class="rounded-lg py-2 text-sm font-semibold transition"
+        class="min-h-10 rounded-lg text-sm font-semibold transition"
         :class="active === k.key ? 'bg-brand-400 text-white' : 'text-white/60'"
         @click="active = k.key"
       >
@@ -74,23 +83,20 @@ const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' 
       </button>
     </div>
 
-    <div v-if="loading" class="mt-5 rounded-3xl bg-white p-6">
-      <div class="mx-auto aspect-square w-full max-w-72 animate-pulse rounded-xl bg-ink-900/10" />
+    <div v-if="loading" class="mt-3 rounded-3xl bg-white p-4">
+      <div class="mx-auto aspect-square w-[min(100%,18rem,34dvh)] animate-pulse rounded-xl bg-ink-900/10" />
     </div>
-    <QrCard v-else-if="cur" :entry="cur" class="mt-5" />
-    <div v-else class="mt-5 rounded-3xl bg-white p-6 py-10 text-center text-ink-900">
+    <QrCard v-else-if="cur" :entry="cur" compact :tight="both" class="mt-3" />
+    <div v-else class="mt-3 rounded-3xl bg-white p-6 py-8 text-center text-ink-900">
       <svg viewBox="0 0 24 24" class="mx-auto h-10 w-10 text-ink-700/40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M20 14v3h-3M14 20h3" /></svg>
       <p class="mt-3 font-semibold">{{ noPackageText }}</p>
       <RouterLink to="/packages" class="btn-primary mt-4">Lihat paket</RouterLink>
     </div>
 
-    <p class="mt-3 text-center text-xs text-white/50">
-      Scan QR ini saat masuk/keluar gym.
-      <template v-if="cur"><br />Disimpan {{ stamp(cur.savedAt) }}<template v-if="failed"> · mode offline</template></template>
-    </p>
-    <CheckInButton class="mt-4" />
-
-    <button class="btn-ghost mt-3 w-full" @click="load">Muat ulang</button>
-    <RouterLink v-if="hasValidQr()" to="/saved-qr" class="btn-ghost mt-3 w-full">Lihat QR tersimpan</RouterLink>
+    <div v-if="cur" class="mt-2 flex items-center justify-center gap-2 text-xs text-white/45">
+      <span>Disimpan {{ stamp(cur.savedAt) }}<template v-if="failed"> · mode offline</template></span>
+      <button v-if="failed" class="btn-ghost min-h-11 !px-3 !py-1.5 text-xs" @click="load">Coba lagi</button>
+    </div>
+    <CheckInButton minimal class="mt-2" />
   </div>
 </template>

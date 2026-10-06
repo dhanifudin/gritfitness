@@ -64,7 +64,7 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
         </button>
       </div>
 
-      <QrCard :entry="cur" compact class="mt-3">
+      <QrCard :entry="cur" compact :tight="available.length > 1" class="mt-3">
         <p
           v-if="left !== null"
           class="mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold"

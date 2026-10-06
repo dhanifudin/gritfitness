@@ -68,7 +68,7 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
 </script>
 
 <template>
-  <PageHeader title="Kelas" :subtitle="weekLabel(dates)" />
+  <PageHeader title="Kelas" :subtitle="weekLabel(dates)" gear />
 
   <div class="mb-3 flex items-center justify-between px-5">
     <button class="btn-ghost min-h-11 !px-3 !py-1.5 disabled:opacity-30" :disabled="offset === 0" aria-label="Minggu sebelumnya" @click="go(-1)">‹</button>

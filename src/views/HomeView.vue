@@ -11,6 +11,7 @@ import { rupiah, useAsync } from '@/composables/useAsync'
 import { useInstall } from '@/composables/useSw'
 import { costPerVisit, unpaidSummary } from '@/lib/budget'
 import { CK } from '@/lib/dataCache'
+import SettingsButton from '@/components/SettingsButton.vue'
 import { dailyInsight, favouriteClassToday, noTrackingNudge, weekTrend } from '@/lib/insight'
 import { prefetchAll } from '@/lib/prefetch'
 import { parseYmd, weekCounts, ymd } from '@/lib/tracker'
@@ -67,8 +68,13 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
 
 <template>
   <div class="px-5 pt-8">
-    <p class="text-sm text-white/55">{{ dateLabel }}</p>
-    <h1 class="font-display text-2xl font-semibold">Halo, {{ first }}!</h1>
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-sm text-white/55">{{ dateLabel }}</p>
+        <h1 class="truncate font-display text-2xl font-semibold">Halo, {{ first }}!</h1>
+      </div>
+      <SettingsButton />
+    </div>
 
     <section class="card mt-4 p-4" data-testid="goal-card">
       <div class="flex items-center gap-4">
