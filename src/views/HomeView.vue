@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { paketKelas, tagihan } from '@/api/endpoints'
 import CheckInButton from '@/components/CheckInButton.vue'
 import ConsentSheet from '@/components/ConsentSheet.vue'
@@ -46,6 +46,17 @@ const watched = computed(() =>
 )
 const watchedShown = computed(() => watched.value.slice(0, WATCH_MAX))
 const priceOf = (packageId: number | null) => parsePrice(classPackages.value.find((p) => p.id === packageId)?.harga)
+const removing = ref<string | null>(null)
+async function removeWatch(e: (typeof watched.value)[number]) {
+  removing.value = e.id
+  try {
+    await classWatch.unwatch(e.weekday, e.start_time, e.class_name)
+  } catch {
+    /* offline: the row stays, tap again later */
+  } finally {
+    removing.value = null
+  }
+}
 const TONE = { good: 'text-emerald-300', warn: 'text-amber-300', bad: 'text-red-300', info: 'text-white/50' } as const
 
 const first = computed(() => (auth.user!.nama.split(' ')[0] ?? '').toLowerCase().replace(/^\w/, (c) => c.toUpperCase()))
@@ -124,15 +135,26 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
     <section v-if="tracker.consented && watched.length" class="mt-3" data-testid="watchlist">
       <p class="px-1 text-xs text-white/50">Daftar otomatis</p>
       <div class="mt-1.5 divide-y divide-white/8 rounded-2xl border border-white/8 bg-ink-900/60">
-        <div v-for="e in watchedShown" :key="e.id" class="px-4 py-2.5 text-sm" data-testid="watch-row">
-          <div class="flex items-center justify-between gap-3">
-            <span class="min-w-0 truncate font-medium">{{ e.class_name }}</span>
-            <span class="shrink-0 text-white/50">{{ watchWhen(e, tracker.now) }}</span>
+        <div v-for="e in watchedShown" :key="e.id" class="flex items-center gap-3 px-4 py-2.5 text-sm" data-testid="watch-row">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-3">
+              <span class="min-w-0 truncate font-medium">{{ e.class_name }}</span>
+              <span class="shrink-0 text-white/50">{{ watchWhen(e, tracker.now) }}</span>
+            </div>
+            <div class="mt-0.5 flex items-center justify-between gap-3 text-xs">
+              <span :class="TONE[watchStatus(e, tracker.now).tone]">{{ watchStatus(e, tracker.now).text }}</span>
+              <span v-if="priceOf(e.package_id)" class="shrink-0 text-lime-grit/80">hemat {{ rupiah(priceOf(e.package_id)) }}</span>
+            </div>
           </div>
-          <div class="mt-0.5 flex items-center justify-between gap-3 text-xs">
-            <span :class="TONE[watchStatus(e, tracker.now).tone]">{{ watchStatus(e, tracker.now).text }}</span>
-            <span v-if="priceOf(e.package_id)" class="shrink-0 text-lime-grit/80">hemat {{ rupiah(priceOf(e.package_id)) }}</span>
-          </div>
+          <button
+            class="btn-ghost min-h-11 shrink-0 !px-3 !py-1.5 text-xs disabled:opacity-50"
+            :disabled="removing === e.id"
+            :aria-label="`Hapus ${e.class_name} dari daftar otomatis`"
+            data-testid="watch-remove"
+            @click="removeWatch(e)"
+          >
+            {{ removing === e.id ? '…' : 'Hapus' }}
+          </button>
         </div>
         <p v-if="watched.length > WATCH_MAX" class="px-4 py-2 text-xs text-white/45">+{{ watched.length - WATCH_MAX }} kelas lainnya</p>
       </div>
