@@ -5,6 +5,7 @@ import { classCancel, classDetail, classRegister, classWaiting } from '@/api/end
 import BackHeader from '@/components/BackHeader.vue'
 import ConfirmSheet from '@/components/ConfirmSheet.vue'
 import DetailRow from '@/components/DetailRow.vue'
+import SafeImg from '@/components/SafeImg.vue'
 import StateBox from '@/components/StateBox.vue'
 import { useAction } from '@/composables/useAction'
 import { assetUrl, useAsync } from '@/composables/useAsync'
@@ -81,7 +82,7 @@ async function confirm() {
       </button>
 
       <div v-if="about" class="card mt-5 overflow-hidden">
-        <img v-if="about.cls.photo" :src="assetUrl(about.cls.photo)" :alt="about.cls.name" loading="lazy" class="h-36 w-full object-cover" />
+        <SafeImg v-if="about.cls.photo" :src="assetUrl(about.cls.photo)" :alt="about.cls.name" class="h-36 w-full object-cover" />
         <div class="p-4">
           <p class="text-xs text-white/50">Tentang kelas</p>
           <p class="mt-1 font-display text-lg">{{ about.cls.name }}</p>

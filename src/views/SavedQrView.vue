@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import CheckInButton from '@/components/CheckInButton.vue'
 import QrCard from '@/components/QrCard.vue'
 import { cachedQrOwner, daysLeft, loadQr, type QrEntry, type QrKind } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
@@ -63,7 +64,7 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
         </button>
       </div>
 
-      <QrCard :entry="cur" compact class="mt-4">
+      <QrCard :entry="cur" compact class="mt-3">
         <p
           v-if="left !== null"
           class="mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold"
@@ -73,7 +74,8 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
         </p>
       </QrCard>
 
-      <p class="mt-3 text-center text-xs text-white/45">Disimpan {{ stamp(cur.savedAt) }}</p>
+      <p class="mt-2 text-center text-xs text-white/45">Disimpan {{ stamp(cur.savedAt) }}</p>
+      <CheckInButton minimal class="mt-2" />
     </template>
 
     <div v-else class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">

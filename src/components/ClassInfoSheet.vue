@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
+import SafeImg from '@/components/SafeImg.vue'
 import { assetUrl } from '@/composables/useAsync'
 import type { ClassMatch } from '@/lib/classInfo'
 import { useClassWatch } from '@/stores/classWatch'
@@ -52,7 +53,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
   <Teleport to="body">
     <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/60" role="dialog" aria-modal="true" :aria-label="`Tentang kelas ${title}`" @click.self="emit('close')">
       <div class="safe-b max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl border-t border-white/10 bg-ink-900">
-        <img v-if="props.match?.cls.photo" :src="assetUrl(props.match.cls.photo)" :alt="title" class="h-44 w-full object-cover" />
+        <SafeImg v-if="props.match?.cls.photo" :src="assetUrl(props.match.cls.photo)" :alt="title" class="h-44 w-full object-cover" />
         <div class="p-5">
           <div class="flex items-start justify-between gap-3">
             <h2 class="font-display text-2xl leading-tight">{{ match?.cls.name ?? title }}</h2>

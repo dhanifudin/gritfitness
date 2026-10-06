@@ -7,6 +7,7 @@ import { assetUrl, useAsync } from '@/composables/useAsync'
 import timetable from '@/data/timetable.json'
 import { CK } from '@/lib/dataCache'
 import ClassInfoSheet from '@/components/ClassInfoSheet.vue'
+import SafeImg from '@/components/SafeImg.vue'
 import classInfo from '@/data/classInfo.json'
 import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
 import { DAY_NAMES, mergeDay, sameDay, weekDates, weekdayOf, weekLabel, type DayItem, type Slot } from '@/lib/timetable'
@@ -107,13 +108,7 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
           v-bind="it.status === 'confirmed' ? { to: `/classes/${it.classId}` } : {}"
           class="flex w-full gap-3 p-3"
         >
-          <img
-            v-if="it.fotoUrl || photoOf(it.packageId)"
-            :src="it.fotoUrl ? assetUrl(it.fotoUrl) : photoOf(it.packageId)"
-            :alt="it.kelas"
-            loading="lazy"
-            class="h-20 w-20 shrink-0 rounded-xl object-cover"
-          />
+          <SafeImg :src="it.fotoUrl ? assetUrl(it.fotoUrl) : photoOf(it.packageId)" :alt="it.kelas" class="h-20 w-20 shrink-0 rounded-xl object-cover" />
           <div class="min-w-0 flex-1">
             <div class="flex items-start justify-between gap-2">
               <p class="truncate font-display text-lg leading-tight">{{ it.name }}</p>

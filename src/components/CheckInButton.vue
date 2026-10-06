@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import ActivitySheet from '@/components/ActivitySheet.vue'
 import { useTracker } from '@/stores/tracker'
 
-defineProps<{ compact?: boolean }>()
+defineProps<{ compact?: boolean; minimal?: boolean }>()
 const tracker = useTracker()
 onMounted(() => tracker.init())
 
@@ -32,13 +32,19 @@ const saveNote = () => v.value && note.value.trim() !== (v.value.note ?? '') && 
   <div>
     <button
       v-if="!tracker.checkedInToday"
-      class="btn w-full !py-4 bg-lime-grit text-base font-bold text-black shadow-[0_6px_24px_rgba(200,245,96,.25)]"
+      class="btn w-full bg-lime-grit text-base font-bold text-black shadow-[0_6px_24px_rgba(200,245,96,.25)]"
+      :class="minimal ? '!py-3' : '!py-4'"
       data-testid="checkin"
       @click="go"
     >
-      <span aria-hidden="true">✅</span> {{ compact ? 'Catat latihan hari ini' : 'Sudah di gym? Catat latihan hari ini' }}
+      <span aria-hidden="true">✅</span> {{ compact || minimal ? 'Catat latihan hari ini' : 'Sudah di gym? Catat latihan hari ini' }}
     </button>
-    <button v-if="!tracker.checkedInToday" class="btn-ghost mx-auto mt-2 !flex min-h-11 w-fit !px-4 !py-1.5 text-xs" data-testid="other-activity" @click="sheet = 'add'">Aktivitas lain atau tanggal lain</button>
+    <template v-if="!tracker.checkedInToday">
+      <button v-if="!minimal" class="btn-ghost mx-auto mt-2 !flex min-h-11 w-fit !px-4 !py-1.5 text-xs" data-testid="other-activity" @click="sheet = 'add'">Aktivitas lain atau tanggal lain</button>
+    </template>
+    <p v-else-if="minimal" class="rounded-xl bg-lime-grit/10 px-4 py-3 text-center text-sm font-semibold text-lime-grit" data-testid="checked-in">
+      <span aria-hidden="true">✓</span> Latihan hari ini tercatat<span v-if="time"> · {{ time }}</span>
+    </p>
     <div v-else class="card p-4" data-testid="checked-in">
       <div class="flex items-center justify-between gap-3">
         <p class="font-semibold text-lime-grit"><span aria-hidden="true">✓</span> Latihan hari ini tercatat<span v-if="time"> · {{ time }}</span></p>

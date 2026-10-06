@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import SafeImg from '@/components/SafeImg.vue'
 import { paketKelas, paketMemberships, paketPt } from '@/api/endpoints'
 import PageHeader from '@/components/PageHeader.vue'
 import StateBox from '@/components/StateBox.vue'
@@ -39,7 +40,7 @@ const link = (id: number) => (tab.value === 'class' ? `/packages/class/${id}` : 
     <ul class="space-y-3 px-5">
       <li v-for="p in cur().data.value as any[]" :key="p.id">
         <RouterLink :to="link(p.id)" class="card flex gap-3 p-4">
-          <img v-if="tab === 'class' && p.foto" :src="assetUrl('/storage/kelas/' + p.foto)" alt="" loading="lazy" class="h-16 w-16 shrink-0 rounded-xl object-cover" />
+          <SafeImg v-if="tab === 'class'" :src="p.foto ? assetUrl('/storage/kelas/' + p.foto) : ''" :alt="p.nama" class="h-16 w-16 shrink-0 rounded-xl object-cover" />
           <div class="min-w-0">
             <p class="font-semibold">{{ p.nama }}</p>
             <p v-if="tab !== 'class'" class="text-sm text-white/55">

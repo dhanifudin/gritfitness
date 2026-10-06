@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 import { paketKelasDetail } from '@/api/endpoints'
 import BackHeader from '@/components/BackHeader.vue'
 import DetailRow from '@/components/DetailRow.vue'
+import SafeImg from '@/components/SafeImg.vue'
 import StateBox from '@/components/StateBox.vue'
 import { assetUrl, rupiah, useAsync } from '@/composables/useAsync'
 import { CK } from '@/lib/dataCache'
@@ -18,7 +19,7 @@ const html = computed(() => DOMPurify.sanitize(p.value?.deskripsi ?? ''))
   <BackHeader :title="p?.nama ?? 'Detail kelas'" :subtitle="p?.kategori" />
   <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="p" class="px-5">
-      <img v-if="p.foto" :src="assetUrl('/storage/kelas/' + p.foto)" alt="" class="mb-4 h-48 w-full rounded-2xl object-cover" />
+      <SafeImg v-if="p.foto" :src="assetUrl('/storage/kelas/' + p.foto)" :alt="p.nama" class="mb-4 h-48 w-full rounded-2xl object-cover" />
       <div class="card p-5">
         <p class="font-display text-3xl text-lime-grit">{{ rupiah(p.harga) }}</p>
         <dl class="mt-3 divide-y divide-white/8">
