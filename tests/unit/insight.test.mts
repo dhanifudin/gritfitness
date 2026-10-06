@@ -28,17 +28,30 @@ const noCpv = { spent: 0, visits: 0, perVisit: null }
 }
 ok('weekTrend: no visits -> recent 0, prior null', i.weekTrend([], NOW, 4).recent === 0 && i.weekTrend([], NOW, 4).prior === null)
 
-// favouriteWeekday ---------------------------------------------------------------------------------
+// favouriteWeekdays ---------------------------------------------------------------------------------
+const lab = (v: any) => i.favouriteLabel(i.favouriteWeekdays(v, NOW, 8))
 {
   // three Thursdays (2026-09-10/17/24), one Monday -> Thursday wins
   const v = V('2026-09-10', '2026-09-17', '2026-09-24', '2026-09-14')
-  ok('favouriteWeekday: clear winner', i.favouriteWeekday(v, NOW, 8) === 'Kamis', i.favouriteWeekday(v, NOW, 8))
+  ok('favouriteWeekdays: clear winner', lab(v) === 'Kamis', lab(v))
 }
-ok('favouriteWeekday: no data -> null', i.favouriteWeekday([], NOW, 8) === null)
+ok('favouriteWeekdays: no data -> null', lab([]) === null)
 {
-  // one Monday, one Tuesday: tie -> null
-  const v = V('2026-09-14', '2026-09-15')
-  ok('favouriteWeekday: tie -> null', i.favouriteWeekday(v, NOW, 8) === null)
+  // one Monday, one Tuesday: tie -> both listed in calendar order
+  const v = V('2026-09-15', '2026-09-14')
+  ok('favouriteWeekdays: 2-way tie lists both', lab(v) === 'Senin & Selasa', lab(v))
+}
+{
+  // Mon 09-14, Tue 09-15, Wed 09-16, Thu 09-17 all once: 4-way tie -> two most recent (Wed, Thu) + 2 more
+  const v = V('2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17')
+  const f = i.favouriteWeekdays(v, NOW, 8)
+  ok('favouriteWeekdays: 4-way tie keeps the 2 most recent', f.days.join() === '2,3' && f.extra === 2, JSON.stringify(f))
+  ok('favouriteWeekdays: 4-way tie label has the remainder', lab(v) === 'Rabu & Kamis (+2 hari lain)', lab(v))
+}
+{
+  // 3-way tie where the oldest weekday is Monday: recency drops Monday, not "first in the week" order
+  const v = V('2026-09-07', '2026-09-23', '2026-09-24')
+  ok('favouriteWeekdays: 3-way tie drops the least recent', lab(v) === 'Rabu & Kamis (+1 hari lain)', lab(v))
 }
 
 // dailyInsight --------------------------------------------------------------------------------------

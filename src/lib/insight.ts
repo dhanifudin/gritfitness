@@ -5,7 +5,7 @@
 import type { CostPerVisit } from './budget.ts'
 import type { Signup } from './trackerData.ts'
 import type { Slot } from './timetable.ts'
-import { VISIT_MILESTONES, activityBreakdown, type Streaks, type Visit, visitDays, weekCounts, weekdayHistogram, weekdayOf, ymd } from './tracker.ts'
+import { VISIT_MILESTONES, activityBreakdown, addDays, mondayOf, parseYmd, type Streaks, type Visit, visitDays, weekCounts, weekdayHistogram, weekdayOf, ymd } from './tracker.ts'
 
 const WEEKDAY_NAMES = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
 
@@ -29,13 +29,43 @@ export function weekTrend(visits: Visit[], now: Date, weeks = 4): WeekTrend {
   return { recent: recentAvg, prior: priorAvg }
 }
 
-/** The weekday (Mon..Sun) the member visits most over the last `weeks` weeks, or null without a clear favourite. */
-export function favouriteWeekday(visits: Visit[], now: Date, weeks = 8): string | null {
+export interface FavouriteWeekdays {
+  /** weekday indexes (Mon = 0) in calendar order, at most `limit` of them */
+  days: number[]
+  /** further weekdays tied for most visits that are not listed */
+  extra: number
+}
+
+/**
+ * The weekday(s) the member visits most over the last `weeks` weeks. Every weekday tied for the top count
+ * is a favourite; when more than `limit` tie, the ones with the most recent visit are kept (recent habit
+ * says more than an arbitrary weekday order) and the rest are only counted in `extra`.
+ */
+export function favouriteWeekdays(visits: Visit[], now: Date, weeks = 8, limit = 2): FavouriteWeekdays {
   const hist = weekdayHistogram(visits, now, weeks)
   const max = Math.max(...hist)
-  if (max === 0) return null
-  if (hist.filter((c) => c === max).length > 1) return null // tie: no clear favourite
-  return WEEKDAY_NAMES[hist.indexOf(max)]
+  if (max === 0) return { days: [], extra: 0 }
+  const tied = hist.flatMap((c, i) => (c === max ? [i] : []))
+  if (tied.length <= limit) return { days: tied, extra: 0 }
+
+  const from = ymd(addDays(mondayOf(now), -7 * (weeks - 1)))
+  const latest = new Map<number, string>()
+  for (const d of visitDays(visits)) {
+    if (d < from) continue
+    const w = weekdayOf(parseYmd(d))
+    if (d > (latest.get(w) ?? '')) latest.set(w, d)
+  }
+  const kept = [...tied]
+    .sort((a, b) => (latest.get(b) ?? '').localeCompare(latest.get(a) ?? '') || a - b)
+    .slice(0, limit)
+    .sort((a, b) => a - b)
+  return { days: kept, extra: tied.length - kept.length }
+}
+
+/** "Senin & Kamis" or "Senin & Kamis (+2 hari lain)"; null when there is no data. */
+export function favouriteLabel(f: FavouriteWeekdays): string | null {
+  if (!f.days.length) return null
+  return f.days.map((d) => WEEKDAY_NAMES[d]).join(' & ') + (f.extra ? ` (+${f.extra} hari lain)` : '')
 }
 
 export interface FavouriteClassToday {
@@ -89,7 +119,7 @@ export function dailyInsight(
     candidates.push({ kind: 'milestone', text: `${total} latihan sejauh ini — ${nextMilestone - total} lagi menuju ${nextMilestone}.` })
   }
 
-  const fav = favouriteWeekday(visits, now)
+  const fav = favouriteLabel(favouriteWeekdays(visits, now))
   if (fav) candidates.push({ kind: 'weekday', text: `${fav} biasanya jadi hari latihanmu.` })
 
   if (cpv.perVisit != null) {

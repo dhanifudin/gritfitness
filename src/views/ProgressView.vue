@@ -14,6 +14,7 @@ import { rupiah, useAsync } from '@/composables/useAsync'
 import { activityLabel, activityMeta } from '@/lib/activities'
 import { costPerVisit, monthlySpend, otherActivitySpend, totalSpent, unpaidSummary } from '@/lib/budget'
 import { CK } from '@/lib/dataCache'
+import { favouriteLabel, favouriteWeekdays } from '@/lib/insight'
 import { activityBreakdown, counts, parseYmd, weekCounts, weekdayHistogram, ymd, type Visit } from '@/lib/tracker'
 import { weightChange } from '@/lib/trackerData'
 import { useTracker } from '@/stores/tracker'
@@ -63,9 +64,8 @@ const monthLabel = (m: string) => MONTH_SHORT[Number(m.slice(5, 7)) - 1]
 const s = computed(() => tracker.stats)
 const weeks = computed(() => weekCounts(tracker.visits, tracker.now, 8))
 const hist = computed(() => weekdayHistogram(tracker.visits, tracker.now, 8))
-const DAY_FULL = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
 const DAY_SHORT = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
-const favourite = computed(() => (Math.max(...hist.value) > 0 ? DAY_FULL[hist.value.indexOf(Math.max(...hist.value))] : null))
+const favourite = computed(() => favouriteLabel(favouriteWeekdays(tracker.visits, tracker.now, 8)))
 const histMax = computed(() => Math.max(1, ...hist.value))
 const planned = computed(() => tracker.signups.filter((x) => x.status === 'planned').map((x) => x.scheduled_on))
 const goal = computed(() => tracker.settings.goal_per_week)
