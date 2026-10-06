@@ -13,6 +13,7 @@ import WeekBars from '@/components/WeekBars.vue'
 import { rupiah, useAsync } from '@/composables/useAsync'
 import { activityLabel, activityMeta } from '@/lib/activities'
 import { costPerVisit, monthlySpend, otherActivitySpend, totalSpent, unpaidSummary } from '@/lib/budget'
+import { useSyncLabel } from '@/composables/useSyncLabel'
 import { CK } from '@/lib/dataCache'
 import { favouriteLabel, favouriteWeekdays } from '@/lib/insight'
 import { activityBreakdown, counts, parseYmd, weekCounts, weekdayHistogram, ymd, type Visit } from '@/lib/tracker'
@@ -69,22 +70,7 @@ const favourite = computed(() => favouriteLabel(favouriteWeekdays(tracker.visits
 const histMax = computed(() => Math.max(1, ...hist.value))
 const planned = computed(() => tracker.signups.filter((x) => x.status === 'planned').map((x) => x.scheduled_on))
 const goal = computed(() => tracker.settings.goal_per_week)
-const hour = computed(() => tracker.settings.reminder_hour ?? 17)
-const syncLabel = computed(() =>
-  tracker.localOnly ? 'Hanya di perangkat ini'
-  : !tracker.consented ? 'Belum disinkronkan'
-  : tracker.pending ? `Menunggu sinkron (${tracker.pending})`
-  : tracker.lastSyncAt ? `Tersinkron ${new Date(tracker.lastSyncAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`
-  : 'Menunggu sinkron',
-)
-const enablingSync = ref(false)
-async function enableCloudSync() {
-  enablingSync.value = true
-  tracker.consent(tracker.settings.goal_per_week)
-  await tracker.sync()
-  enablingSync.value = false
-}
-
+const syncLabel = useSyncLabel()
 // ---- tubuh ----
 const form = ref({ date: today.value, weight: '', waist: '', fat: '' })
 const formError = ref('')
@@ -104,11 +90,6 @@ function saveMetric() {
 const weightPoints = computed(() => tracker.metrics.filter((m) => m.weight_kg != null).map((m) => ({ date: m.measured_on, value: m.weight_kg! })))
 const waistPoints = computed(() => tracker.metrics.filter((m) => m.waist_cm != null).map((m) => ({ date: m.measured_on, value: m.waist_cm! })))
 const change30 = computed(() => weightChange(tracker.metrics, 30, tracker.now))
-const goalWeight = ref(tracker.settings.goal_weight_kg != null ? String(tracker.settings.goal_weight_kg) : '')
-function saveGoalWeight() {
-  const v = num(goalWeight.value)
-  tracker.setSettings({ goal_weight_kg: v != null && v >= 20 && v <= 400 ? v : null })
-}
 const metricLine = (m: (typeof tracker.metrics)[number]) =>
   [m.weight_kg != null ? `${m.weight_kg} kg` : null, m.waist_cm != null ? `pinggang ${m.waist_cm} cm` : null, m.body_fat_pct != null ? `lemak ${m.body_fat_pct}%` : null]
     .filter(Boolean)
@@ -122,14 +103,14 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
 </script>
 
 <template>
-  <PageHeader title="Progres" :subtitle="`Target ${goal}x seminggu · ${syncLabel}`" />
+  <PageHeader title="Progres" :subtitle="`Target ${goal}x seminggu · ${syncLabel}`">
+    <template #action>
+      <RouterLink to="/settings" class="btn-ghost mt-1 h-11 w-11 shrink-0 !p-0" aria-label="Pengaturan" data-testid="open-settings">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" /></svg>
+      </RouterLink>
+    </template>
+  </PageHeader>
 
-  <div v-if="tracker.localOnly" class="mx-5 mb-4 flex items-center justify-between gap-3 rounded-xl bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
-    <span>Progres hanya tersimpan di perangkat ini — tidak muncul di perangkat/browser lain, dan fitur daftar otomatis kelas butuh ini aktif.</span>
-    <button class="btn-primary shrink-0 !px-3 !py-1.5 text-xs disabled:opacity-60" :disabled="enablingSync" data-testid="enable-cloud-sync" @click="enableCloudSync">
-      {{ enablingSync ? 'Mengaktifkan…' : 'Aktifkan' }}
-    </button>
-  </div>
 
   <div class="mx-5 mb-4 grid grid-cols-5 gap-1 rounded-xl bg-white/5 p-1" role="tablist">
     <button
@@ -176,22 +157,6 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
       <button class="btn-ghost mt-3 w-full !py-2" data-testid="add-activity" @click="openAdd()">Tambah aktivitas</button>
     </section>
 
-    <section class="card space-y-4 p-4">
-      <h2 class="text-sm font-semibold">Pengaturan</h2>
-      <div class="flex items-center justify-between">
-        <span class="text-sm">Target per minggu</span>
-        <div class="flex items-center gap-3">
-          <button class="btn-ghost !px-3 !py-1.5" aria-label="Kurangi target" :disabled="goal <= 1" @click="tracker.setSettings({ goal_per_week: goal - 1 })">−</button>
-          <span class="w-6 text-center font-display text-lg" data-testid="goal-value">{{ goal }}</span>
-          <button class="btn-ghost !px-3 !py-1.5" aria-label="Tambah target" :disabled="goal >= 7" @click="tracker.setSettings({ goal_per_week: goal + 1 })">+</button>
-        </div>
-      </div>
-      <label class="flex items-center justify-between text-sm">Pengingat setelah jam
-        <select class="input !w-auto !py-2" :value="hour" @change="tracker.setSettings({ reminder_hour: Number(($event.target as HTMLSelectElement).value) })">
-          <option v-for="h in 18" :key="h" :value="h + 4">{{ String(h + 4).padStart(2, '0') }}.00</option>
-        </select>
-      </label>
-    </section>
   </div>
 
   <!-- BADGE -->
@@ -262,9 +227,6 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
         <span v-if="change30 !== null" class="text-xs" :class="change30 <= 0 ? 'text-lime-grit' : 'text-amber-300'" data-testid="change30">{{ change30 > 0 ? '+' : '' }}{{ change30 }} kg / 30 hari</span>
       </div>
       <MetricChart :points="weightPoints" unit="kg" :target="tracker.settings.goal_weight_kg ?? null" />
-      <label class="mt-3 flex items-center justify-between text-xs text-white/55">Target berat (kg)
-        <input v-model="goalWeight" inputmode="decimal" class="input !w-24 !py-1.5 text-right" placeholder="-" @change="saveGoalWeight" />
-      </label>
     </section>
     <section v-if="waistPoints.length > 0" class="card p-4"><h2 class="mb-2 text-sm font-semibold">Lingkar pinggang</h2><MetricChart :points="waistPoints" unit="cm" /></section>
 

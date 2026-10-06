@@ -13,6 +13,7 @@ const tabs = [
 // Editing the profile is a button inside the Profil page itself, not a second menu row.
 const moreLinks = [
   { to: '/profile', label: 'Profil' },
+  { to: '/settings', label: 'Pengaturan' },
   { to: '/memberships', label: 'Riwayat Membership' },
   { to: '/leave', label: 'Cuti Membership' },
   { to: '/packages', label: 'Paket' },
