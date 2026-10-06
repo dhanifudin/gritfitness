@@ -4,8 +4,8 @@
 //   'notracking' — the member hasn't logged anything in a while.
 //   'classopen'  — a watched class's registration window is probably opening soon; a nudge to open
 //                  the app, which then attempts the real registration itself (src/stores/classWatch.ts).
-//                  The nudge time here (19:00 the day before for a morning class, 07:00 the same day
-//                  for an afternoon one) is only the member's own observed heuristic, never authoritative
+//                  The nudge time (src/lib/classOpen.ts: 15:00 the day before for a morning class, 07:00 the
+//                  same day for an afternoon one) is only the member's own observed heuristic, never authoritative
 //                  — the app always decides against the row's real tanggal_mulai_daftar/tutup_daftar.
 // The decision logic is the exact same pure functions the in-app Home nudges use
 // (src/lib/insight.ts), imported directly so the two can never disagree.
@@ -24,13 +24,12 @@ import { favouriteClassToday, noTrackingNudge } from '../../../src/lib/insight.t
 import { daysSinceLastVisit, type Visit } from '../../../src/lib/tracker.ts'
 import type { Slot } from '../../../src/lib/timetable.ts'
 import type { Signup } from '../../../src/lib/trackerData.ts'
+import { jakartaFields, nudgeDue } from '../../../src/lib/classOpen.ts'
 import { gritServiceRequest } from '../_shared/grit.ts'
 
 const TIMETABLE_URL = 'https://grit.ulfillah.com/timetable.json'
 const FAVCLASS_COOLDOWN_DAYS = 1
 const NOTRACKING_COOLDOWN_DAYS = 3
-const MORNING_NUDGE_HOUR = 19 // evening before, for a class starting before noon
-const AFTERNOON_NUDGE_HOUR = 7 // same day, for a class starting at/after noon
 const CLASSOPEN_COOLDOWN_DAYS = 0.75 // one nudge per watched occurrence, not one per cron tick
 
 interface SubRow {
@@ -58,12 +57,6 @@ interface WatchRow {
   weekday: number
   start_time: string
   class_name: string
-}
-
-/** Jakarta has no DST; a fixed +7h offset is exact, not an approximation. */
-function jakartaFields(d: Date): { weekday: number; hour: number } {
-  const jk = new Date(d.getTime() + 7 * 3600_000)
-  return { weekday: (jk.getUTCDay() + 6) % 7, hour: jk.getUTCHours() + jk.getUTCMinutes() / 60 }
 }
 
 function groupBy<T extends { member_id: number }>(rows: T[]): Map<number, T[]> {
@@ -105,7 +98,7 @@ Deno.serve(async (req) => {
   const signupsByMember = groupBy(await signupsRes.json() as SignupRow[])
   const logByMember = groupBy(await logRes.json() as LogRow[])
   const watchByMember = groupBy(await watchRes.json() as WatchRow[])
-  const { weekday: todayWeekday, hour: jakartaHour } = jakartaFields(now)
+  const jakarta = jakartaFields(now)
 
   let sent = 0
   const pruned = new Set<string>()
@@ -134,13 +127,10 @@ Deno.serve(async (req) => {
     }
 
     for (const e of watchByMember.get(memberId) ?? []) {
-      const morning = e.start_time < '12:00'
-      const dueWeekday = morning ? (todayWeekday + 1) % 7 : todayWeekday
-      if (e.weekday !== dueWeekday) continue
-      if (jakartaHour < (morning ? MORNING_NUDGE_HOUR : AFTERNOON_NUDGE_HOUR)) continue
+      if (!nudgeDue(e, jakarta)) continue
       const last = log.filter((l) => l.kind === 'classopen' && l.watchlist_id === e.id).sort((a, b) => b.sent_at.localeCompare(a.sent_at))[0]
       if (last && daysSince(last.sent_at) < CLASSOPEN_COOLDOWN_DAYS) continue
-      const when = morning ? 'besok' : 'hari ini'
+      const when = e.weekday === jakarta.weekday ? 'hari ini' : 'besok'
       payloads.push({
         kind: 'classopen',
         title: 'Jadwal kelas mungkin sudah bisa didaftar',

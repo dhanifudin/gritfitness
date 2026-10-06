@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import SafeImg from '@/components/SafeImg.vue'
 import { assetUrl } from '@/composables/useAsync'
 import type { ClassMatch } from '@/lib/classInfo'
+import { opensLabel } from '@/lib/classOpen'
 import { useClassWatch } from '@/stores/classWatch'
 import { useTracker } from '@/stores/tracker'
 
@@ -31,6 +32,7 @@ const classWatch = useClassWatch()
 // watchlist check always decides off the row's real window anyway, so gate this on "not already
 // over", not on the predicted/confirmed display badge.
 const canWatch = computed(() => !props.session?.ended && props.session?.weekday != null && props.session.start_time && props.session.class_name && tracker.consented)
+const opens = computed(() => (props.session?.predicted && props.session.weekday != null && props.session.start_time ? opensLabel(props.session.weekday, props.session.start_time) : null))
 const watched = computed(() =>
   canWatch.value ? !!classWatch.activeFor(props.session!.weekday!, props.session!.start_time!, props.session!.class_name!) : false,
 )
@@ -62,7 +64,28 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
             </button>
           </div>
 
-          <div v-if="match" class="mt-2 flex flex-wrap gap-2 text-xs">
+          <div v-if="session" class="mt-2 text-sm">
+            <p class="text-white/80">{{ session.time }}<template v-if="session.instructor"> · {{ session.instructor }}</template></p>
+            <button
+              v-if="canWatch"
+              type="button"
+              class="mt-3 flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-left"
+              :class="watched ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/8 text-white/85'"
+              data-testid="watch-toggle"
+              @click="toggleWatch"
+            >
+              <span class="min-w-0">
+                <span class="block text-sm font-semibold">{{ watched ? 'Daftar otomatis aktif' : 'Daftar otomatis saat dibuka' }}</span>
+                <span v-if="opens" class="block text-xs font-normal text-white/55">Pendaftaran biasanya dibuka {{ opens }}.</span>
+              </span>
+              <span class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition" :class="watched ? 'bg-emerald-400' : 'bg-white/25'">
+                <span class="inline-block h-5 w-5 translate-x-0.5 rounded-full bg-white transition" :class="watched ? 'translate-x-5' : ''" />
+              </span>
+            </button>
+            <p v-else-if="!session.ended" class="mt-2 text-xs text-white/45">Aktifkan sinkronisasi (Pengaturan › Data & sinkronisasi) untuk daftar otomatis.</p>
+          </div>
+
+          <div v-if="match" class="mt-4 flex flex-wrap gap-2 text-xs">
             <span v-if="match.category" class="rounded-full bg-brand-400/25 px-2.5 py-1 font-semibold text-brand-300">{{ match.category.name }}</span>
             <span v-if="match.cls.minutes" class="rounded-full bg-white/8 px-2.5 py-1 text-white/70">{{ match.cls.minutes }} menit</span>
           </div>
@@ -73,24 +96,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
           <p v-if="match?.category?.tagline" class="mt-4 rounded-xl bg-white/5 p-3 text-xs leading-relaxed text-white/60">
             <span class="font-semibold text-white/75">Tentang kelas {{ match.category.name }}:</span> {{ match.category.tagline }}
           </p>
-
-          <div v-if="session" class="mt-4 border-t border-white/10 pt-3 text-sm">
-            <p class="text-white/80">{{ session.time }}<template v-if="session.instructor"> · {{ session.instructor }}</template></p>
-            <p v-if="session.predicted" class="mt-1 text-xs text-amber-200/80">Perkiraan — jadwal pasti biasanya dibuka sehari sebelumnya.</p>
-            <button
-              v-if="canWatch"
-              type="button"
-              class="mt-3 flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold"
-              :class="watched ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/5 text-white/70'"
-              @click="toggleWatch"
-            >
-              <span>{{ watched ? 'Daftar otomatis aktif' : 'Daftar otomatis saat dibuka' }}</span>
-              <span class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition" :class="watched ? 'bg-emerald-400' : 'bg-white/20'">
-                <span class="inline-block h-4 w-4 translate-x-0.5 rounded-full bg-white transition" :class="watched ? 'translate-x-4' : ''" />
-              </span>
-            </button>
-            <p v-else-if="!session.ended" class="mt-1 text-xs text-white/40">Aktifkan sinkronisasi di Progres untuk daftar otomatis.</p>
-          </div>
         </div>
       </div>
     </div>

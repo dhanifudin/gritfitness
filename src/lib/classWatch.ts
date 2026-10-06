@@ -5,7 +5,7 @@
 // `GET /jadwal-kelas` only ever returns today's rows (confirmed live — a date query param is silently
 // ignored), so a future occurrence's real id genuinely doesn't exist yet. Each row that does exist
 // carries its own authoritative `tanggal_mulai_daftar`/`tanggal_tutup_daftar` window (confirmed live:
-// not a fixed 19:00/07:00 clock time) — that window, not a guessed time, is what gates the attempt.
+// not a fixed clock time) — that window, not a guessed time, is what gates the attempt.
 import { ymd, weekdayOf } from './tracker.ts'
 
 export interface WatchEntry {

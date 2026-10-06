@@ -51,7 +51,7 @@ export interface JadwalKelas {
   foto_url: string
   status_saya?: string
   /** registration window, 'YYYY-MM-DD HH:MM:SS' — confirmed present on live responses though not
-   *  consistently 19:00-day-before/07:00-same-day; always trust these over any guessed clock time. */
+   *  consistently 15:00-day-before/07:00-same-day; always trust these over any guessed clock time. */
   tanggal_mulai_daftar?: string
   tanggal_tutup_daftar?: string
 }
