@@ -44,7 +44,8 @@ export async function api<T>(path: string, { method = 'GET', body, emptyOn404 }:
   if (res.status === 404 && emptyOn404 !== undefined) return emptyOn404 as T
   if (!res.ok) {
     const msg = (data as { message?: string; error?: string } | null)?.message ?? (data as { error?: string } | null)?.error
-    throw new ApiError(res.status, msg ?? `Permintaan gagal (${res.status})`, data)
+    const sessionEnded = res.status === 401 && !!token && !path.startsWith('/verify-otp') && !path.startsWith('/request-otp')
+    throw new ApiError(res.status, sessionEnded ? 'Sesi berakhir. Masuk lagi untuk memuat data terbaru.' : (msg ?? `Permintaan gagal (${res.status})`), data)
   }
   return data as T
 }

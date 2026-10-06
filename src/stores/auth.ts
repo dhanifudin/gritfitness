@@ -6,6 +6,7 @@ import type { User } from '@/api/types'
 import { clearAll as clearData } from '@/lib/dataCache'
 import { saveLastPhone } from '@/lib/lastPhone'
 import { clearQr } from '@/lib/qrCache'
+import { endReason, msUntilExpiry, type EndReason } from '@/lib/session'
 import { revokeTrackerSession } from '@/lib/supabase'
 
 const userKey = 'grit.user'
@@ -22,6 +23,9 @@ export const useAuth = defineStore('auth', () => {
   const token = ref<string | null>(getToken())
   // bumped on expire() so `loggedIn` re-evaluates; the clock alone is not reactive
   const tick = ref(0)
+  /** Why the session ended while the profile is still remembered; null while logged in. */
+  const endedReason = ref<EndReason | null>(null)
+  let expiryTimer: ReturnType<typeof setTimeout> | undefined
 
   /** Token present and not past its server-issued expiry (about 5 h after login). */
   const tokenValid = computed(() => {
@@ -34,6 +38,17 @@ export const useAuth = defineStore('auth', () => {
   /** Profile is remembered but the token is gone/expired: only the cached QR stays reachable. */
   const sessionExpired = computed(() => !loggedIn.value && !!user.value)
 
+  /** Notice the natural expiry at the right moment (also after the device slept), not at some later request. */
+  function armExpiryTimer() {
+    clearTimeout(expiryTimer)
+    const ms = token.value ? msUntilExpiry(user.value?.token_expired, Date.now()) : null
+    if (ms != null) expiryTimer = setTimeout(recheck, ms + 500)
+  }
+  function recheck() {
+    if (token.value && !tokenValid.value) expire()
+    else tick.value++
+  }
+
   async function login(noHp: string, otp: string) {
     const { access_token, token_type, ...u } = await ep.verifyOtp(noHp, otp)
     void token_type
@@ -45,6 +60,8 @@ export const useAuth = defineStore('auth', () => {
     setToken(access_token)
     token.value = access_token
     user.value = u
+    endedReason.value = null
+    armExpiryTimer()
     localStorage.setItem(userKey, JSON.stringify(u))
     saveLastPhone(u.no_hp) // convenience only: remembered across logout, never used to skip OTP
     // tracker: load this member's local copy and push anything recorded while logged out
@@ -62,6 +79,9 @@ export const useAuth = defineStore('auth', () => {
 
   /** Session ended (401 / clock): drop the token but keep the profile and cached QR. */
   function expire() {
+    if (!token.value) return // already ended: parallel 401s must not repeat this
+    endedReason.value = endReason(user.value?.token_expired, Date.now())
+    clearTimeout(expiryTimer)
     setToken(null)
     token.value = null
     tick.value++
@@ -75,6 +95,8 @@ export const useAuth = defineStore('auth', () => {
     if (tokenValid.value) await tracker.flushBeforeLogout() // push queued check-ins first
     await tracker.wipe()
     if (tokenValid.value) await ep.logout().catch(() => {})
+    clearTimeout(expiryTimer)
+    endedReason.value = null
     setToken(null)
     token.value = null
     user.value = null
@@ -84,5 +106,7 @@ export const useAuth = defineStore('auth', () => {
     await caches?.delete('api').catch(() => {}) // leftover from v1 service-worker API caching
   }
 
-  return { user, token, loggedIn, tokenValid, sessionExpired, login, logout, expire, patchUser }
+  armExpiryTimer()
+
+  return { user, token, loggedIn, tokenValid, sessionExpired, endedReason, login, logout, expire, recheck, patchUser }
 })

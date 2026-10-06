@@ -12,13 +12,12 @@ app.use(createPinia())
 app.use(router)
 
 const auth = useAuth()
+// A 401 means the gym ended this session (it allows only one per account, so a login elsewhere revokes
+// it long before the 5h expiry). Don't yank the member to the login page from a background request: stay
+// on the page (App.vue shows a banner with a Masuk button). Only the live QR has a useful fallback.
 setUnauthorizedHandler(() => {
   auth.expire()
-  const r = router.currentRoute.value
-  if (r.name === 'saved-qr') return
-  // The cached QR stays usable; everything else needs a fresh login.
-  if (r.name === 'qr' && hasValidQr()) router.replace({ name: 'saved-qr' })
-  else router.replace({ name: 'login', query: { redirect: r.fullPath } })
+  if (router.currentRoute.value.name === 'qr' && hasValidQr()) router.replace({ name: 'saved-qr' })
 })
 
 app.mount('#app')

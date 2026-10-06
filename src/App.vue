@@ -16,7 +16,9 @@ import { useTracker } from '@/stores/tracker'
 const NO_CHROME = new Set(['login', 'register'])
 const route = useRoute()
 const auth = useAuth()
-const showTabs = computed(() => auth.loggedIn && !NO_CHROME.has(String(route.name)))
+// a session that ended while a protected page is open keeps the tab bar, so the layout doesn't jump
+const showTabs = computed(() => (auth.loggedIn || (auth.sessionExpired && !route.meta.public)) && !NO_CHROME.has(String(route.name)))
+const showExpired = computed(() => auth.sessionExpired && !route.meta.public)
 // no session, but a cached QR is still being shown offline: a minimal bar (QR + Masuk/Daftar), not the
 // full tab bar whose other destinations need a real session to do anything. Also kept on /login so this
 // bar never abruptly vanishes on the saved-qr -> login navigation; MiniTabBar itself decides whether the
@@ -25,7 +27,9 @@ const showMiniTabs = computed(() => !auth.loggedIn && (route.name === 'saved-qr'
 const online = useOnline()
 const { needRefresh, update, applyIfSafe, offlineReady } = useUpdater()
 // a waiting update is applied on the next navigation (never while typing)
-useRouter().afterEach(() => applyIfSafe())
+const router = useRouter()
+router.afterEach(() => applyIfSafe())
+const loginAgain = () => router.push({ name: 'login', query: { redirect: route.fullPath } })
 
 // one-time "works offline now" feedback after the first successful precache — otherwise a first-time
 // installer gets no confirmation at all that the app cached itself for offline use.
@@ -41,6 +45,7 @@ const tracker = useTracker()
 const classWatch = useClassWatch()
 const resync = () => {
   if (document.visibilityState !== 'visible') return
+  auth.recheck()
   void tracker.sync()
   void classWatch.checkAndRegister()
 }
@@ -83,6 +88,14 @@ watch(
   <div class="mx-auto flex h-full max-w-md flex-col bg-ink-950">
     <div v-if="!online" class="safe-t bg-amber-500/90 px-4 py-1.5 text-center text-xs font-semibold text-black">
       Offline — menampilkan data terakhir
+    </div>
+    <div v-if="showExpired" class="safe-t flex items-center justify-between gap-3 bg-amber-500/15 px-4 py-2 text-xs text-amber-100" data-testid="session-ended">
+      <p>
+        {{ auth.endedReason === 'early'
+          ? 'Sesi berakhir lebih awal — biasanya karena kamu masuk di perangkat atau aplikasi GritFitness lain (hanya satu yang bisa aktif).'
+          : 'Sesi 5 jam habis. Masuk lagi untuk memperbarui data.' }}
+      </p>
+      <button class="btn-primary min-h-11 shrink-0 !px-3 !py-1.5 text-xs" data-testid="login-again" @click="loginAgain">Masuk lagi</button>
     </div>
     <main class="safe-t flex-1 overflow-y-auto" :class="showTabs || showMiniTabs ? 'pb-28' : ''">
       <RouterView />
