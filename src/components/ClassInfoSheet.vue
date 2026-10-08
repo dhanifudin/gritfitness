@@ -53,51 +53,53 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 
 <template>
   <Teleport to="body">
-    <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/60" role="dialog" aria-modal="true" :aria-label="`Tentang kelas ${title}`" @click.self="emit('close')">
-      <div class="safe-b max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl border-t border-white/10 bg-ink-900">
+<Transition name="sheet" appear>    <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/60" role="dialog" aria-modal="true" :aria-label="`Tentang kelas ${title}`" @click.self="emit('close')">
+      <div class="sheet-panel safe-b max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl border-t border-white/8 bg-ink-900">
+        <div class="sheet-handle mt-3" aria-hidden="true" />
         <SafeImg v-if="props.match?.cls.photo" :src="assetUrl(props.match.cls.photo)" :alt="title" class="h-44 w-full object-cover" />
         <div class="p-5">
           <div class="flex items-start justify-between gap-3">
-            <h2 class="font-display text-2xl leading-tight">{{ match?.cls.name ?? title }}</h2>
+            <h2 class="font-display text-xl font-semibold leading-tight">{{ match?.cls.name ?? title }}</h2>
             <button class="-mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 active:bg-white/10" aria-label="Tutup" @click="emit('close')">
               <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
           </div>
 
           <div v-if="session" class="mt-2 text-sm">
-            <p class="text-white/80">{{ session.time }}<template v-if="session.instructor"> · {{ session.instructor }}</template></p>
+            <p class="text-white/70">{{ session.time }}<template v-if="session.instructor"> · {{ session.instructor }}</template></p>
             <button
               v-if="canWatch"
               type="button"
               class="mt-3 flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-left"
-              :class="watched ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/8 text-white/85'"
+              :class="watched ? 'bg-emerald-500/15 text-emerald-300' : 'bg-white/10 text-white/70'"
               data-testid="watch-toggle"
               @click="toggleWatch"
             >
               <span class="min-w-0">
                 <span class="block text-sm font-semibold">{{ watched ? 'Daftar otomatis aktif' : 'Daftar otomatis saat dibuka' }}</span>
-                <span v-if="opens" class="block text-xs font-normal text-white/55">Pendaftaran biasanya dibuka {{ opens }}.</span>
+                <span v-if="opens" class="block text-xs font-normal text-white/50">Pendaftaran biasanya dibuka {{ opens }}.</span>
               </span>
-              <span class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition" :class="watched ? 'bg-emerald-400' : 'bg-white/25'">
+              <span class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition" :class="watched ? 'bg-emerald-400' : 'bg-white/15'">
                 <span class="inline-block h-5 w-5 translate-x-0.5 rounded-full bg-white transition" :class="watched ? 'translate-x-5' : ''" />
               </span>
             </button>
-            <p v-else-if="!session.ended" class="mt-2 text-xs text-white/45">Aktifkan sinkronisasi (Pengaturan › Data & sinkronisasi) untuk daftar otomatis.</p>
+            <p v-else-if="!session.ended" class="mt-2 text-xs text-white/50">Aktifkan sinkronisasi (Pengaturan › Data & sinkronisasi) untuk daftar otomatis.</p>
           </div>
 
           <div v-if="match" class="mt-4 flex flex-wrap gap-2 text-xs">
-            <span v-if="match.category" class="rounded-full bg-brand-400/25 px-2.5 py-1 font-semibold text-brand-300">{{ match.category.name }}</span>
-            <span v-if="match.cls.minutes" class="rounded-full bg-white/8 px-2.5 py-1 text-white/70">{{ match.cls.minutes }} menit</span>
+            <span v-if="match.category" class="rounded-full bg-white/10 px-2.5 py-1 font-semibold text-white/70">{{ match.category.name }}</span>
+            <span v-if="match.cls.minutes" class="rounded-full bg-white/10 px-2.5 py-1 text-white/70">{{ match.cls.minutes }} menit</span>
           </div>
 
-          <p v-if="match?.cls.description" class="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/85">{{ match.cls.description }}</p>
-          <p v-else class="mt-4 text-sm text-white/55">Deskripsi kelas belum tersedia.</p>
+          <p v-if="match?.cls.description" class="mt-4 whitespace-pre-line text-sm leading-relaxed text-white/70">{{ match.cls.description }}</p>
+          <p v-else class="mt-4 text-sm text-white/50">Deskripsi kelas belum tersedia.</p>
 
-          <p v-if="match?.category?.tagline" class="mt-4 rounded-xl bg-white/5 p-3 text-xs leading-relaxed text-white/60">
-            <span class="font-semibold text-white/75">Tentang kelas {{ match.category.name }}:</span> {{ match.category.tagline }}
+          <p v-if="match?.category?.tagline" class="mt-4 rounded-xl bg-white/5 p-3 text-xs leading-relaxed text-white/50">
+            <span class="font-semibold text-white/70">Tentang kelas {{ match.category.name }}:</span> {{ match.category.tagline }}
           </p>
         </div>
       </div>
     </div>
+  </Transition>
   </Teleport>
 </template>

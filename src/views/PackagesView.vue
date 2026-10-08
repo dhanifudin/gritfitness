@@ -25,12 +25,12 @@ const link = (id: number) => (tab.value === 'class' ? `/packages/class/${id}` : 
 
 <template>
   <PageHeader title="Paket" subtitle="Informasi paket GritFitness" />
-  <div class="mx-5 mb-4 grid grid-cols-3 gap-1 rounded-xl bg-white/5 p-1">
+  <div class="seg mx-5 mb-4 grid-cols-3">
     <button
       v-for="t in tabs"
       :key="t.key"
-      class="min-h-11 rounded-lg py-2 text-sm font-semibold"
-      :class="tab === t.key ? 'bg-brand-400' : 'text-white/60'"
+      class="seg-tab"
+      :class="tab === t.key ? 'seg-tab-on' : ''"
       @click="tab = t.key"
     >
       {{ t.label }}
@@ -43,11 +43,11 @@ const link = (id: number) => (tab.value === 'class' ? `/packages/class/${id}` : 
           <SafeImg v-if="tab === 'class'" :src="p.foto ? assetUrl('/storage/kelas/' + p.foto) : ''" :alt="p.nama" class="h-16 w-16 shrink-0 rounded-xl object-cover" />
           <div class="min-w-0">
             <p class="font-semibold">{{ p.nama }}</p>
-            <p v-if="tab !== 'class'" class="text-sm text-white/55">
+            <p v-if="tab !== 'class'" class="text-sm text-white/50">
               {{ p.durasi }} {{ p.satuan_durasi }}<template v-if="p.jumlah_pertemuan"> · {{ p.jumlah_pertemuan }} pertemuan</template>
             </p>
-            <p v-else class="text-sm text-white/55">{{ p.durasi_waktu }} menit · maks {{ p.maksimal_member }} peserta</p>
-            <p class="mt-1 font-display text-lg text-lime-grit">{{ rupiah(p.harga) }}</p>
+            <p v-else class="text-sm text-white/50">{{ p.durasi_waktu }} menit · maks {{ p.maksimal_member }} peserta</p>
+            <p class="mt-1 font-display text-lg">{{ rupiah(p.harga) }}</p>
           </div>
         </RouterLink>
       </li>

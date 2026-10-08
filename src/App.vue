@@ -101,27 +101,27 @@ watch(
           ? 'Sesi berakhir lebih awal — biasanya karena kamu masuk di perangkat atau aplikasi GritFitness lain (hanya satu yang bisa aktif).'
           : 'Sesi 5 jam habis. Masuk lagi untuk memperbarui data.' }}
       </p>
-      <button class="btn-primary min-h-11 shrink-0 !px-3 !py-1.5 text-xs" data-testid="login-again" @click="loginAgain">Masuk lagi</button>
+      <button class="btn-primary min-h-11 shrink-0 !px-3 !py-1.5 !text-xs" data-testid="login-again" @click="loginAgain">Masuk lagi</button>
     </div>
     <main class="safe-t flex-1 overflow-y-auto" :class="showTabs || showMiniTabs ? 'pb-28' : ''">
       <RouterView />
     </main>
     <button
       v-if="needRefresh"
-      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl bg-lime-grit px-4 py-3 text-sm font-semibold text-black shadow-lg"
+      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl bg-grit-500 px-4 py-3 text-sm font-semibold text-white shadow-lg"
       @click="update"
     >
       Versi baru siap — ketuk untuk memperbarui sekarang
     </button>
     <p
       v-if="showOfflineToast"
-      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-white/10 bg-ink-900/95 px-4 py-3 text-center text-sm text-white/80 shadow-lg backdrop-blur"
+      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-white/8 bg-ink-900/95 px-4 py-3 text-center text-sm text-white/70 shadow-lg backdrop-blur"
     >
       Siap dipakai offline
     </p>
     <p
       v-if="watchToast"
-      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-white/10 bg-ink-900/95 px-4 py-3 text-center text-sm text-emerald-300 shadow-lg backdrop-blur"
+      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-white/8 bg-ink-900/95 px-4 py-3 text-center text-sm text-emerald-300 shadow-lg backdrop-blur"
     >
       {{ watchToast }}
     </p>

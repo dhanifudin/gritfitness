@@ -24,8 +24,8 @@ const other = computed(() =>
       <li v-if="showQr" class="flex justify-center">
         <RouterLink
           to="/qr"
-          class="flex flex-col items-center gap-0.5 px-2 py-1 text-[11px] font-medium"
-          :class="name === 'saved-qr' || name === 'qr' ? 'text-lime-grit' : 'text-white/50'"
+          class="flex flex-col items-center gap-0.5 px-2 py-1 text-xs font-medium"
+          :class="name === 'saved-qr' || name === 'qr' ? 'text-grit-300' : 'text-white/50'"
         >
           <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v1M14 20h1M18 18h3v3h-3z" />
@@ -34,7 +34,7 @@ const other = computed(() =>
         </RouterLink>
       </li>
       <li class="flex justify-center">
-        <RouterLink :to="other.to" class="flex flex-col items-center gap-0.5 px-2 py-1 text-[11px] font-medium text-white/50">
+        <RouterLink :to="other.to" class="flex flex-col items-center gap-0.5 px-2 py-1 text-xs font-medium text-white/50">
           <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <template v-if="other.icon === 'register'">
               <circle cx="9" cy="8" r="3.3" />

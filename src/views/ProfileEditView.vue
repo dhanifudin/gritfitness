@@ -53,29 +53,29 @@ async function submit() {
 <template>
   <BackHeader title="Ubah Profil" />
   <form class="space-y-4 px-5" @submit.prevent="submit">
-    <label class="block text-sm text-white/60">Nama
+    <label class="block text-sm text-white/50">Nama
       <input v-model="form.nama" class="input mt-1" required />
     </label>
-    <label class="block text-sm text-white/60">No. HP
+    <label class="block text-sm text-white/50">No. HP
       <input v-model="form.no_hp" type="tel" inputmode="numeric" class="input mt-1" required />
     </label>
-    <label class="block text-sm text-white/60">Email
+    <label class="block text-sm text-white/50">Email
       <input v-model="form.email" type="email" class="input mt-1" />
     </label>
-    <label class="block text-sm text-white/60">Tanggal lahir
+    <label class="block text-sm text-white/50">Tanggal lahir
       <input v-model="form.tanggal_lahir" type="date" class="input mt-1" />
     </label>
-    <label class="block text-sm text-white/60">Jenis kelamin
+    <label class="block text-sm text-white/50">Jenis kelamin
       <select v-model="form.jenis_kelamin" class="input mt-1">
         <option value="">Pilih</option>
         <option>Laki-Laki</option>
         <option>Perempuan</option>
       </select>
     </label>
-    <label class="block text-sm text-white/60">Alamat
+    <label class="block text-sm text-white/50">Alamat
       <textarea v-model="form.alamat" rows="2" class="input mt-1" />
     </label>
-    <label class="block text-sm text-white/60">Foto
+    <label class="block text-sm text-white/50">Foto
       <input type="file" accept="image/*" class="input mt-1" @change="pick" />
     </label>
     <img v-if="preview" :src="preview" alt="Pratinjau" class="h-24 w-24 rounded-xl object-cover" />

@@ -21,7 +21,7 @@ const { data, loading, error, savedAt, stale, reload } = useAsync(() => membersh
             <p class="font-semibold">{{ m.nama_paket }}</p>
             <StatusBadge :status="m.status" />
           </div>
-          <p class="mt-1 text-sm text-white/55">{{ m.tanggal_mulai }} – {{ m.tanggal_selesai }}</p>
+          <p class="mt-1 text-sm text-white/50">{{ m.tanggal_mulai }} – {{ m.tanggal_selesai }}</p>
         </RouterLink>
       </li>
     </ul>

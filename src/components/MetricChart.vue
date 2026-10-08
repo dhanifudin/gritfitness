@@ -25,13 +25,13 @@ const fmt = (s: string) => {
 <template>
   <div v-if="sorted.length" data-testid="metric-chart">
     <svg :viewBox="`0 0 ${W} ${H}`" class="w-full" role="img" :aria-label="`Grafik ${unit}`">
-      <line v-if="target != null" :x1="PAD" :x2="W - PAD" :y1="y(target)" :y2="y(target)" stroke="#c8f560" stroke-dasharray="4 4" stroke-opacity=".6" />
-      <path v-if="sorted.length > 1" :d="path" fill="none" stroke="#a29bfa" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
-      <circle v-for="(p, i) in sorted" :key="p.date" :cx="x(i)" :cy="y(p.value)" r="3.5" fill="#6f63f0" stroke="#0d0c26" stroke-width="1.5" />
+      <line v-if="target != null" :x1="PAD" :x2="W - PAD" :y1="y(target)" :y2="y(target)" stroke="var(--color-grit-500)" stroke-dasharray="4 4" stroke-opacity=".6" />
+      <path v-if="sorted.length > 1" :d="path" fill="none" stroke="var(--color-chart-2)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+      <circle v-for="(p, i) in sorted" :key="p.date" :cx="x(i)" :cy="y(p.value)" r="3.5" fill="var(--color-chart-2)" stroke="var(--color-ink-950)" stroke-width="1.5" />
     </svg>
-    <div class="mt-1 flex justify-between text-[11px] text-white/50">
+    <div class="chart-label mt-1 flex justify-between">
       <span>{{ fmt(sorted[0].date) }} · {{ sorted[0].value }} {{ unit }}</span>
-      <span v-if="target != null" class="text-lime-grit/80">target {{ target }} {{ unit }}</span>
+      <span v-if="target != null" class="!text-grit-300">target {{ target }} {{ unit }}</span>
       <span>{{ fmt(sorted[sorted.length - 1].date) }} · {{ sorted[sorted.length - 1].value }} {{ unit }}</span>
     </div>
   </div>

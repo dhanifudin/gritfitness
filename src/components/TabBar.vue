@@ -39,7 +39,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
           v-if="t.center"
           :to="t.to"
           aria-label="QR Member"
-          class="-mt-8 flex h-16 w-16 items-center justify-center rounded-full border-4 border-ink-950 bg-lime-grit text-black shadow-[0_6px_24px_rgba(200,245,96,.35)] transition active:scale-95"
+          class="-mt-8 flex h-16 w-16 items-center justify-center rounded-full border-4 border-ink-950 bg-grit-500 text-white shadow-[0_6px_24px_rgba(236,47,143,.3)] transition active:scale-95"
         >
           <svg viewBox="0 0 24 24" class="h-8 w-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v1M14 20h1M18 18h3v3h-3z" />
@@ -48,8 +48,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
         <RouterLink
           v-else
           :to="t.to"
-          class="flex flex-col items-center gap-0.5 px-2 py-1 text-[11px] font-medium text-white/50"
-          active-class="!text-brand-300"
+          class="flex flex-col items-center gap-0.5 px-2 py-1 text-xs font-medium text-white/50"
+          active-class="!text-grit-300"
         >
           <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path :d="t.icon" />
@@ -62,8 +62,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
           type="button"
           aria-haspopup="menu"
           :aria-expanded="open"
-          class="flex flex-col items-center gap-0.5 px-2 py-1 text-[11px] font-medium text-white/50"
-          :class="open ? '!text-brand-300' : ''"
+          class="flex flex-col items-center gap-0.5 px-2 py-1 text-xs font-medium text-white/50"
+          :class="open ? '!text-grit-300' : ''"
           @click="open = !open"
         >
           <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -77,17 +77,17 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     </ul>
 
     <Teleport to="body">
-      <div v-if="open" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60" role="menu" aria-label="Menu lainnya" data-testid="more-menu" @click.self="open = false">
-        <div class="safe-b w-full max-w-md rounded-t-3xl border-t border-white/10 bg-ink-900 p-3">
-          <p class="px-2 pt-1 pb-2 text-xs font-semibold tracking-wide text-white/40 uppercase">Menu lainnya</p>
+      <Transition name="sheet" appear><div v-if="open" class="fixed inset-0 z-50 flex items-end justify-center bg-black/60" role="menu" aria-label="Menu lainnya" data-testid="more-menu" @click.self="open = false">
+        <div class="sheet-panel safe-b w-full max-w-md rounded-t-3xl border-t border-white/8 bg-ink-900 p-3 pt-3"><div class="sheet-handle" />
+          <p class="px-2 pt-1 pb-2 text-xs text-white/50">Menu lainnya</p>
           <RouterLink
             v-for="l in moreLinks" :key="l.to" :to="l.to" role="menuitem"
             class="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium active:bg-white/5"
           >
-            {{ l.label }} <span class="text-white/40">›</span>
+            {{ l.label }} <svg viewBox="0 0 24 24" class="h-4 w-4 text-white/35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
           </RouterLink>
         </div>
-      </div>
+      </div></Transition>
     </Teleport>
   </nav>
 </template>

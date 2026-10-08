@@ -14,14 +14,14 @@ const met = computed(() => props.count >= props.goal)
       <circle cx="60" cy="60" :r="R" fill="none" stroke="currentColor" stroke-width="10" class="text-white/10" />
       <circle
         cx="60" cy="60" :r="R" fill="none" stroke-width="10" stroke-linecap="round"
-        :stroke="met ? '#c8f560' : '#6f63f0'"
+        :stroke="met ? 'var(--color-grit-500)' : 'var(--color-chart-2)'"
         :stroke-dasharray="C" :stroke-dashoffset="C * (1 - ratio)"
         style="transition: stroke-dashoffset .6s ease"
       />
     </svg>
     <div class="absolute inset-0 flex flex-col items-center justify-center">
-      <span class="font-display text-3xl leading-none" :class="met ? 'text-lime-grit' : ''">{{ count }}<span class="text-lg text-white/50">/{{ goal }}</span></span>
-      <span class="mt-1 text-[11px] text-white/55">{{ label ?? 'minggu ini' }}</span>
+      <span class="font-display text-3xl leading-none" :class="met ? 'text-grit-300' : ''">{{ count }}<span class="text-lg text-white/50">/{{ goal }}</span></span>
+      <span class="chart-label mt-1">{{ label ?? 'minggu ini' }}</span>
     </div>
   </div>
 </template>

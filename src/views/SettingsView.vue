@@ -24,9 +24,9 @@ const items = computed(() => [
       <RouterLink :to="i.to" class="card flex min-h-16 items-center justify-between gap-3 px-4 py-3" :data-testid="`settings-${i.to.split('/').pop()}`">
         <div class="min-w-0">
           <p class="font-semibold">{{ i.title }}</p>
-          <p class="truncate text-xs text-white/55">{{ i.hint }}</p>
+          <p class="truncate text-xs text-white/50">{{ i.hint }}</p>
         </div>
-        <span class="text-white/40" aria-hidden="true">›</span>
+        <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-white/35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
       </RouterLink>
     </li>
   </ul>

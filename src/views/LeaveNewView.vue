@@ -29,13 +29,13 @@ async function submit() {
 <template>
   <BackHeader title="Ajukan Cuti" />
   <form class="space-y-4 px-5" @submit.prevent="submit">
-    <label class="block text-sm text-white/60">Tanggal mulai
+    <label class="block text-sm text-white/50">Tanggal mulai
       <input v-model="awal" type="date" :min="today" class="input mt-1" required />
     </label>
-    <label class="block text-sm text-white/60">Tanggal selesai
+    <label class="block text-sm text-white/50">Tanggal selesai
       <input v-model="akhir" type="date" :min="awal || today" class="input mt-1" required />
     </label>
-    <label class="block text-sm text-white/60">Alasan
+    <label class="block text-sm text-white/50">Alasan
       <textarea v-model="keterangan" rows="3" class="input mt-1" placeholder="Alasan cuti" required />
     </label>
     <p v-if="!online" class="text-sm text-amber-300">Perlu koneksi internet untuk mengirim pengajuan.</p>

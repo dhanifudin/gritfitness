@@ -71,12 +71,12 @@ const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' 
       <SettingsButton />
     </div>
 
-    <div v-if="both" class="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-white/5 p-1">
+    <div v-if="both" class="seg mt-2 grid-cols-2">
       <button
         v-for="k in kinds"
         :key="k.key"
-        class="min-h-10 rounded-lg text-sm font-semibold transition"
-        :class="active === k.key ? 'bg-brand-400 text-white' : 'text-white/60'"
+        class="seg-tab"
+        :class="active === k.key ? 'seg-tab-on' : ''"
         @click="active = k.key"
       >
         {{ k.label }}
@@ -93,9 +93,9 @@ const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' 
       <RouterLink to="/packages" class="btn-primary mt-4">Lihat paket</RouterLink>
     </div>
 
-    <div v-if="cur" class="mt-2 flex items-center justify-center gap-2 text-xs text-white/45">
+    <div v-if="cur" class="mt-2 flex items-center justify-center gap-2 text-xs text-white/50">
       <span>Disimpan {{ stamp(cur.savedAt) }}<template v-if="failed"> · mode offline</template></span>
-      <button v-if="failed" class="btn-ghost min-h-11 !px-3 !py-1.5 text-xs" @click="load">Coba lagi</button>
+      <button v-if="failed" class="btn-sm" @click="load">Coba lagi</button>
     </div>
     <CheckInButton minimal class="mt-2" />
   </div>

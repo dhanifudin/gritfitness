@@ -50,9 +50,9 @@ async function togglePush() {
       <div class="flex items-center justify-between">
         <span class="text-sm">Target per minggu</span>
         <div class="flex items-center gap-3">
-          <button class="btn-ghost min-h-11 !px-3 !py-1.5" aria-label="Kurangi target" :disabled="goal <= 1" @click="tracker.setSettings({ goal_per_week: goal - 1 })">−</button>
+          <button class="btn-sm !text-sm" aria-label="Kurangi target" :disabled="goal <= 1" @click="tracker.setSettings({ goal_per_week: goal - 1 })"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14" /></svg></button>
           <span class="w-6 text-center font-display text-lg" data-testid="goal-value">{{ goal }}</span>
-          <button class="btn-ghost min-h-11 !px-3 !py-1.5" aria-label="Tambah target" :disabled="goal >= 7" @click="tracker.setSettings({ goal_per_week: goal + 1 })">+</button>
+          <button class="btn-sm !text-sm" aria-label="Tambah target" :disabled="goal >= 7" @click="tracker.setSettings({ goal_per_week: goal + 1 })"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg></button>
         </div>
       </div>
       <label class="flex items-center justify-between text-sm">Pengingat setelah jam
@@ -65,16 +65,16 @@ async function togglePush() {
       </label>
     </section>
 
-    <section class="card p-5" data-testid="push-settings">
+    <section class="card p-4" data-testid="push-settings">
       <div class="flex items-center justify-between gap-3">
         <div class="min-w-0">
           <p class="font-semibold">Notifikasi latihan</p>
-          <p class="mt-0.5 text-xs text-white/55">Kelas favorit yang terlewat, dan pengingat kalau belum tercatat beberapa hari.</p>
+          <p class="mt-0.5 text-xs text-white/50">Kelas favorit yang terlewat, dan pengingat kalau belum tercatat beberapa hari.</p>
         </div>
         <button
           type="button" role="switch" :aria-checked="pushOn" data-testid="push-toggle"
-          class="relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-60"
-          :class="pushOn ? 'bg-lime-grit' : 'bg-white/15'"
+          class="switch"
+          :class="pushOn ? 'switch-on' : ''"
           :disabled="pushBusy"
           @click="togglePush"
         >

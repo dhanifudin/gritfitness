@@ -16,7 +16,7 @@ const { data: b, loading, error, savedAt, stale, reload } = useAsync(() => billD
   <BackHeader title="Detail tagihan" :subtitle="b?.kode" />
   <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="b" class="px-5">
-      <div class="card p-5">
+      <div class="card p-4">
         <div class="flex items-start justify-between gap-3">
           <p class="font-semibold">{{ b.paket }}</p>
           <StatusBadge :status="b.status" />

@@ -48,16 +48,16 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
   <div class="flex h-full flex-col px-5 pt-5">
     <div class="flex items-center justify-between gap-3">
       <p class="min-w-0 truncate font-display text-lg font-semibold">{{ owner?.nama }}</p>
-      <span v-if="!auth.loggedIn" class="shrink-0 rounded-full bg-white/8 px-2.5 py-1 text-[11px] font-medium text-white/60">Tanpa login</span>
+      <span v-if="!auth.loggedIn" class="shrink-0 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/50">Tanpa login</span>
     </div>
 
     <template v-if="cur">
-      <div v-if="available.length > 1" class="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-white/5 p-1">
+      <div v-if="available.length > 1" class="seg mt-3 grid-cols-2">
         <button
           v-for="k in available"
           :key="k.key"
-          class="min-h-10 rounded-lg text-sm font-semibold transition"
-          :class="active === k.key ? 'bg-brand-400 text-white' : 'text-white/60'"
+          class="seg-tab"
+          :class="active === k.key ? 'seg-tab-on' : ''"
           @click="active = k.key"
         >
           {{ k.label }}
@@ -74,14 +74,14 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
         </p>
       </QrCard>
 
-      <p class="mt-2 text-center text-xs text-white/45">Disimpan {{ stamp(cur.savedAt) }}</p>
+      <p class="mt-2 text-center text-xs text-white/50">Disimpan {{ stamp(cur.savedAt) }}</p>
       <CheckInButton minimal class="mt-2" />
     </template>
 
-    <div v-else class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-      <svg viewBox="0 0 24 24" class="mx-auto h-10 w-10 text-white/25" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M20 14v3h-3M14 20h3" /></svg>
+    <div v-else class="mt-6 card p-6 text-center">
+      <svg viewBox="0 0 24 24" class="mx-auto h-10 w-10 text-white/35" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M20 14v3h-3M14 20h3" /></svg>
       <p class="mt-3 font-semibold">Belum ada QR tersimpan</p>
-      <p class="mt-1 text-sm text-white/60">Masuk sekali dan buka QR Anda, maka QR akan tersimpan untuk dipakai tanpa masuk lagi.</p>
+      <p class="mt-1 text-sm text-white/50">Masuk sekali dan buka QR Anda, maka QR akan tersimpan untuk dipakai tanpa masuk lagi.</p>
     </div>
   </div>
 </template>

@@ -53,10 +53,10 @@ async function verify() {
 </script>
 
 <template>
-  <div class="safe-t px-6 pt-12 pb-10">
+  <div class="safe-t px-5 pt-8 pb-10">
     <div class="mx-auto mb-8 rounded-2xl bg-white px-5 py-3"><img src="/logo.png" alt="GritFitness" class="h-14" /></div>
-    <h1 class="font-display text-3xl font-semibold">Masuk member</h1>
-    <p class="mt-1 mb-6 text-sm text-white/60">
+    <h1 class="font-display text-2xl font-semibold">Masuk member</h1>
+    <p class="mt-1 mb-6 text-sm text-white/50">
       {{ step === 'phone' ? 'Masukkan nomor WhatsApp yang terdaftar.' : `Kode OTP dikirim ke ${phone}.` }}
     </p>
 

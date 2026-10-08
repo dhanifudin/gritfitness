@@ -20,7 +20,7 @@ const { data, loading, error, savedAt, stale, reload } = useAsync(() => cutiList
           <p class="font-semibold">{{ c.status_cuti }}</p>
           <StatusBadge :status="c.status_paket" />
         </div>
-        <p v-if="c.tgl_awal" class="mt-1 text-sm text-white/60">{{ c.tgl_awal }} s.d. {{ c.tgl_akhir || '-' }}</p>
+        <p v-if="c.tgl_awal" class="mt-1 text-sm text-white/50">{{ c.tgl_awal }} s.d. {{ c.tgl_akhir || '-' }}</p>
         <p class="mt-1 text-sm text-white/50">Alasan: {{ c.nama_kegiatan }}</p>
       </li>
     </ul>

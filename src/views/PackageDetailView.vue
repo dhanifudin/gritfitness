@@ -15,8 +15,8 @@ const { data: p, loading, error, savedAt, stale, reload } = useAsync(() => packa
   <BackHeader :title="p?.nama ?? 'Detail paket'" :subtitle="route.params.type === 'pt' ? 'Personal Trainer' : 'Membership'" />
   <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="p" class="px-5">
-      <div class="card p-5">
-        <p class="font-display text-3xl text-lime-grit">{{ rupiah(p.harga) }}</p>
+      <div class="card p-4">
+        <p class="font-display text-3xl">{{ rupiah(p.harga) }}</p>
         <dl class="mt-3 divide-y divide-white/8">
           <DetailRow label="Durasi" :value="`${p.durasi} ${p.satuan_durasi}`" />
           <DetailRow v-if="p.total_durasi" label="Total hari" :value="`${p.total_durasi} hari`" />

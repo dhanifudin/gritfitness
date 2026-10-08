@@ -16,7 +16,7 @@ const { data: m, loading, error, savedAt, stale, reload } = useAsync(() => membe
   <BackHeader title="Detail membership" :subtitle="m?.kode_registrasi" />
   <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="m" class="px-5">
-      <div class="card p-5">
+      <div class="card p-4">
         <div class="flex items-start justify-between gap-3">
           <p class="font-semibold">{{ m.nama_paket }}</p>
           <StatusBadge :status="m.status" />
@@ -30,7 +30,7 @@ const { data: m, loading, error, savedAt, stale, reload } = useAsync(() => membe
         </dl>
       </div>
       <RouterLink v-if="m.invoice" :to="`/bills/${m.invoice.id}`" class="card mt-3 flex items-center justify-between px-4 py-4 text-sm font-medium">
-        Lihat tagihan {{ m.invoice.kode }} <span class="text-white/40">›</span>
+        Lihat tagihan {{ m.invoice.kode }} <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-white/35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
       </RouterLink>
     </div>
   </StateBox>

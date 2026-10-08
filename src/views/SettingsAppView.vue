@@ -46,15 +46,15 @@ async function out() {
     <section class="card p-4">
       <p class="text-xs text-white/50">Versi aplikasi</p>
       <p class="mt-1 font-semibold">{{ version.sha }} · {{ version.date }}</p>
-      <button class="btn-ghost mt-3 w-full disabled:opacity-50" :disabled="checking" data-testid="check-update" @click="checkUpdate">
+      <button class="btn-ghost mt-3 w-full" :disabled="checking" data-testid="check-update" @click="checkUpdate">
         {{ checking ? 'Memeriksa…' : 'Periksa pembaruan' }}
       </button>
-      <p v-if="updateMsg" class="mt-2 text-center text-xs text-white/55">{{ updateMsg }}</p>
+      <p v-if="updateMsg" class="mt-2 text-center text-xs text-white/50">{{ updateMsg }}</p>
     </section>
 
     <section class="card p-4">
       <p class="font-semibold">Akun</p>
-      <p class="mt-1 text-sm text-white/65">{{ auth.user?.nama }} · {{ auth.user?.no_hp }}</p>
+      <p class="mt-1 text-sm text-white/70">{{ auth.user?.nama }} · {{ auth.user?.no_hp }}</p>
       <button class="btn-ghost mt-3 w-full !text-red-300" data-testid="logout" @click="confirmOut = true">Keluar</button>
     </section>
   </div>

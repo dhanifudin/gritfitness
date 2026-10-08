@@ -52,16 +52,16 @@ async function submit() {
 <template>
   <BackHeader title="Daftar Member" subtitle="Buat akun GritFitness" />
   <form class="space-y-4 px-5 pb-10" @submit.prevent="submit">
-    <label class="block text-sm text-white/60">Nama lengkap<input v-model="form.nama" class="input mt-1" required /></label>
-    <label class="block text-sm text-white/60">Email<input v-model="form.email" type="email" class="input mt-1" required /></label>
-    <label class="block text-sm text-white/60">Tanggal lahir<input v-model="form.tanggal_lahir" type="date" class="input mt-1" required /></label>
-    <label class="block text-sm text-white/60">Jenis kelamin
+    <label class="block text-sm text-white/50">Nama lengkap<input v-model="form.nama" class="input mt-1" required /></label>
+    <label class="block text-sm text-white/50">Email<input v-model="form.email" type="email" class="input mt-1" required /></label>
+    <label class="block text-sm text-white/50">Tanggal lahir<input v-model="form.tanggal_lahir" type="date" class="input mt-1" required /></label>
+    <label class="block text-sm text-white/50">Jenis kelamin
       <select v-model="form.jenisKelamin" class="input mt-1"><option>Laki-Laki</option><option>Perempuan</option></select>
     </label>
-    <label class="block text-sm text-white/60">Alamat<textarea v-model="form.alamat" rows="2" class="input mt-1" required /></label>
+    <label class="block text-sm text-white/50">Alamat<textarea v-model="form.alamat" rows="2" class="input mt-1" required /></label>
 
     <div>
-      <label class="block text-sm text-white/60">Kota
+      <label class="block text-sm text-white/50">Kota
         <input v-model="cityQuery" class="input mt-1" placeholder="Cari nama kota…" />
       </label>
       <select v-model="form.kota" class="input mt-2" :disabled="!cities.length" required>
@@ -70,15 +70,15 @@ async function submit() {
       </select>
     </div>
 
-    <label class="block text-sm text-white/60">Foto (opsional)<input type="file" accept="image/*" class="input mt-1" @change="pickFoto" /></label>
-    <label class="block text-sm text-white/60">Pendaftar pelajar?
+    <label class="block text-sm text-white/50">Foto (opsional)<input type="file" accept="image/*" class="input mt-1" @change="pickFoto" /></label>
+    <label class="block text-sm text-white/50">Pendaftar pelajar?
       <select v-model="form.daftar_pelajar" class="input mt-1"><option>Tidak</option><option>Ya</option></select>
     </label>
-    <label v-if="form.daftar_pelajar === 'Ya'" class="block text-sm text-white/60">Kartu pelajar
+    <label v-if="form.daftar_pelajar === 'Ya'" class="block text-sm text-white/50">Kartu pelajar
       <input type="file" accept="image/*" class="input mt-1" required @change="pickPelajar" />
     </label>
 
-    <label class="block text-sm text-white/60">No. WhatsApp<input v-model="form.noHp" type="tel" inputmode="numeric" class="input mt-1" required /></label>
+    <label class="block text-sm text-white/50">No. WhatsApp<input v-model="form.noHp" type="tel" inputmode="numeric" class="input mt-1" required /></label>
     <button type="button" class="btn-ghost w-full" :disabled="otpAction.busy.value || form.noHp.length < 9" @click="sendOtp">
       {{ otpAction.busy.value ? 'Mengirim…' : otpSent ? 'Kirim ulang OTP' : 'Kirim OTP' }}
     </button>
