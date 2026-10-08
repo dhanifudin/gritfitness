@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { titleCase } from '@/lib/format'
 import { ref } from 'vue'
 import SafeImg from '@/components/SafeImg.vue'
 import { paketKelas, paketMemberships, paketPt } from '@/api/endpoints'
@@ -40,9 +41,9 @@ const link = (id: number) => (tab.value === 'class' ? `/packages/class/${id}` : 
     <ul class="space-y-3 px-5">
       <li v-for="p in cur().data.value as any[]" :key="p.id">
         <RouterLink :to="link(p.id)" class="card flex gap-3 p-4">
-          <SafeImg v-if="tab === 'class'" :src="p.foto ? assetUrl('/storage/kelas/' + p.foto) : ''" :alt="p.nama" class="h-16 w-16 shrink-0 rounded-xl object-cover" />
+          <SafeImg v-if="tab === 'class'" :src="p.foto ? assetUrl('/storage/kelas/' + p.foto) : ''" :alt="titleCase(p.nama)" class="h-16 w-16 shrink-0 rounded-xl object-cover" />
           <div class="min-w-0">
-            <p class="font-semibold">{{ p.nama }}</p>
+            <p class="font-semibold">{{ tab === 'class' ? titleCase(p.nama) : p.nama }}</p>
             <p v-if="tab !== 'class'" class="text-sm text-white/50">
               {{ p.durasi }} {{ p.satuan_durasi }}<template v-if="p.jumlah_pertemuan"> · {{ p.jumlah_pertemuan }} pertemuan</template>
             </p>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { titleCase } from '@/lib/format'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { classCancel, classDetail, classRegister, classWaiting } from '@/api/endpoints'
@@ -65,7 +66,7 @@ async function confirm() {
 </script>
 
 <template>
-  <BackHeader :title="c?.nama_jadwal_kelas ?? 'Detail kelas'" :subtitle="c?.nama_kelas" />
+  <BackHeader :title="c ? titleCase(c.nama_jadwal_kelas) : 'Detail kelas'" :subtitle="titleCase(c?.nama_kelas)" />
   <StateBox :loading="loading && !c" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="c" class="px-5">
       <div class="card px-4 py-2">
@@ -103,7 +104,7 @@ async function confirm() {
   <ConfirmSheet
     :open="sheet"
     :title="action?.label ?? ''"
-    :message="action?.kind === 'cancel' ? 'Tuliskan alasan pembatalan.' : `Konfirmasi untuk ${c?.nama_jadwal_kelas}, ${c?.tanggal} pukul ${c?.jam_awal}.`"
+    :message="action?.kind === 'cancel' ? 'Tuliskan alasan pembatalan.' : `Konfirmasi untuk ${titleCase(c?.nama_jadwal_kelas)}, ${c?.tanggal} pukul ${c?.jam_awal}.`"
     :confirm-label="action?.kind === 'cancel' ? 'Batalkan' : 'Ya, daftar'"
     :danger="action?.danger"
     :busy="busy || !canConfirm"

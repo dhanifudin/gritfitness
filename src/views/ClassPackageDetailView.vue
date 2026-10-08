@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { titleCase } from '@/lib/format'
 import DOMPurify from 'dompurify'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -16,7 +17,7 @@ const html = computed(() => DOMPurify.sanitize(p.value?.deskripsi ?? ''))
 </script>
 
 <template>
-  <BackHeader :title="p?.nama ?? 'Detail kelas'" :subtitle="p?.kategori" />
+  <BackHeader :title="p ? titleCase(p.nama) : 'Detail kelas'" :subtitle="p?.kategori" />
   <StateBox :loading="loading" :stale="stale" :saved-at="savedAt" :error="error" @retry="reload">
     <div v-if="p" class="px-5">
       <SafeImg v-if="p.foto" :src="assetUrl('/storage/kelas/' + p.foto)" :alt="p.nama" class="mb-4 h-48 w-full rounded-2xl object-cover" />

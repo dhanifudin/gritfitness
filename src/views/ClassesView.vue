@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { titleCase } from '@/lib/format'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { jadwalKelas, paketKelas } from '@/api/endpoints'
 import PageHeader from '@/components/PageHeader.vue'
@@ -108,10 +109,10 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
           v-bind="it.status === 'confirmed' ? { to: `/classes/${it.classId}` } : {}"
           class="flex w-full gap-3 p-3"
         >
-          <SafeImg :src="it.fotoUrl ? assetUrl(it.fotoUrl) : photoOf(it.packageId)" :alt="it.kelas" class="h-20 w-20 shrink-0 rounded-xl object-cover" />
+          <SafeImg :src="it.fotoUrl ? assetUrl(it.fotoUrl) : photoOf(it.packageId)" :alt="titleCase(it.kelas)" class="h-20 w-20 shrink-0 rounded-xl object-cover" />
           <div class="min-w-0 flex-1">
             <div class="flex items-start justify-between gap-2">
-              <p class="truncate font-display text-lg leading-tight">{{ it.name }}</p>
+              <p class="truncate font-display text-lg leading-tight">{{ titleCase(it.name) }}</p>
               <span class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="badge[it.status]">
                 <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <circle v-if="badgeIcon[it.status] === 'clock'" cx="12" cy="12" r="9" />
@@ -120,7 +121,7 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
                 {{ badgeText[it.status] }}
               </span>
             </div>
-            <p class="truncate text-sm text-white/50">{{ it.kelas }}<template v-if="it.instructor"> · {{ it.instructor }}</template></p>
+            <p class="truncate text-sm text-white/50">{{ titleCase(it.kelas) }}<template v-if="it.instructor"> · {{ it.instructor }}</template></p>
             <p class="mt-1 flex items-center gap-1.5 text-sm">
               {{ it.start }}–{{ it.end }}
               <template v-if="matchOf(it)?.category">
@@ -152,7 +153,7 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
   <ClassInfoSheet
     v-if="opened"
     :match="openedMatch"
-    :title="opened.name"
+    :title="titleCase(opened.name)"
     :session="{
       time: `${opened.start}–${opened.end}`,
       instructor: opened.instructor,

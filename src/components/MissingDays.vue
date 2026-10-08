@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { titleCase } from '@/lib/format'
 import { computed, ref } from 'vue'
 import ActivitySheet from '@/components/ActivitySheet.vue'
 import { addDays, parseYmd, ymd } from '@/lib/tracker'
@@ -24,7 +25,7 @@ const dayLabel = (d: string) => parseYmd(d).toLocaleDateString('id-ID', { weekda
     </div>
 
     <div v-for="c in tracker.pastSignups" :key="c.schedule_id" class="banner banner-info" data-testid="past-signup">
-      <p class="font-semibold">Jadi ikut {{ c.class_name }}?</p>
+      <p class="font-semibold">Jadi ikut {{ titleCase(c.class_name) }}?</p>
       <p class="mt-0.5 text-xs text-white/50">{{ dayLabel(c.scheduled_on) }}<span v-if="c.start_time"> · {{ c.start_time.slice(0, 5) }}</span></p>
       <div class="mt-3 grid grid-cols-2 gap-2">
         <button class="btn-primary !py-2" @click="tracker.attendClass(c.schedule_id)">Saya hadir</button>

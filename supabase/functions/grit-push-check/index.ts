@@ -25,6 +25,7 @@ import { daysSinceLastVisit, type Visit } from '../../../src/lib/tracker.ts'
 import type { Slot } from '../../../src/lib/timetable.ts'
 import type { Signup } from '../../../src/lib/trackerData.ts'
 import { jakartaFields, nudgeDue } from '../../../src/lib/classOpen.ts'
+import { titleCase } from '../../../src/lib/format.ts'
 import { gritServiceRequest } from '../_shared/grit.ts'
 
 const TIMETABLE_URL = 'https://grit.ulfillah.com/timetable.json'
@@ -116,7 +117,7 @@ Deno.serve(async (req) => {
     const fav = favouriteClassToday({ visits: asVisits, now, slots, signups: signups as Signup[] })
     const favLast = lastSent('favclass')
     if (fav && (!favLast || daysSince(favLast.sent_at) >= FAVCLASS_COOLDOWN_DAYS)) {
-      payloads.push({ kind: 'favclass', title: 'Kelas favoritmu hari ini', body: `${fav.className} jam ${fav.start} — belum daftar.`, url: '/classes' })
+      payloads.push({ kind: 'favclass', title: 'Kelas favoritmu hari ini', body: `${titleCase(fav.className)} jam ${fav.start} — belum daftar.`, url: '/classes' })
     } else {
       const sinceLast = daysSinceLastVisit(asVisits, now)
       const text = noTrackingNudge(sinceLast)
@@ -134,7 +135,7 @@ Deno.serve(async (req) => {
       payloads.push({
         kind: 'classopen',
         title: 'Jadwal kelas mungkin sudah bisa didaftar',
-        body: `${e.class_name} ${when} jam ${e.start_time} — buka app untuk coba daftar otomatis.`,
+        body: `${titleCase(e.class_name)} ${when} jam ${e.start_time} — buka app untuk coba daftar otomatis.`,
         url: '/classes',
         watchlist_id: e.id,
       })

@@ -1,3 +1,4 @@
+import { titleCase } from './format.ts'
 // Activity types a member can record. Pure data + helpers (no Vue, no I/O) so they can be unit-tested.
 import type { ClassInfoData } from './classInfo'
 
@@ -32,7 +33,7 @@ export interface ActivityFields {
 /** Human label of one entry: the class name for classes, the custom name for "Lainnya", else the type label. */
 export function activityLabel(v: ActivityFields): string {
   const a = v.activity ?? 'gym'
-  if (a === 'class') return v.class_name || 'Kelas'
+  if (a === 'class') return titleCase(v.class_name) || 'Kelas'
   if (a === 'other') return v.activity_name || 'Lainnya'
   return activityMeta(a).label
 }

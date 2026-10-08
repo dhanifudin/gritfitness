@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { titleCase } from '@/lib/format'
 import { computed, onMounted, ref } from 'vue'
 import { tagihan } from '@/api/endpoints'
 import ActivitySheet from '@/components/ActivitySheet.vue'
@@ -152,7 +153,7 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
           <span class="flex items-center gap-1.5"><ActivityIcon :kind="i.key" class="text-white/70" /> {{ i.label }}</span><span class="font-semibold">{{ i.count }}x</span>
         </li>
       </ul>
-      <p v-if="breakdown.topClass" class="mt-2 text-xs text-white/50">Kelas favorit: {{ breakdown.topClass.name }} ({{ breakdown.topClass.count }}x)</p>
+      <p v-if="breakdown.topClass" class="mt-2 text-xs text-white/50">Kelas favorit: {{ titleCase(breakdown.topClass.name) }} ({{ breakdown.topClass.count }}x)</p>
       <button class="btn-ghost mt-3 w-full !py-2" data-testid="add-activity" @click="openAdd()">Tambah aktivitas</button>
     </section>
 

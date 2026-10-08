@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { titleCase } from '@/lib/format'
 import { computed, onMounted, ref, watch } from 'vue'
 import { paketKelas, tagihan } from '@/api/endpoints'
 import CheckInButton from '@/components/CheckInButton.vue'
@@ -138,7 +139,7 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
         <div v-for="e in watchedShown" :key="e.id" class="flex items-center gap-3 px-4 py-2.5 text-sm" data-testid="watch-row">
           <div class="min-w-0 flex-1">
             <div class="flex items-center justify-between gap-3">
-              <span class="min-w-0 truncate font-medium">{{ e.class_name }}</span>
+              <span class="min-w-0 truncate font-medium">{{ titleCase(e.class_name) }}</span>
               <span class="shrink-0 text-white/50">{{ watchWhen(e, tracker.now) }}</span>
             </div>
             <div class="mt-0.5 flex items-center justify-between gap-3 text-xs">
@@ -173,7 +174,7 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
     <div v-if="favClass" class="banner banner-info mt-3 flex gap-2.5" data-testid="favclass-nudge">
       <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0 text-grit-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M16 2.5v4M8 2.5v4M3 10h18" /></svg>
       <div class="min-w-0">
-        <p class="font-semibold">{{ favClass.className }}<span class="font-normal text-white/50"> · {{ favClass.start.slice(0, 5) }}</span></p>
+        <p class="font-semibold">{{ titleCase(favClass.className) }}<span class="font-normal text-white/50"> · {{ favClass.start.slice(0, 5) }}</span></p>
         <p class="mt-0.5 text-xs text-white/50">Kelas favoritmu ada hari ini — belum daftar.</p>
         <RouterLink to="/classes" class="btn-sm mt-2">Lihat jadwal</RouterLink>
       </div>
@@ -183,7 +184,7 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
       <div v-for="c in todaySignups" :key="c.schedule_id" class="banner banner-info flex gap-2.5">
         <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0 text-grit-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M16 2.5v4M8 2.5v4M3 10h18" /></svg>
         <div class="min-w-0 flex-1">
-          <p class="font-semibold">{{ c.class_name }}<span v-if="c.start_time" class="font-normal text-white/50"> · {{ c.start_time.slice(0, 5) }}</span></p>
+          <p class="font-semibold">{{ titleCase(c.class_name) }}<span v-if="c.start_time" class="font-normal text-white/50"> · {{ c.start_time.slice(0, 5) }}</span></p>
           <p class="mt-0.5 text-xs text-white/50">Jadi ikut kelas?</p>
           <div class="mt-2 grid grid-cols-2 gap-2">
             <button class="btn-primary !py-2" @click="tracker.attendClass(c.schedule_id)">Saya hadir</button>
@@ -199,7 +200,7 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
       <p class="px-1 text-xs text-white/50">Kelas terdaftar</p>
       <div class="mt-1.5 card divide-y divide-white/8">
         <div v-for="c in upcomingSignups" :key="c.schedule_id" class="flex items-center justify-between px-4 py-2.5 text-sm">
-          <span class="font-medium">{{ c.class_name }}</span>
+          <span class="font-medium">{{ titleCase(c.class_name) }}</span>
           <span class="text-white/50">{{ parseYmd(c.scheduled_on).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }) }}<span v-if="c.start_time"> · {{ c.start_time.slice(0, 5) }}</span></span>
         </div>
       </div>
