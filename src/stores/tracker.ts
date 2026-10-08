@@ -14,6 +14,7 @@ import {
   reminder as pickReminder,
   visitedToday,
   addDays,
+  momentOn,
   ymd,
   type Messages,
   type Settings,
@@ -187,11 +188,11 @@ export const useTracker = defineStore('tracker', () => {
   }
 
   // ---- writes (local first) ------------------------------------------------------------------------------
-  function checkIn(o: { source?: Visit['source']; class_name?: string | null; energy?: number | null; note?: string | null; onlyOnce?: boolean } = {}): Visit {
+  function checkIn(o: { source?: Visit['source']; class_name?: string | null; energy?: number | null; note?: string | null; onlyOnce?: boolean; at?: Date } = {}): Visit {
     const source = o.source ?? 'checkin'
     const existing = todayVisit.value
     if (existing && (o.onlyOnce ?? source === 'checkin')) return existing
-    const t = new Date()
+    const t = o.at ?? new Date()
     const activity: Activity = source === 'class' ? 'class' : 'gym'
     const v: Visit = { client_id: crypto.randomUUID(), visited_on: ymd(t), visited_at: t.toISOString(), source, class_name: o.class_name ?? null, note: o.note ?? null, energy: o.energy ?? null, activity, counts_toward_goal: true }
     visits.value = sortVisits([v, ...visits.value])
@@ -216,7 +217,7 @@ export const useTracker = defineStore('tracker', () => {
     const v: Visit = {
       client_id: crypto.randomUUID(),
       visited_on: o.date,
-      visited_at: o.time ? new Date(`${o.date}T${o.time}:00`).toISOString() : null,
+      visited_at: momentOn(o.date, o.time)?.toISOString() ?? null,
       source: 'manual',
       activity: o.activity,
       activity_name: o.activity === 'other' ? o.activity_name?.trim() || null : null,
@@ -308,7 +309,8 @@ export const useTracker = defineStore('tracker', () => {
   function attendClass(scheduleId: number) {
     const s = signups.value.find((x) => x.schedule_id === scheduleId)
     if (!s) return
-    if (s.scheduled_on === ymd(new Date())) checkIn({ source: 'class', class_name: s.class_name, onlyOnce: false })
+    // the visit is stamped with the class's scheduled start, not the moment the question was answered
+    if (s.scheduled_on === ymd(new Date())) checkIn({ source: 'class', class_name: s.class_name, onlyOnce: false, at: momentOn(s.scheduled_on, s.start_time) ?? undefined })
     else addActivity({ date: s.scheduled_on, activity: 'class', class_name: s.class_name, time: s.start_time?.slice(0, 5) ?? null })
     setSignupStatus(scheduleId, 'attended')
   }

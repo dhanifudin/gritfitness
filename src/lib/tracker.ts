@@ -39,6 +39,13 @@ export const parseYmd = (s: string) => {
   const [y, m, d] = s.split('-').map(Number)
   return new Date(y, m - 1, d)
 }
+/** Local date + 'HH:MM' or 'HH:MM:SS' (what the server returns for a class start) as a Date; null when the time is missing or invalid. */
+export function momentOn(date: string, time?: string | null): Date | null {
+  const m = /^(\d{1,2}):(\d{2})(?::\d{2})?$/.exec((time ?? '').trim())
+  if (!m || +m[1] > 23 || +m[2] > 59) return null
+  const d = parseYmd(date)
+  return Number.isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate(), +m[1], +m[2])
+}
 export const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
 export const weekdayOf = (d: Date) => (d.getDay() + 6) % 7 // Mon = 0
 export const mondayOf = (d: Date) => addDays(new Date(d.getFullYear(), d.getMonth(), d.getDate()), -weekdayOf(d))

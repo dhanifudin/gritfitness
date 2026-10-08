@@ -90,3 +90,13 @@ const usual = V('2026-09-03', '2026-09-10', '2026-09-17', '2026-09-24') // Thurs
 ok('usual weekday, after reminder hour, nothing logged -> usual_day', t.reminder(usual, S, new Date(2026, 9, 1, 18, 0)).reason === 'usual_day')
 ok('usual weekday but before reminder hour -> quiet', !t.reminder(usual, S, new Date(2026, 9, 1, 9, 0)).show)
 ok('non-usual weekday -> quiet', !t.reminder(usual, S, new Date(2026, 8, 28, 18, 0)).show)
+
+// momentOn --------------------------------------------------------------------------------------
+{
+  const a = t.momentOn('2026-10-06', '17:00')
+  ok('momentOn: HH:MM is that local date and time', a.getFullYear() === 2026 && a.getMonth() === 9 && a.getDate() === 6 && a.getHours() === 17 && a.getMinutes() === 0)
+  const b = t.momentOn('2026-10-06', '08:15:00')
+  ok('momentOn: HH:MM:SS (server format) is accepted', b.getHours() === 8 && b.getMinutes() === 15)
+  ok('momentOn: missing / empty / garbage / out of range -> null', t.momentOn('2026-10-06', null) === null && t.momentOn('2026-10-06', '') === null && t.momentOn('2026-10-06', 'soon') === null && t.momentOn('2026-10-06', '25:00') === null && t.momentOn('2026-10-06', '10:75') === null)
+  ok('momentOn: bad date -> null', t.momentOn('not-a-date', '10:00') === null)
+}
