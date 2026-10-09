@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ProfileButton from '@/components/ProfileButton.vue'
 import SettingsButton from '@/components/SettingsButton.vue'
 
 defineProps<{ title: string; subtitle?: string; gear?: boolean }>()
@@ -10,6 +11,6 @@ defineProps<{ title: string; subtitle?: string; gear?: boolean }>()
       <h1 class="font-display text-2xl font-semibold">{{ title }}</h1>
       <p v-if="subtitle" class="mt-0.5 text-sm text-white/50">{{ subtitle }}</p>
     </div>
-    <SettingsButton v-if="gear" />
+    <div v-if="gear" class="flex shrink-0 gap-2"><ProfileButton /><SettingsButton /></div>
   </header>
 </template>

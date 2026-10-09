@@ -58,5 +58,20 @@ const membershipDaysLeft = computed(() => (gym.value && !gym.value.error ? daysL
         <p class="text-sm text-white/50">s.d. {{ pt.tanggal_selesai }}</p>
       </div>
     </div>
+
+    <ul class="mt-3 space-y-3">
+      <li>
+        <RouterLink to="/memberships" class="card flex min-h-16 items-center justify-between gap-3 px-4 py-3" data-testid="profile-memberships">
+          <p class="font-semibold">Riwayat Membership</p>
+          <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-white/35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+        </RouterLink>
+      </li>
+      <li>
+        <RouterLink to="/leave" class="card flex min-h-16 items-center justify-between gap-3 px-4 py-3" data-testid="profile-leave">
+          <p class="font-semibold">Cuti Membership</p>
+          <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-white/35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+        </RouterLink>
+      </li>
+    </ul>
   </div>
 </template>

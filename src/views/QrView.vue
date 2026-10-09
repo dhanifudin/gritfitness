@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { memberAktif, memberPtAktif } from '@/api/endpoints'
 import CheckInButton from '@/components/CheckInButton.vue'
 import QrCard from '@/components/QrCard.vue'
+import ProfileButton from '@/components/ProfileButton.vue'
 import SettingsButton from '@/components/SettingsButton.vue'
 import { hasValidQr, loadQr, syncQr, type QrEntry, type QrKind } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
@@ -68,7 +69,7 @@ const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' 
   <div class="flex h-full flex-col px-5 pt-5">
     <div class="flex items-center justify-between gap-3">
       <p class="min-w-0 truncate font-display text-lg font-semibold">{{ auth.user?.nama }}</p>
-      <SettingsButton />
+      <div class="flex shrink-0 gap-2"><ProfileButton /><SettingsButton /></div>
     </div>
 
     <div v-if="both" class="seg mt-2 grid-cols-2">

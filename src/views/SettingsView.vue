@@ -14,6 +14,7 @@ const items = computed(() => [
   { to: '/settings/target', title: 'Target & pengingat', hint: `${tracker.settings.goal_per_week}x seminggu · pengingat ${hour.value}.00` },
   { to: '/settings/data', title: 'Data & sinkronisasi', hint: syncLabel.value },
   { to: '/settings/app', title: 'Aplikasi & akun', hint: `Versi ${version.sha}` },
+  { to: '/saved-qr', title: 'QR Tersimpan (offline)', hint: 'Buka QR member tanpa login.' },
 ])
 </script>
 

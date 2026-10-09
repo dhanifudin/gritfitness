@@ -14,6 +14,7 @@ import { costPerVisit, unpaidSummary } from '@/lib/budget'
 import { parsePrice } from '@/lib/classValue'
 import { nextOccurrence, watchStatus, watchWhen } from '@/lib/classWatch'
 import { CK } from '@/lib/dataCache'
+import ProfileButton from '@/components/ProfileButton.vue'
 import SettingsButton from '@/components/SettingsButton.vue'
 import { dailyInsight, favouriteClassToday, noTrackingNudge, weekTrend } from '@/lib/insight'
 import { prefetchAll } from '@/lib/prefetch'
@@ -102,7 +103,7 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
         <p class="text-sm text-white/50">{{ dateLabel }}</p>
         <h1 class="truncate font-display text-2xl font-semibold">Halo, {{ first }}!</h1>
       </div>
-      <SettingsButton />
+      <div class="flex shrink-0 gap-2"><ProfileButton /><SettingsButton /></div>
     </div>
 
     <section class="card mt-3 p-4" data-testid="goal-card">
