@@ -11,6 +11,8 @@ import ClassInfoSheet from '@/components/ClassInfoSheet.vue'
 import SafeImg from '@/components/SafeImg.vue'
 import classInfo from '@/data/classInfo.json'
 import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
+import { parseYmd, signupDue, ymd } from '@/lib/tracker'
+import { useTracker } from '@/stores/tracker'
 import { DAY_NAMES, mergeDay, sameDay, weekDates, weekdayOf, weekLabel, type DayItem, type Slot } from '@/lib/timetable'
 
 const MAX_OFFSET = 3 // current week + 3 weeks ahead
@@ -58,6 +60,19 @@ const week = computed(() => dates.value.map((d) => mergeDay(d, actual.value, slo
 const items = computed(() => week.value[selected.value])
 const generated = new Date(timetable.generatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 
+// ---- "Terdaftar" view: the member's own classes (today from the API, later from the tracker) ----
+const tracker = useTracker()
+onMounted(() => tracker.init())
+type View = 'mine' | 'all'
+const view = ref<View>('mine')
+const mineToday = computed(() => mergeDay(now.value, actual.value, [], now.value).filter((i) => i.mine))
+const mineUpcoming = computed(() =>
+  tracker.signups
+    .filter((s) => s.status === 'planned' && (s.scheduled_on > ymd(now.value) || (s.scheduled_on === ymd(now.value) && !signupDue(s, now.value) && !mineToday.value.length)))
+    .sort((a, b) => a.scheduled_on.localeCompare(b.scheduled_on) || (a.start_time ?? '').localeCompare(b.start_time ?? '')),
+)
+const upDay = (on: string) => (on === ymd(now.value) ? 'Hari ini' : parseYmd(on).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }))
+
 const badge = {
   confirmed: 'bg-emerald-500/20 text-emerald-300',
   predicted: 'bg-amber-500/15 text-amber-300',
@@ -69,8 +84,48 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
 </script>
 
 <template>
-  <PageHeader title="Kelas" :subtitle="weekLabel(dates)" gear />
+  <PageHeader title="Kelas" :subtitle="view === 'all' ? weekLabel(dates) : 'Kelas yang kamu ikuti'" gear />
 
+  <div class="seg mx-5 mb-3 grid-cols-2" role="tablist">
+    <button role="tab" :aria-selected="view === 'mine'" class="seg-tab" :class="view === 'mine' ? 'seg-tab-on' : ''" data-testid="view-mine" @click="view = 'mine'">Terdaftar</button>
+    <button role="tab" :aria-selected="view === 'all'" class="seg-tab" :class="view === 'all' ? 'seg-tab-on' : ''" data-testid="view-all" @click="view = 'all'">Jadwal</button>
+  </div>
+
+  <template v-if="view === 'mine'">
+    <div class="space-y-3 px-5" data-testid="mine-list">
+      <RouterLink
+        v-for="it in mineToday"
+        :key="it.key"
+        :to="`/classes/${it.classId}`"
+        class="card flex items-center justify-between gap-3 p-4"
+      >
+        <div class="min-w-0">
+          <p class="truncate font-display text-lg leading-tight">{{ titleCase(it.name) }}</p>
+          <p class="mt-0.5 text-sm text-white/50">Hari ini · {{ it.start }}–{{ it.end }}<template v-if="it.instructor"> · {{ it.instructor }}</template></p>
+        </div>
+        <span class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="it.mine === 'peserta' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/15 text-amber-300'">
+          <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+          {{ it.mine === 'peserta' ? 'Terdaftar' : 'Waiting list' }}
+        </span>
+      </RouterLink>
+
+      <div v-for="s in mineUpcoming" :key="s.schedule_id" class="card flex items-center justify-between gap-3 p-4">
+        <div class="min-w-0">
+          <p class="truncate font-display text-lg leading-tight">{{ titleCase(s.class_name) }}</p>
+          <p class="mt-0.5 text-sm text-white/50">{{ upDay(s.scheduled_on) }}<template v-if="s.start_time"> · {{ s.start_time.slice(0, 5) }}</template></p>
+        </div>
+        <span class="shrink-0 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300">Terdaftar</span>
+      </div>
+
+      <div v-if="!mineToday.length && !mineUpcoming.length" class="card p-6 text-center" data-testid="mine-empty">
+        <p class="font-semibold">Belum ada kelas terdaftar</p>
+        <p class="mt-1 text-sm text-white/50">Daftar dari jadwal, atau nyalakan daftar otomatis di kelas yang kamu mau.</p>
+        <button class="btn-primary mt-4 w-full" @click="view = 'all'">Lihat jadwal</button>
+      </div>
+    </div>
+  </template>
+
+  <template v-else>
   <div class="mb-3 flex items-center justify-between px-5">
     <button class="btn-sm !text-sm" :disabled="offset === 0" aria-label="Minggu sebelumnya" @click="go(-1)"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
     <span class="text-xs text-white/50">{{ offset === 0 ? 'Minggu ini' : offset === 1 ? 'Minggu depan' : `${offset} minggu lagi` }}</span>
@@ -113,7 +168,11 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
           <div class="min-w-0 flex-1">
             <div class="flex items-start justify-between gap-2">
               <p class="truncate font-display text-lg leading-tight">{{ titleCase(it.name) }}</p>
-              <span class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="badge[it.status]">
+              <span v-if="it.mine" class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="it.mine === 'peserta' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/15 text-amber-300'">
+                <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+                {{ it.mine === 'peserta' ? 'Terdaftar' : 'Waiting list' }}
+              </span>
+              <span v-else class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="badge[it.status]">
                 <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <circle v-if="badgeIcon[it.status] === 'clock'" cx="12" cy="12" r="9" />
                   <path :d="badgeIcon[it.status] === 'clock' ? 'M12 7v5l3 3' : 'M20 6L9 17l-5-5'" />
@@ -146,7 +205,9 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
     </ul>
   </StateBox>
 
-  <p class="mx-5 mt-4 text-center text-xs leading-relaxed text-white/35">
+  </template>
+
+  <p v-if="view === 'all'" class="mx-5 mt-4 text-center text-xs leading-relaxed text-white/35">
     Kelas berlabel “Perkiraan” mengikuti pola {{ timetable.weeksUsed }} minggu terakhir (diperbarui {{ generated }}) dan bisa berubah.
   </p>
 

@@ -31,3 +31,9 @@ const sun = t.mergeDay(w0[6], actual, slots, now); ok('Sunday: empty', sun.lengt
 const nextThu = t.mergeDay(w1[3], actual, slots, now); ok("next week's Thursday ignores today's real rows", nextThu.every(i => i.status === 'predicted') && nextThu.length === 4)
 ok('sorted by start time', thu.map(i => i.start).join() === [...thu.map(i => i.start)].sort().join())
 ok('two same-hour slots with different names both kept', t.mergeDay(w0[3], [], [slot(3, '19:00', 'YOGA A'), slot(3, '19:00', 'YOGA B')], now).length === 2)
+
+// mineOf: the member's own status on a real row
+ok('mineOf: Peserta', t.mineOf('Peserta') === 'peserta' && t.mineOf('PESERTA') === 'peserta')
+ok('mineOf: Waiting List', t.mineOf('Waiting List') === 'waiting')
+ok('mineOf: not registered / missing -> null', t.mineOf('Tidak Terdaftar') === null && t.mineOf(undefined) === null)
+ok('mergeDay carries mine', t.mergeDay(d('2026-10-01'), [{ ...real(1135, '01/10/2026', '08:00', 'X'), status_saya: 'Peserta' }], [], d('2026-10-01')).find((i: any) => i.status === 'confirmed').mine === 'peserta')

@@ -26,6 +26,8 @@ export interface ActualClass {
   maksimal_member: number
   peserta: number
   foto_url?: string
+  /** "Peserta" | "Waiting List" | "Tidak Terdaftar" — the member's own status on this row */
+  status_saya?: string
 }
 
 export type DayStatus = 'confirmed' | 'predicted' | 'ended'
@@ -33,6 +35,8 @@ export type DayStatus = 'confirmed' | 'predicted' | 'ended'
 export interface DayItem {
   key: string
   status: DayStatus
+  /** the member's own registration on a real row */
+  mine?: 'peserta' | 'waiting' | null
   start: string
   end: string
   name: string
@@ -43,6 +47,13 @@ export interface DayItem {
   peserta?: number
   max?: number
   fotoUrl?: string
+}
+
+export function mineOf(statusSaya: string | null | undefined): 'peserta' | 'waiting' | null {
+  const s = (statusSaya ?? '').toLowerCase()
+  if (s.includes('peserta')) return 'peserta'
+  if (s.includes('waiting')) return 'waiting'
+  return null
 }
 
 export const DAY_NAMES = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
@@ -86,6 +97,7 @@ export function mergeDay(date: Date, actual: ActualClass[], slots: Slot[], now =
   const items: DayItem[] = real.map((a) => ({
     key: `c${a.id}`,
     status: 'confirmed',
+    mine: mineOf(a.status_saya),
     start: a.jam_awal,
     end: a.jam_akhir,
     name: a.nama_jadwal_kelas,
