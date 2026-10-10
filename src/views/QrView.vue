@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { memberAktif, memberPtAktif } from '@/api/endpoints'
+import { classQrs, memberAktif, memberPtAktif } from '@/api/endpoints'
 import CheckInButton from '@/components/CheckInButton.vue'
 import QrCard from '@/components/QrCard.vue'
 import ProfileButton from '@/components/ProfileButton.vue'
 import SettingsButton from '@/components/SettingsButton.vue'
-import { hasValidQr, loadQr, syncQr, type QrEntry, type QrKind } from '@/lib/qrCache'
+import { titleCase } from '@/lib/format'
+import { hasValidQr, loadClassQrs, loadQr, preselectQr, syncClassQrs, syncQr, type ClassQrEntry, type QrEntry, type QrKind } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
 import { useWakeLock } from '@/composables/useWakeLock'
 
@@ -21,8 +22,9 @@ const kinds = [
 ] as const
 
 const items = ref<Record<QrKind, QrEntry | null>>({ gym: loadQr('gym'), pt: loadQr('pt') })
+const classes = ref<ClassQrEntry[]>(loadClassQrs())
 const serverSaid = ref<Record<QrKind, string>>({ gym: '', pt: '' }) // {error} text when the server says no package
-const active = ref<QrKind>(items.value.gym || !items.value.pt ? 'gym' : 'pt')
+const active = ref<string>(preselectQr(classes.value) ?? (items.value.gym || !items.value.pt ? 'gym' : 'pt'))
 const loading = ref(!items.value.gym && !items.value.pt)
 const failed = ref(false)
 
@@ -35,8 +37,8 @@ async function load() {
   const user = { id: auth.user.id, nama: auth.user.nama }
   failed.value = false
   loading.value = !items.value.gym && !items.value.pt
-  await Promise.all(
-    kinds.map(async (k) => {
+  await Promise.all([
+    ...kinds.map(async (k) => {
       try {
         const res = await k.fetch(user.id)
         syncQr(user, k.key, res)
@@ -46,9 +48,16 @@ async function load() {
         failed.value = true // offline / server down: keep whatever the cache holds
       }
     }),
-  )
-  const other = active.value === 'gym' ? 'pt' : 'gym'
-  if (!items.value[active.value] && items.value[other]) active.value = other
+    (async () => {
+      try {
+        syncClassQrs(user, await classQrs(user.id))
+        classes.value = loadClassQrs()
+      } catch {
+        failed.value = true
+      }
+    })(),
+  ])
+  if (!options.value.some((o) => o.key === active.value)) active.value = preselectQr(classes.value) ?? options.value[0]?.key ?? 'gym'
   loading.value = false
 }
 
@@ -59,10 +68,18 @@ onMounted(() => {
 })
 onUnmounted(() => document.removeEventListener('visibilitychange', onVisible))
 
-const cur = computed(() => items.value[active.value])
-const both = computed(() => !!items.value.gym && !!items.value.pt)
+const timeShort = (t: string) => t.slice(0, 5).replace(':', '.')
+/** Everything the member can open with: membership/PT, plus one QR per registered class. */
+const options = computed(() => [
+  ...(items.value.gym ? [{ key: 'gym', label: 'Membership' }] : []),
+  ...(items.value.pt ? [{ key: 'pt', label: 'Personal Trainer' }] : []),
+  ...classes.value.map((c) => ({ key: 'c' + c.id, label: `${titleCase(c.nama_jadwal_kelas)} ${timeShort(c.jam_awal)}` })),
+])
+const curClass = computed(() => (active.value.startsWith('c') ? classes.value.find((c) => 'c' + c.id === active.value) ?? null : null))
+const cur = computed(() => (curClass.value ? null : items.value[active.value as QrKind]))
+const many = computed(() => options.value.length > 1)
 const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
-const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' ? 'Anda sedang cuti' : 'Tidak ada paket aktif'))
+const noPackageText = computed(() => (serverSaid.value[active.value as QrKind] === 'Cuti' ? 'Anda sedang cuti' : 'Tidak ada paket aktif'))
 </script>
 
 <template>
@@ -72,30 +89,40 @@ const noPackageText = computed(() => (serverSaid.value[active.value] === 'Cuti' 
       <div class="flex shrink-0 gap-2"><ProfileButton /><SettingsButton /></div>
     </div>
 
-    <div v-if="both" class="seg mt-2 grid-cols-2">
+    <div v-if="many" class="seg mt-2 !flex overflow-x-auto" data-testid="qr-picker">
       <button
-        v-for="k in kinds"
-        :key="k.key"
-        class="seg-tab"
-        :class="active === k.key ? 'seg-tab-on' : ''"
-        @click="active = k.key"
+        v-for="o in options"
+        :key="o.key"
+        class="seg-tab min-w-fit flex-1 shrink-0 whitespace-nowrap !px-3"
+        :class="active === o.key ? 'seg-tab-on' : ''"
+        @click="active = o.key"
       >
-        {{ k.label }}
+        {{ o.label }}
       </button>
     </div>
 
     <div v-if="loading" class="mt-3 rounded-3xl bg-white p-4">
       <div class="mx-auto aspect-square w-[min(100%,18rem,34dvh)] animate-pulse rounded-xl bg-ink-900/10" />
     </div>
-    <QrCard v-else-if="cur" :entry="cur" compact :tight="both" class="mt-3" />
+    <QrCard
+      v-else-if="curClass"
+      :entry="curClass"
+      compact
+      :tight="many"
+      :title="titleCase(curClass.nama_jadwal_kelas)"
+      :sub="`${curClass.tanggal} · ${curClass.jam_awal.slice(0, 5)}–${curClass.jam_akhir.slice(0, 5)}`"
+      class="mt-3"
+      data-testid="class-qr"
+    />
+    <QrCard v-else-if="cur" :entry="cur" compact :tight="many" class="mt-3" />
     <div v-else class="mt-3 rounded-3xl bg-white p-6 py-8 text-center text-ink-900">
       <svg viewBox="0 0 24 24" class="mx-auto h-10 w-10 text-ink-700/40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M20 14v3h-3M14 20h3" /></svg>
       <p class="mt-3 font-semibold">{{ noPackageText }}</p>
       <RouterLink to="/packages" class="btn-primary mt-4">Lihat paket</RouterLink>
     </div>
 
-    <div v-if="cur" class="mt-2 flex items-center justify-center gap-2 text-xs text-white/50">
-      <span>Disimpan {{ stamp(cur.savedAt) }}<template v-if="failed"> · mode offline</template></span>
+    <div v-if="cur || curClass" class="mt-2 flex items-center justify-center gap-2 text-xs text-white/50">
+      <span>Disimpan {{ stamp((curClass ?? cur)!.savedAt) }}<template v-if="failed"> · mode offline</template></span>
       <button v-if="failed" class="btn-sm" @click="load">Coba lagi</button>
     </div>
     <CheckInButton minimal class="mt-2" />

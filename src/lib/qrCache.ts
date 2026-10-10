@@ -1,7 +1,7 @@
 // Last successfully fetched check-in QR, kept independent of the login session so the member
 // can still show it after the (5 h) token expires. The QR is static per membership, so it stays
 // valid until the membership's end date; each entry is dropped once that day is over.
-import type { ActiveMember } from '@/api/types'
+import type { ActiveMember, ClassQr } from '@/api/types'
 
 export type QrKind = 'gym' | 'pt'
 
@@ -13,10 +13,16 @@ export interface QrEntry {
   expiresAt: number | null
   savedAt: number
 }
+export interface ClassQrEntry extends ClassQr {
+  expiresAt: number | null
+  savedAt: number
+}
 interface Store {
   userId: number
   nama: string
   entries: Partial<Record<QrKind, QrEntry>>
+  /** per-registered-class QRs; replaced wholesale on every successful /kelas/list fetch */
+  classes?: ClassQrEntry[]
 }
 
 const KEY = 'grit.qr.v1'
@@ -54,7 +60,7 @@ function load(): Store | null {
 
 function persist(s: Store | null) {
   try {
-    if (!s || !Object.keys(s.entries).length) localStorage.removeItem(KEY)
+    if (!s || (!Object.keys(s.entries).length && !s.classes?.length)) localStorage.removeItem(KEY)
     else localStorage.setItem(KEY, JSON.stringify(s))
   } catch {
     /* best effort */
@@ -73,8 +79,13 @@ function fresh(): Store | null {
       changed = true
     }
   }
+  const keptClasses = (s.classes ?? []).filter((c) => c.qr_code && (c.expiresAt === null || Date.now() <= c.expiresAt))
+  if (keptClasses.length !== (s.classes?.length ?? 0)) {
+    s.classes = keptClasses
+    changed = true
+  }
   if (changed) persist(s)
-  return Object.keys(s.entries).length ? s : null
+  return Object.keys(s.entries).length || s.classes?.length ? s : null
 }
 
 export const loadQr = (kind: QrKind): QrEntry | null => fresh()?.entries[kind] ?? null
@@ -120,6 +131,27 @@ export function daysLeft(e: Pick<QrEntry, 'expiresAt'>, now = Date.now()): numbe
   if (e.expiresAt === null) return null
   const day = (t: number) => new Date(new Date(t).getFullYear(), new Date(t).getMonth(), new Date(t).getDate()).getTime()
   return Math.max(0, Math.round((day(e.expiresAt) - day(now)) / 86_400_000))
+}
+
+/** Replace the cached per-class QRs with a successful /kelas/list answer (empty list clears them). */
+export function syncClassQrs(user: { id: number; nama: string }, rows: ClassQr[]) {
+  let s = load()
+  if (!s || s.userId !== user.id) s = { userId: user.id, nama: user.nama, entries: {} }
+  s.nama = user.nama
+  s.classes = rows.filter((r) => r.qr_code).map((r) => ({ ...r, expiresAt: parseExpiry(r.tanggal), savedAt: Date.now() }))
+  persist(s)
+}
+
+export const loadClassQrs = (): ClassQrEntry[] => fresh()?.classes ?? []
+
+/** The QR to open with at the gym door: a registered class running now-ish (2h before start until it
+ *  ends today) beats the membership QR. */
+export function preselectQr(classes: Pick<ClassQrEntry, 'id' | 'jam_awal' | 'jam_akhir' | 'expiresAt'>[], now = new Date()): string | null {
+  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).getTime()
+  const minutes = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
+  const cur = now.getHours() * 60 + now.getMinutes()
+  const hit = classes.find((c) => c.expiresAt !== null && c.expiresAt <= endOfToday && cur >= minutes(c.jam_awal) - 120 && cur <= minutes(c.jam_akhir))
+  return hit ? 'c' + hit.id : null
 }
 
 export const clearQr = () => localStorage.removeItem(KEY)

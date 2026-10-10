@@ -2,7 +2,8 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import CheckInButton from '@/components/CheckInButton.vue'
 import QrCard from '@/components/QrCard.vue'
-import { cachedQrOwner, daysLeft, loadQr, type QrEntry, type QrKind } from '@/lib/qrCache'
+import { titleCase } from '@/lib/format'
+import { cachedQrOwner, daysLeft, loadClassQrs, loadQr, preselectQr, type ClassQrEntry, type QrEntry, type QrKind } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
 import { useWakeLock } from '@/composables/useWakeLock'
 
@@ -11,20 +12,25 @@ import { useWakeLock } from '@/composables/useWakeLock'
 const auth = useAuth()
 useWakeLock() // this is the gym-door screen too (the offline fallback): don't let it dim/sleep mid-scan
 
-const kinds = [
-  { key: 'gym', label: 'Membership' },
-  { key: 'pt', label: 'Personal Trainer' },
-] as const
-
 const items = ref<Record<QrKind, QrEntry | null>>({ gym: null, pt: null })
+const classes = ref<ClassQrEntry[]>([])
 const owner = ref<{ userId: number; nama: string } | null>(null)
-const active = ref<QrKind>('gym')
+const active = ref<string>('gym')
+
+const timeShort = (t: string) => t.slice(0, 5).replace(':', '.')
+const options = computed(() => [
+  ...(items.value.gym ? [{ key: 'gym', label: 'Membership' }] : []),
+  ...(items.value.pt ? [{ key: 'pt', label: 'Personal Trainer' }] : []),
+  ...classes.value.map((c) => ({ key: 'c' + c.id, label: `${titleCase(c.nama_jadwal_kelas)} ${timeShort(c.jam_awal)}` })),
+])
 
 function refresh() {
   items.value = { gym: loadQr('gym'), pt: loadQr('pt') } // loadQr drops entries past their end date
+  classes.value = loadClassQrs()
   owner.value = cachedQrOwner()
-  if (!items.value[active.value]) active.value = items.value.gym ? 'gym' : 'pt'
+  if (!options.value.some((o) => o.key === active.value)) active.value = preselectQr(classes.value) ?? options.value[0]?.key ?? 'gym'
 }
+active.value = preselectQr(loadClassQrs()) ?? 'gym'
 refresh()
 
 let timer: ReturnType<typeof setInterval>
@@ -38,8 +44,8 @@ onUnmounted(() => {
   document.removeEventListener('visibilitychange', onVisible)
 })
 
-const available = computed(() => kinds.filter((k) => items.value[k.key]))
-const cur = computed(() => items.value[active.value])
+const curClass = computed(() => (active.value.startsWith('c') ? classes.value.find((c) => 'c' + c.id === active.value) ?? null : null))
+const cur = computed(() => (curClass.value ? null : items.value[active.value as QrKind]))
 const left = computed(() => (cur.value ? daysLeft(cur.value) : null))
 const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 </script>
@@ -51,20 +57,30 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
       <span v-if="!auth.loggedIn" class="shrink-0 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium text-white/50">Tanpa login</span>
     </div>
 
-    <template v-if="cur">
-      <div v-if="available.length > 1" class="seg mt-3 grid-cols-2">
+    <template v-if="cur || curClass">
+      <div v-if="options.length > 1" class="seg mt-3 !flex overflow-x-auto" data-testid="qr-picker">
         <button
-          v-for="k in available"
-          :key="k.key"
-          class="seg-tab"
-          :class="active === k.key ? 'seg-tab-on' : ''"
-          @click="active = k.key"
+          v-for="o in options"
+          :key="o.key"
+          class="seg-tab min-w-fit flex-1 shrink-0 whitespace-nowrap !px-3"
+          :class="active === o.key ? 'seg-tab-on' : ''"
+          @click="active = o.key"
         >
-          {{ k.label }}
+          {{ o.label }}
         </button>
       </div>
 
-      <QrCard :entry="cur" compact :tight="available.length > 1" class="mt-3">
+      <QrCard
+        v-if="curClass"
+        :entry="curClass"
+        compact
+        :tight="options.length > 1"
+        :title="titleCase(curClass.nama_jadwal_kelas)"
+        :sub="`${curClass.tanggal} · ${curClass.jam_awal.slice(0, 5)}–${curClass.jam_akhir.slice(0, 5)}`"
+        class="mt-3"
+        data-testid="class-qr"
+      />
+      <QrCard v-else :entry="cur!" compact :tight="options.length > 1" class="mt-3">
         <p
           v-if="left !== null"
           class="mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold"
@@ -74,7 +90,7 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
         </p>
       </QrCard>
 
-      <p class="mt-2 text-center text-xs text-white/50">Disimpan {{ stamp(cur.savedAt) }}</p>
+      <p class="mt-2 text-center text-xs text-white/50">Disimpan {{ stamp((curClass ?? cur)!.savedAt) }}</p>
       <CheckInButton minimal class="mt-2" />
     </template>
 

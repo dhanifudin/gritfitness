@@ -66,6 +66,17 @@ export interface PaketMembership {
   jenis: string
 }
 
+/** One row per successfully registered class: its own check-in QR (GET /kelas/list/{uid}). */
+export interface ClassQr {
+  id: number // id_peserta
+  nama_paket: string
+  nama_jadwal_kelas: string
+  qr_code: string // base64 SVG
+  tanggal: string // "10 Oct 2026"
+  jam_awal: string
+  jam_akhir: string
+}
+
 export interface ClassDetail {
   id: number
   id_paket_kelas?: number

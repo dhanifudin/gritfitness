@@ -12,13 +12,13 @@ import { rupiah, useAsync } from '@/composables/useAsync'
 import { useInstall } from '@/composables/useSw'
 import { costPerVisit, unpaidSummary } from '@/lib/budget'
 import { parsePrice } from '@/lib/classValue'
-import { nextOccurrence, watchStatus, watchWhen } from '@/lib/classWatch'
+import { nextOccurrence, showOnHome, watchStatus, watchWhen } from '@/lib/classWatch'
 import { CK } from '@/lib/dataCache'
 import ProfileButton from '@/components/ProfileButton.vue'
 import SettingsButton from '@/components/SettingsButton.vue'
 import { dailyInsight, favouriteClassToday, noTrackingNudge, weekTrend } from '@/lib/insight'
 import { prefetchAll } from '@/lib/prefetch'
-import { parseYmd, weekCounts, ymd } from '@/lib/tracker'
+import { parseYmd, signupDue, weekCounts, ymd } from '@/lib/tracker'
 import timetable from '@/data/timetable.json'
 import type { Slot } from '@/lib/timetable'
 import { useAuth } from '@/stores/auth'
@@ -43,7 +43,7 @@ const { data: classPackages } = useAsync(paketKelas, [], { key: CK.packages('cla
 const WATCH_MAX = 4
 const watched = computed(() =>
   classWatch.entries
-    .filter((e) => e.active)
+    .filter((e) => showOnHome(e, tracker.now))
     .sort((a, b) => nextOccurrence(a, tracker.now) - nextOccurrence(b, tracker.now) || a.start_time.localeCompare(b.start_time)),
 )
 const watchedShown = computed(() => watched.value.slice(0, WATCH_MAX))
@@ -64,12 +64,14 @@ const TONE = { good: 'text-emerald-300', warn: 'text-amber-300', bad: 'text-red-
 const first = computed(() => (auth.user!.nama.split(' ')[0] ?? '').toLowerCase().replace(/^\w/, (c) => c.toUpperCase()))
 const dateLabel = computed(() => tracker.now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' }))
 const s = computed(() => tracker.stats)
-const todaySignups = computed(() => tracker.signups.filter((x) => x.scheduled_on === ymd(tracker.now) && x.status === 'planned'))
+// the attendance question waits for the class to start; until then today's class sits in the upcoming list
+const dueSignups = computed(() => tracker.signups.filter((x) => signupDue(x, tracker.now)))
 const upcomingSignups = computed(() =>
   tracker.signups
-    .filter((x) => x.status === 'planned' && x.scheduled_on > ymd(tracker.now))
+    .filter((x) => x.status === 'planned' && (x.scheduled_on > ymd(tracker.now) || (x.scheduled_on === ymd(tracker.now) && !signupDue(x, tracker.now))))
     .sort((a, b) => a.scheduled_on.localeCompare(b.scheduled_on) || (a.start_time ?? '').localeCompare(b.start_time ?? '')),
 )
+const upcomingDay = (on: string) => (on === ymd(tracker.now) ? 'Hari ini' : parseYmd(on).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }))
 
 // ---- act zone: favourite-class-predicted-today and no-tracking nudges (same logic the push checks reuse) ----
 const slots = timetable.slots as Slot[]
@@ -181,8 +183,8 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
       </div>
     </div>
 
-    <section v-if="todaySignups.length" class="mt-3 space-y-3" data-testid="today-classes">
-      <div v-for="c in todaySignups" :key="c.schedule_id" class="banner banner-info flex gap-2.5">
+    <section v-if="dueSignups.length" class="mt-3 space-y-3" data-testid="today-classes">
+      <div v-for="c in dueSignups" :key="c.schedule_id" class="banner banner-info flex gap-2.5">
         <svg viewBox="0 0 24 24" class="mt-0.5 h-4 w-4 shrink-0 text-grit-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2" /><path d="M16 2.5v4M8 2.5v4M3 10h18" /></svg>
         <div class="min-w-0 flex-1">
           <p class="font-semibold">{{ titleCase(c.class_name) }}<span v-if="c.start_time" class="font-normal text-white/50"> · {{ c.start_time.slice(0, 5) }}</span></p>
@@ -202,7 +204,7 @@ const insight = computed(() => dailyInsight({ visits: tracker.visits, now: track
       <div class="mt-1.5 card divide-y divide-white/8">
         <div v-for="c in upcomingSignups" :key="c.schedule_id" class="flex items-center justify-between px-4 py-2.5 text-sm">
           <span class="font-medium">{{ titleCase(c.class_name) }}</span>
-          <span class="text-white/50">{{ parseYmd(c.scheduled_on).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }) }}<span v-if="c.start_time"> · {{ c.start_time.slice(0, 5) }}</span></span>
+          <span class="text-white/50">{{ upcomingDay(c.scheduled_on) }}<span v-if="c.start_time"> · {{ c.start_time.slice(0, 5) }}</span></span>
         </div>
       </div>
     </section>

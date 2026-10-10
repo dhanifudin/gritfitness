@@ -3,7 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import ActivitySheet from '@/components/ActivitySheet.vue'
 import { useTracker } from '@/stores/tracker'
 
-defineProps<{ compact?: boolean; minimal?: boolean }>()
+defineProps<{ minimal?: boolean }>()
 const tracker = useTracker()
 onMounted(() => tracker.init())
 
@@ -30,18 +30,25 @@ const saveNote = () => v.value && note.value.trim() !== (v.value.note ?? '') && 
 
 <template>
   <div>
-    <button
-      v-if="!tracker.checkedInToday"
-      class="btn w-full bg-grit-500 text-base font-bold text-white shadow-[0_6px_24px_rgba(236,47,143,.3)]"
-      :class="minimal ? '!py-3' : '!py-4'"
-      data-testid="checkin"
-      @click="go"
-    >
-      {{ compact || minimal ? 'Catat latihan hari ini' : 'Sudah di gym? Catat latihan hari ini' }}
-    </button>
-    <template v-if="!tracker.checkedInToday">
-      <button v-if="!minimal" class="btn-sm mx-auto mt-2 !flex w-fit !px-4" data-testid="other-activity" @click="sheet = 'add'">Aktivitas lain atau tanggal lain</button>
-    </template>
+    <div v-if="!tracker.checkedInToday" class="flex items-stretch gap-2">
+      <button
+        class="btn flex-1 bg-grit-500 text-base font-bold text-white shadow-[0_6px_24px_rgba(236,47,143,.3)]"
+        :class="minimal ? '!py-3' : '!py-4'"
+        data-testid="checkin"
+        @click="go"
+      >
+        Catat latihan hari ini
+      </button>
+      <button
+        v-if="!minimal"
+        class="btn-ghost w-14 shrink-0 !p-0"
+        aria-label="Aktivitas lain atau tanggal lain"
+        data-testid="other-activity"
+        @click="sheet = 'add'"
+      >
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+      </button>
+    </div>
     <p v-else-if="minimal" class="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300" data-testid="checked-in">
       <svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
       Latihan hari ini tercatat<span v-if="time"> · {{ time }}</span>

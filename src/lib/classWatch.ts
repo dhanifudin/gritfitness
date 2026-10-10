@@ -80,3 +80,10 @@ export function watchStatus(entry: WatchResult, now: Date): { text: string; tone
   const r = entry.last_attempt_date === ymd(now) && entry.last_attempt_result ? RESULTS[entry.last_attempt_result] : undefined
   return r ?? { text: `Pendaftaran biasanya dibuka ${opensLabel(entry.weekday, entry.start_time)}`, tone: 'info' }
 }
+
+/** A watch row earns its place on Beranda until today's attempt has succeeded — after that the class
+ *  shows under the registered classes instead, so keeping the row would just duplicate it. */
+export function showOnHome(entry: WatchResult, now: Date): boolean {
+  if (!entry.active) return false
+  return !(entry.last_attempt_date === ymd(now) && (entry.last_attempt_result === 'registered' || entry.last_attempt_result === 'already'))
+}

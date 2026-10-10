@@ -1,7 +1,12 @@
 <script setup lang="ts">
-import type { QrEntry } from '@/lib/qrCache'
-
-defineProps<{ entry: QrEntry; compact?: boolean; tight?: boolean }>()
+defineProps<{
+  entry: { qr_code: string; nama_paket: string; tanggal_mulai?: string; tanggal_selesai?: string }
+  compact?: boolean
+  tight?: boolean
+  /** override the two text lines (used for per-class QRs) */
+  title?: string
+  sub?: string
+}>()
 </script>
 
 <template>
@@ -18,8 +23,8 @@ defineProps<{ entry: QrEntry; compact?: boolean; tight?: boolean }>()
         class="mx-auto aspect-square"
         :class="compact ? (tight ? 'w-[min(100%,18rem,27dvh)]' : 'w-[min(100%,18rem,34dvh)]') : 'w-full max-w-72'"
       />
-      <p class="font-semibold" :class="compact ? 'mt-2 leading-tight' : 'mt-3'">{{ entry.nama_paket }}</p>
-      <p class="text-sm text-ink-700/80">{{ entry.tanggal_mulai }} – {{ entry.tanggal_selesai }}</p>
+      <p class="font-semibold" :class="compact ? 'mt-2 leading-tight' : 'mt-3'">{{ title ?? entry.nama_paket }}</p>
+      <p class="text-sm text-ink-700/80">{{ sub ?? `${entry.tanggal_mulai} – ${entry.tanggal_selesai}` }}</p>
       <slot />
     </div>
   </div>

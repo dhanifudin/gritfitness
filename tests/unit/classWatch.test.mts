@@ -71,3 +71,11 @@ ok('watchStatus: attempted today -> result in words', cw.watchStatus(e2({ last_a
 ok('watchStatus: failed/full are the bad tone', cw.watchStatus(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'full' }), NOW).tone === 'bad' && cw.watchStatus(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'failed' }), NOW).tone === 'bad')
 ok('watchStatus: old attempt falls back to the opening hint', cw.watchStatus(e2({ last_attempt_date: '2026-10-01', last_attempt_result: 'registered' }), NOW).text === 'Pendaftaran biasanya dibuka Senin 07.00')
 ok('watchStatus: morning class hint names the day before', cw.watchStatus(e2({ start_time: '08:00' }), NOW).text === 'Pendaftaran biasanya dibuka Minggu 15.00', cw.watchStatus(e2({ start_time: '08:00' }), NOW).text)
+
+// ---- showOnHome: a successful attempt clears the row for the day ----
+ok('showOnHome: untouched active entry shows', cw.showOnHome(e2(), NOW))
+ok('showOnHome: registered today hides', !cw.showOnHome(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'registered' }), NOW))
+ok('showOnHome: already-registered today hides', !cw.showOnHome(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'already' }), NOW))
+ok('showOnHome: waiting/full/failed stay visible', cw.showOnHome(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'waiting' }), NOW) && cw.showOnHome(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'full' }), NOW) && cw.showOnHome(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'failed' }), NOW))
+ok('showOnHome: yesterday\'s success shows again', cw.showOnHome(e2({ last_attempt_date: '2026-10-04', last_attempt_result: 'registered' }), NOW))
+ok('showOnHome: inactive never shows', !cw.showOnHome(e2({ active: false }), NOW))

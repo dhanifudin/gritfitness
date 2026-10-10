@@ -28,3 +28,33 @@ ok('another member replaces the owner', q.cachedQrOwner()?.userId === 8)
 const eod = (add: number) => { const d = new Date(); d.setDate(d.getDate() + add); d.setHours(23, 59, 59, 999); return d.getTime() }
 ok('daysLeft: today 0, tomorrow 1, null stays null, past clamps to 0', q.daysLeft({ expiresAt: eod(0) }) === 0 && q.daysLeft({ expiresAt: eod(1) }) === 1 && q.daysLeft({ expiresAt: null }) === null && q.daysLeft({ expiresAt: eod(-3) }) === 0)
 q.clearQr(); ok('clearQr', !q.hasValidQr())
+
+// ---- class QRs (per registered class) ----
+{
+  const user = { id: 7994, nama: 'Dian' }
+  localStorage.removeItem('grit.qr.v1')
+  q.syncClassQrs(user, [
+    { id: 18032, nama_paket: 'Lesmills Body Pump', nama_jadwal_kelas: 'BODY PUMP', qr_code: 'QQ==', tanggal: '10 Oct 2026', jam_awal: '16:00', jam_akhir: '17:00' },
+    { id: 18033, nama_paket: 'Zumba', nama_jadwal_kelas: 'ZUMBA', qr_code: '', tanggal: '10 Oct 2026', jam_awal: '18:00', jam_akhir: '19:00' },
+  ])
+  const rows = q.loadClassQrs()
+  ok('classQrs: stored, empty qr dropped', rows.length === 1 && rows[0].id === 18032 && rows[0].expiresAt !== null, JSON.stringify(rows.map((r: any) => r.id)))
+  ok('classQrs: store counts as a valid QR', q.hasValidQr() === true)
+  q.syncClassQrs(user, [])
+  ok('classQrs: an empty successful answer clears them', q.loadClassQrs().length === 0)
+  // expiry pruning: a class dated yesterday disappears
+  q.syncClassQrs(user, [{ id: 1, nama_paket: 'X', nama_jadwal_kelas: 'X', qr_code: 'QQ==', tanggal: '01 Jan 2020', jam_awal: '08:00', jam_akhir: '09:00' }])
+  ok('classQrs: expired class pruned on load', q.loadClassQrs().length === 0)
+}
+// ---- preselectQr ----
+{
+  const today = (h: number) => { const d = new Date(); d.setHours(h, 0, 0, 0); return d }
+  const endToday = new Date(); endToday.setHours(23, 59, 59, 999)
+  const cls = [{ id: 5, jam_awal: '16:00', jam_akhir: '17:00', expiresAt: endToday.getTime() }]
+  ok('preselect: 2h before start -> the class QR', q.preselectQr(cls, today(14)) === 'c5')
+  ok('preselect: during the class -> the class QR', q.preselectQr(cls, today(16)) === 'c5')
+  ok('preselect: morning -> membership', q.preselectQr(cls, today(9)) === null)
+  ok('preselect: after it ended -> membership', q.preselectQr(cls, today(18)) === null)
+  const tomorrow = new Date(endToday.getTime() + 86_400_000)
+  ok('preselect: a class tomorrow never preselects', q.preselectQr([{ ...cls[0], expiresAt: tomorrow.getTime() }], today(16)) === null)
+}

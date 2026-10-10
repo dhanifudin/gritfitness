@@ -46,6 +46,14 @@ export function momentOn(date: string, time?: string | null): Date | null {
   const d = parseYmd(date)
   return Number.isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate(), +m[1], +m[2])
 }
+/** Ask "did you attend?" only once the class has started: planned, dated today, and past jam_awal.
+ *  A signup without a stored start time is due all day (nothing to compare against). */
+export function signupDue(s: { scheduled_on: string; start_time?: string | null; status: string }, now: Date): boolean {
+  if (s.status !== 'planned' || s.scheduled_on !== ymd(now)) return false
+  const t = s.start_time?.slice(0, 5)
+  if (!t || !/^\d{2}:\d{2}$/.test(t)) return true
+  return `${pad(now.getHours())}:${pad(now.getMinutes())}` >= t
+}
 export const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
 export const weekdayOf = (d: Date) => (d.getDay() + 6) % 7 // Mon = 0
 export const mondayOf = (d: Date) => addDays(new Date(d.getFullYear(), d.getMonth(), d.getDate()), -weekdayOf(d))

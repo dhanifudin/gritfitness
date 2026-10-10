@@ -3,10 +3,11 @@
 // them. See src/lib/classWatch.ts for why this can only ever run while the app is actually open.
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { jadwalKelas, classDetail, classRegister, classWaiting } from '@/api/endpoints'
+import { jadwalKelas, classDetail, classQrs, classRegister, classWaiting } from '@/api/endpoints'
 import { classActionFor } from '@/lib/classAction'
 import { parsePrice } from '@/lib/classValue'
 import { matchOpenRow, type WatchEntry } from '@/lib/classWatch'
+import { syncClassQrs } from '@/lib/qrCache'
 import { remote, trackerConfigured } from '@/lib/supabase'
 import { parseDmy } from '@/lib/timetable'
 import { ymd } from '@/lib/tracker'
@@ -69,6 +70,8 @@ export const useClassWatch = defineStore('classWatch', () => {
         message = res.message
         // same bookkeeping as a manual registration: shows under "Kelas terdaftar" and counts toward the savings
         useTracker().trackSignup({ schedule_id: row.id, class_name: detail.nama_jadwal_kelas, scheduled_on: ymd(parseDmy(detail.tanggal)), start_time: detail.jam_awal, status: 'planned', price: parsePrice(detail.harga) })
+        const u = useAuth().user
+        if (u) void classQrs(u.id).then((rows) => syncClassQrs({ id: u.id, nama: u.nama }, rows)).catch(() => {})
       } else if (action?.kind === 'waiting') {
         const res = await classWaiting(row.id)
         result = 'waiting'

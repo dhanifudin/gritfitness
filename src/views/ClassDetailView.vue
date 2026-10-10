@@ -2,7 +2,7 @@
 import { titleCase } from '@/lib/format'
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { classCancel, classDetail, classRegister, classWaiting } from '@/api/endpoints'
+import { classCancel, classDetail, classQrs, classRegister, classWaiting } from '@/api/endpoints'
 import BackHeader from '@/components/BackHeader.vue'
 import ConfirmSheet from '@/components/ConfirmSheet.vue'
 import DetailRow from '@/components/DetailRow.vue'
@@ -15,14 +15,17 @@ import { classActionFor, classNoticeFor } from '@/lib/classAction'
 import { parsePrice } from '@/lib/classValue'
 import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
 import { CK, invalidate } from '@/lib/dataCache'
+import { syncClassQrs } from '@/lib/qrCache'
 import { parseDmy } from '@/lib/timetable'
 import { ymd } from '@/lib/tracker'
+import { useAuth } from '@/stores/auth'
 import { useTracker } from '@/stores/tracker'
 import { useOnline } from '@/composables/useSw'
 
 const route = useRoute()
 const { data: c, loading, error, savedAt, stale, reload } = useAsync(() => classDetail(route.params.id as string), null, { key: () => CK.classDetail(route.params.id as string) })
 const online = useOnline()
+const auth = useAuth()
 const tracker = useTracker()
 const about = computed(() =>
   c.value ? classInfoFor(classInfo as unknown as ClassInfoData, { packageId: c.value.id_paket_kelas, kelas: c.value.nama_kelas }) : null,
@@ -57,6 +60,8 @@ async function confirm() {
   tracker.init()
   if (k === 'register') {
     tracker.trackSignup({ schedule_id: id, class_name: c.value.nama_jadwal_kelas, scheduled_on: ymd(parseDmy(c.value.tanggal)), start_time: c.value.jam_awal, status: 'planned', price: seatPrice })
+    // the gym mints a per-class QR on registration: cache it right away for the QR tab / offline screen
+    if (auth.user) void classQrs(auth.user.id).then((rows) => syncClassQrs({ id: auth.user!.id, nama: auth.user!.nama }, rows)).catch(() => {})
   } else if (k === 'cancel') {
     tracker.setSignupStatus(id, 'cancelled')
   }

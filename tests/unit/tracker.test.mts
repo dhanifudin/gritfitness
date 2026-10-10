@@ -100,3 +100,16 @@ ok('non-usual weekday -> quiet', !t.reminder(usual, S, new Date(2026, 8, 28, 18,
   ok('momentOn: missing / empty / garbage / out of range -> null', t.momentOn('2026-10-06', null) === null && t.momentOn('2026-10-06', '') === null && t.momentOn('2026-10-06', 'soon') === null && t.momentOn('2026-10-06', '25:00') === null && t.momentOn('2026-10-06', '10:75') === null)
   ok('momentOn: bad date -> null', t.momentOn('not-a-date', '10:00') === null)
 }
+
+// signupDue --------------------------------------------------------------------------------------
+{
+  const today = (h: number, m = 0) => { const d = new Date(2026, 9, 10, h, m); return d }
+  const su = (on: string, start: string | null) => ({ scheduled_on: on, start_time: start, status: 'planned' })
+  ok('signupDue: before the start -> not yet', !t.signupDue(su('2026-10-10', '16:00:00'), today(8)))
+  ok('signupDue: one minute before -> not yet', !t.signupDue(su('2026-10-10', '16:00'), today(15, 59)))
+  ok('signupDue: at the start -> due', t.signupDue(su('2026-10-10', '16:00:00'), today(16, 0)))
+  ok('signupDue: after the start -> due', t.signupDue(su('2026-10-10', '16:00'), today(21)))
+  ok('signupDue: no start time -> due all day', t.signupDue(su('2026-10-10', null), today(8)))
+  ok('signupDue: other days never due', !t.signupDue(su('2026-10-11', '08:00'), today(21)) && !t.signupDue(su('2026-10-09', '08:00'), today(21)))
+  ok('signupDue: only planned', !t.signupDue({ scheduled_on: '2026-10-10', start_time: '08:00', status: 'attended' }, today(21)))
+}

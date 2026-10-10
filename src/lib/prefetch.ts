@@ -1,6 +1,6 @@
 import * as ep from '@/api/endpoints'
 import { CK, read, write } from '@/lib/dataCache'
-import { syncQr } from '@/lib/qrCache'
+import { syncClassQrs, syncQr } from '@/lib/qrCache'
 
 let running = false
 
@@ -31,6 +31,14 @@ export async function prefetchAll(user: { id: number; nama: string }) {
       async () => {
         const r = await ep.memberPtAktif(userId)
         syncQr(user, 'pt', r)
+        return r
+      },
+    ],
+    [
+      'classQrs',
+      async () => {
+        const r = await ep.classQrs(userId)
+        syncClassQrs(user, r)
         return r
       },
     ],
