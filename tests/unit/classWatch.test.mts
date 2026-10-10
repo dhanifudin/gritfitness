@@ -79,3 +79,13 @@ ok('showOnHome: already-registered today hides', !cw.showOnHome(e2({ last_attemp
 ok('showOnHome: waiting/full/failed stay visible', cw.showOnHome(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'waiting' }), NOW) && cw.showOnHome(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'full' }), NOW) && cw.showOnHome(e2({ last_attempt_date: '2026-10-05', last_attempt_result: 'failed' }), NOW))
 ok('showOnHome: yesterday\'s success shows again', cw.showOnHome(e2({ last_attempt_date: '2026-10-04', last_attempt_result: 'registered' }), NOW))
 ok('showOnHome: inactive never shows', !cw.showOnHome(e2({ active: false }), NOW))
+
+// ---- classActionFor with the PESERTA disambiguation ctx (daftar lies after a cancellation) ----
+ok('PESERTA + batal Ya + id_peserta -> cancel', ca.classActionFor('PESERTA', { idPeserta: 18032, batal: 'Ya' })?.kind === 'cancel')
+ok('PESERTA + no id_peserta (cancelled) -> no action', ca.classActionFor('PESERTA', { idPeserta: null, batal: 'Tidak' }) === null && ca.classActionFor('PESERTA', { batal: 'Ya' }) === null)
+ok('PESERTA + id_peserta but batal Tidak (window closed) -> no action', ca.classActionFor('PESERTA', { idPeserta: 18032, batal: 'Tidak' }) === null)
+ok('PESERTA without ctx keeps the old behavior', ca.classActionFor('PESERTA')?.kind === 'cancel')
+ok('ctx does not disturb register/waiting', ca.classActionFor('BELUM TERDAFTAR', { batal: 'Tidak' })?.kind === 'register')
+ok('notice: cancelled registration', ca.classNoticeFor('PESERTA', { idPeserta: null, batal: 'Tidak' }) === 'Anda sudah membatalkan kepesertaan di kelas ini.')
+ok('notice: cancellation closed', ca.classNoticeFor('PESERTA', { idPeserta: 18032, batal: 'Tidak' }) === 'Anda terdaftar sebagai peserta. Pembatalan sudah ditutup.')
+ok('notice: active participant unchanged', ca.classNoticeFor('PESERTA', { idPeserta: 18032, batal: 'Ya' }) === 'Anda sudah menjadi peserta kelas ini.')

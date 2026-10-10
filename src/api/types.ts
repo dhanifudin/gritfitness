@@ -93,6 +93,8 @@ export interface ClassDetail {
   /** raw non-member price, e.g. "75000.00" */
   harga?: string
   daftar: string
+  /** "Ya" while the member can still cancel; "Tidak" after cancelling or once cancellation closed */
+  batal?: string
   id_peserta?: number
 }
 export interface ActionResult {

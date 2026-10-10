@@ -20,8 +20,21 @@ const NOTICES: Record<string, string> = {
   'BAYAR WAITINGLIST': 'Pendaftaran Anda menunggu penyelesaian di front desk.',
 }
 
-/** What action (if any) applies for a `ClassDetail.daftar` status. Null when there's nothing to do. */
-export function classActionFor(daftar: string | undefined): ClassAction | null {
+/** Extra detail fields that disambiguate `daftar: "PESERTA"` — after a cancellation the gym KEEPS
+ *  answering PESERTA, and the truth lives in `batal` ("Ya" = still cancellable) and `id_peserta`
+ *  (absent once the registration was cancelled). Verified against the live API. */
+export interface PesertaCtx {
+  idPeserta?: number | null
+  batal?: string
+}
+
+const cancelled = (ctx: PesertaCtx) => ctx.idPeserta == null
+const cancelClosed = (ctx: PesertaCtx) => ctx.batal !== 'Ya'
+
+/** What action (if any) applies for a `ClassDetail.daftar` status. Null when there's nothing to do.
+ *  Pass `ctx` when the full detail is at hand; without it PESERTA is taken at face value (the
+ *  auto-register path only distinguishes register/waiting and never cancels). */
+export function classActionFor(daftar: string | undefined, ctx?: PesertaCtx): ClassAction | null {
   switch (daftar) {
     case 'YA':
     case 'BELUM TERDAFTAR':
@@ -29,6 +42,7 @@ export function classActionFor(daftar: string | undefined): ClassAction | null {
     case 'DAFTAR WAITING LIST':
       return { kind: 'waiting', label: 'Daftar Waiting List' }
     case 'PESERTA':
+      if (ctx && (cancelled(ctx) || cancelClosed(ctx))) return null
       return { kind: 'cancel', label: 'Batalkan Kepesertaan', danger: true }
     default:
       return null
@@ -36,9 +50,13 @@ export function classActionFor(daftar: string | undefined): ClassAction | null {
 }
 
 /** Human-readable explanation of the current `daftar` status, for display. */
-export function classNoticeFor(daftar: string | undefined): string {
+export function classNoticeFor(daftar: string | undefined, ctx?: PesertaCtx): string {
   const d = daftar ?? ''
-  if (d === 'PESERTA') return 'Anda sudah menjadi peserta kelas ini.'
+  if (d === 'PESERTA') {
+    if (ctx && cancelled(ctx)) return NOTICES.DIBATALKAN
+    if (ctx && cancelClosed(ctx)) return 'Anda terdaftar sebagai peserta. Pembatalan sudah ditutup.'
+    return 'Anda sudah menjadi peserta kelas ini.'
+  }
   if (d === 'DAFTAR WAITING LIST') return 'Kuota peserta sudah penuh. Daftar sebagai waiting list?'
   return NOTICES[d] ?? ''
 }

@@ -33,8 +33,8 @@ const about = computed(() =>
 const classMeta = computed(() => [about.value?.category?.name, about.value?.cls.minutes ? `${about.value.cls.minutes} menit` : null].filter(Boolean).join(' · '))
 const { busy, error: actionError, run } = useAction()
 
-const action = computed(() => classActionFor(c.value?.daftar))
-const notice = computed(() => classNoticeFor(c.value?.daftar))
+const action = computed(() => classActionFor(c.value?.daftar, { idPeserta: c.value?.id_peserta, batal: c.value?.batal }))
+const notice = computed(() => classNoticeFor(c.value?.daftar, { idPeserta: c.value?.id_peserta, batal: c.value?.batal }))
 
 const sheet = ref(false)
 const reason = ref('')
