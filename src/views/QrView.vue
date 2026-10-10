@@ -71,10 +71,12 @@ onUnmounted(() => document.removeEventListener('visibilitychange', onVisible))
 const timeShort = (t: string) => t.slice(0, 5).replace(':', '.')
 /** Everything the member can open with: membership/PT, plus one QR per registered class. */
 const options = computed(() => [
-  ...(items.value.gym ? [{ key: 'gym', label: 'Membership' }] : []),
-  ...(items.value.pt ? [{ key: 'pt', label: 'Personal Trainer' }] : []),
-  ...classes.value.map((c) => ({ key: 'c' + c.id, label: `${titleCase(c.nama_jadwal_kelas)} ${timeShort(c.jam_awal)}` })),
+  ...(items.value.gym ? [{ key: 'gym', label: 'Membership', hint: items.value.gym.tanggal_selesai ? `s.d. ${items.value.gym.tanggal_selesai}` : '' }] : []),
+  ...(items.value.pt ? [{ key: 'pt', label: 'Personal Trainer', hint: items.value.pt.tanggal_selesai ? `s.d. ${items.value.pt.tanggal_selesai}` : '' }] : []),
+  ...classes.value.map((c) => ({ key: 'c' + c.id, label: titleCase(c.nama_jadwal_kelas), hint: `Hari ini · ${timeShort(c.jam_awal)}` })),
 ])
+/** everything except the QR currently shown, as a collapsed list under the card */
+const collapsed = computed(() => options.value.filter((o) => o.key !== active.value))
 const curClass = computed(() => (active.value.startsWith('c') ? classes.value.find((c) => 'c' + c.id === active.value) ?? null : null))
 const cur = computed(() => (curClass.value ? null : items.value[active.value as QrKind]))
 const many = computed(() => options.value.length > 1)
@@ -87,18 +89,6 @@ const noPackageText = computed(() => (serverSaid.value[active.value as QrKind] =
     <div class="flex items-center justify-between gap-3">
       <p class="min-w-0 truncate font-display text-lg font-semibold">{{ auth.user?.nama }}</p>
       <div class="flex shrink-0 gap-2"><ProfileButton /><SettingsButton /></div>
-    </div>
-
-    <div v-if="many" class="seg mt-2 !flex overflow-x-auto" data-testid="qr-picker">
-      <button
-        v-for="o in options"
-        :key="o.key"
-        class="seg-tab min-w-fit flex-1 shrink-0 whitespace-nowrap !px-3"
-        :class="active === o.key ? 'seg-tab-on' : ''"
-        @click="active = o.key"
-      >
-        {{ o.label }}
-      </button>
     </div>
 
     <div v-if="loading" class="mt-3 rounded-3xl bg-white p-4">
@@ -124,6 +114,20 @@ const noPackageText = computed(() => (serverSaid.value[active.value as QrKind] =
     <div v-if="cur || curClass" class="mt-2 flex items-center justify-center gap-2 text-xs text-white/50">
       <span>Disimpan {{ stamp((curClass ?? cur)!.savedAt) }}<template v-if="failed"> · mode offline</template></span>
       <button v-if="failed" class="btn-sm" @click="load">Coba lagi</button>
+    </div>
+    <div v-if="collapsed.length" class="mt-2 space-y-2" data-testid="qr-rows">
+      <button
+        v-for="o in collapsed"
+        :key="o.key"
+        type="button"
+        class="card flex min-h-12 w-full items-center gap-2.5 px-4 py-2 text-left"
+        data-testid="qr-row"
+        @click="active = o.key"
+      >
+        <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-white/50" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v1M14 20h1M18 18h3v3h-3z" /></svg>
+        <span class="min-w-0 flex-1 truncate text-sm font-semibold">{{ o.label }}</span>
+        <span class="shrink-0 text-xs text-white/50">{{ o.hint }}</span>
+      </button>
     </div>
     <CheckInButton minimal class="mt-2" />
   </div>

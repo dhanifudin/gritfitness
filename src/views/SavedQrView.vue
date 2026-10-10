@@ -19,10 +19,11 @@ const active = ref<string>('gym')
 
 const timeShort = (t: string) => t.slice(0, 5).replace(':', '.')
 const options = computed(() => [
-  ...(items.value.gym ? [{ key: 'gym', label: 'Membership' }] : []),
-  ...(items.value.pt ? [{ key: 'pt', label: 'Personal Trainer' }] : []),
-  ...classes.value.map((c) => ({ key: 'c' + c.id, label: `${titleCase(c.nama_jadwal_kelas)} ${timeShort(c.jam_awal)}` })),
+  ...(items.value.gym ? [{ key: 'gym', label: 'Membership', hint: items.value.gym.tanggal_selesai ? `s.d. ${items.value.gym.tanggal_selesai}` : '' }] : []),
+  ...(items.value.pt ? [{ key: 'pt', label: 'Personal Trainer', hint: items.value.pt.tanggal_selesai ? `s.d. ${items.value.pt.tanggal_selesai}` : '' }] : []),
+  ...classes.value.map((c) => ({ key: 'c' + c.id, label: titleCase(c.nama_jadwal_kelas), hint: `Hari ini · ${timeShort(c.jam_awal)}` })),
 ])
+const collapsed = computed(() => options.value.filter((o) => o.key !== active.value))
 
 function refresh() {
   items.value = { gym: loadQr('gym'), pt: loadQr('pt') } // loadQr drops entries past their end date
@@ -58,18 +59,6 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
     </div>
 
     <template v-if="cur || curClass">
-      <div v-if="options.length > 1" class="seg mt-3 !flex overflow-x-auto" data-testid="qr-picker">
-        <button
-          v-for="o in options"
-          :key="o.key"
-          class="seg-tab min-w-fit flex-1 shrink-0 whitespace-nowrap !px-3"
-          :class="active === o.key ? 'seg-tab-on' : ''"
-          @click="active = o.key"
-        >
-          {{ o.label }}
-        </button>
-      </div>
-
       <QrCard
         v-if="curClass"
         :entry="curClass"
@@ -91,6 +80,20 @@ const stamp = (t: number) => new Date(t).toLocaleString('id-ID', { day: '2-digit
       </QrCard>
 
       <p class="mt-2 text-center text-xs text-white/50">Disimpan {{ stamp((curClass ?? cur)!.savedAt) }}</p>
+      <div v-if="collapsed.length" class="mt-2 space-y-2" data-testid="qr-rows">
+      <button
+        v-for="o in collapsed"
+        :key="o.key"
+        type="button"
+        class="card flex min-h-12 w-full items-center gap-2.5 px-4 py-2 text-left"
+        data-testid="qr-row"
+        @click="active = o.key"
+      >
+        <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-white/50" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v1M14 20h1M18 18h3v3h-3z" /></svg>
+        <span class="min-w-0 flex-1 truncate text-sm font-semibold">{{ o.label }}</span>
+        <span class="shrink-0 text-xs text-white/50">{{ o.hint }}</span>
+      </button>
+    </div>
       <CheckInButton minimal class="mt-2" />
     </template>
 

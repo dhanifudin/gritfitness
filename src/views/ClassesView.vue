@@ -64,7 +64,9 @@ const generated = new Date(timetable.generatedAt).toLocaleDateString('id-ID', { 
 const tracker = useTracker()
 onMounted(() => tracker.init())
 type View = 'mine' | 'all'
-const view = ref<View>('mine')
+// null until the member chooses: the default follows whether anything is registered
+const view = ref<View | null>(null)
+const effectiveView = computed<View>(() => view.value ?? (mineToday.value.length || mineUpcoming.value.length ? 'mine' : 'all'))
 const mineToday = computed(() => mergeDay(now.value, actual.value, [], now.value).filter((i) => i.mine))
 const mineUpcoming = computed(() =>
   tracker.signups
@@ -84,14 +86,14 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
 </script>
 
 <template>
-  <PageHeader title="Kelas" :subtitle="view === 'all' ? weekLabel(dates) : 'Kelas yang kamu ikuti'" gear />
+  <PageHeader title="Kelas" :subtitle="effectiveView === 'all' ? weekLabel(dates) : 'Kelas yang kamu ikuti'" gear />
 
   <div class="seg mx-5 mb-3 grid-cols-2" role="tablist">
-    <button role="tab" :aria-selected="view === 'mine'" class="seg-tab" :class="view === 'mine' ? 'seg-tab-on' : ''" data-testid="view-mine" @click="view = 'mine'">Terdaftar</button>
-    <button role="tab" :aria-selected="view === 'all'" class="seg-tab" :class="view === 'all' ? 'seg-tab-on' : ''" data-testid="view-all" @click="view = 'all'">Jadwal</button>
+    <button role="tab" :aria-selected="effectiveView === 'mine'" class="seg-tab" :class="effectiveView === 'mine' ? 'seg-tab-on' : ''" data-testid="view-mine" @click="view = 'mine'">Terdaftar</button>
+    <button role="tab" :aria-selected="effectiveView === 'all'" class="seg-tab" :class="effectiveView === 'all' ? 'seg-tab-on' : ''" data-testid="view-all" @click="view = 'all'">Jadwal</button>
   </div>
 
-  <template v-if="view === 'mine'">
+  <template v-if="effectiveView === 'mine'">
     <div class="space-y-3 px-5" data-testid="mine-list">
       <RouterLink
         v-for="it in mineToday"
@@ -207,7 +209,7 @@ const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as 
 
   </template>
 
-  <p v-if="view === 'all'" class="mx-5 mt-4 text-center text-xs leading-relaxed text-white/35">
+  <p v-if="effectiveView === 'all'" class="mx-5 mt-4 text-center text-xs leading-relaxed text-white/35">
     Kelas berlabel “Perkiraan” mengikuti pola {{ timetable.weeksUsed }} minggu terakhir (diperbarui {{ generated }}) dan bisa berubah.
   </p>
 
