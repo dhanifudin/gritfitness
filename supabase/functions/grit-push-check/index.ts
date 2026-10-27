@@ -2,11 +2,11 @@
 //   'favclass'   — the member's favourite class (by real attendance) is predicted today and they
 //                  haven't signed up or attended it yet.
 //   'notracking' — the member hasn't logged anything in a while.
-//   'classopen'  — a watched class's registration window is probably opening soon; a nudge to open
-//                  the app, which then attempts the real registration itself (src/stores/classWatch.ts).
-//                  The nudge time (src/lib/classOpen.ts: 15:00 the day before for a morning class, 07:00 the
-//                  same day for an afternoon one) is only the member's own observed heuristic, never authoritative
-//                  — the app always decides against the row's real tanggal_mulai_daftar/tutup_daftar.
+//   'classopen'  — a watched class's schedule row is probably published by now (the gym publishes
+//                  about a day ahead); a nudge to open the app, which then attempts the real booking
+//                  itself (src/stores/classWatch.ts). The nudge time (15:00 Jakarta the day before,
+//                  or the occurrence morning before the class starts) is only a heuristic — the app
+//                  always decides off the actually-published /schedule rows.
 // The decision logic is the exact same pure functions the in-app Home nudges use
 // (src/lib/insight.ts), imported directly so the two can never disagree.
 //
@@ -24,9 +24,25 @@ import { favouriteClassToday, noTrackingNudge } from '../../../src/lib/insight.t
 import { daysSinceLastVisit, type Visit } from '../../../src/lib/tracker.ts'
 import type { Slot } from '../../../src/lib/timetable.ts'
 import type { Signup } from '../../../src/lib/trackerData.ts'
-import { jakartaFields, nudgeDue } from '../../../src/lib/classOpen.ts'
 import { titleCase } from '../../../src/lib/format.ts'
 import { gritServiceRequest } from '../_shared/grit.ts'
+
+// Jakarta-local clock fields (UTC+7, Monday = 0), mirroring the app's weekday convention.
+export function jakartaFields(now: Date): { weekday: number; hhmm: string } {
+  const j = new Date(now.getTime() + 7 * 3600_000)
+  return {
+    weekday: (j.getUTCDay() + 6) % 7,
+    hhmm: `${String(j.getUTCHours()).padStart(2, '0')}:${String(j.getUTCMinutes()).padStart(2, '0')}`,
+  }
+}
+
+/** The watched slot's schedule row is likely published: from 15:00 the day before through the
+ *  occurrence morning, until the class starts. */
+export function nudgeDue(e: { weekday: number; start_time: string }, j: { weekday: number; hhmm: string }): boolean {
+  if (e.weekday === j.weekday) return j.hhmm < e.start_time
+  if (e.weekday === (j.weekday + 1) % 7) return j.hhmm >= '15:00'
+  return false
+}
 
 const TIMETABLE_URL = 'https://grit.ulfillah.com/timetable.json'
 const FAVCLASS_COOLDOWN_DAYS = 1
@@ -134,8 +150,8 @@ Deno.serve(async (req) => {
       const when = e.weekday === jakarta.weekday ? 'hari ini' : 'besok'
       payloads.push({
         kind: 'classopen',
-        title: 'Jadwal kelas mungkin sudah bisa didaftar',
-        body: `${titleCase(e.class_name)} ${when} jam ${e.start_time} — buka app untuk coba daftar otomatis.`,
+        title: 'Jadwal kelas mungkin sudah terbit',
+        body: `${titleCase(e.class_name)} ${when} jam ${e.start_time} — buka app untuk booking otomatis.`,
         url: '/classes',
         watchlist_id: e.id,
       })

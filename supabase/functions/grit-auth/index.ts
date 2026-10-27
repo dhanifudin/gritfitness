@@ -8,7 +8,7 @@
 //   -> 200 { token, expires_at, member_id, refresh_token, refresh_expires_at }
 //   -> 401 { error } when the gym rejects the token
 //
-// The gym API is the only source of identity: we call its /validate-token and trust nothing from the
+// The gym API is the only source of identity: we call its /auth/me and trust nothing from the
 // client. The refresh token this mints is scoped only to the member's own rows in schema grit, exactly
 // like the access token — it grants nothing in the gym account, bills or other apps, and nothing in any
 // other Supabase schema (see grit-refresh for how it's used afterwards).
@@ -18,7 +18,7 @@
 // SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are injected by the platform (used only to manage sessions).
 import { cors, createSession, json, mintAccessToken, resolveAllowedOrigins } from '../_shared/grit.ts'
 
-const GYM_API = 'https://gritfitness.id/api'
+const GYM_API = 'https://gritfitness.id/api/member'
 const allowedOrigins = resolveAllowedOrigins()
 
 Deno.serve(async (req) => {
@@ -32,9 +32,9 @@ Deno.serve(async (req) => {
   const auth = req.headers.get('Authorization') ?? ''
   if (!/^Bearer\s+\S{20,}$/.test(auth)) return json({ error: 'missing gym token' }, 401, origin, allowedOrigins)
 
-  let gym: { isValid?: boolean; user?: { id?: unknown } }
+  let gym: { user?: { id?: unknown } }
   try {
-    const res = await fetch(`${GYM_API}/validate-token`, {
+    const res = await fetch(`${GYM_API}/auth/me`, {
       headers: { Authorization: auth, Accept: 'application/json' },
       signal: AbortSignal.timeout(8000),
     })
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
   }
 
   const memberId = Number(gym.user?.id)
-  if (!gym.isValid || !Number.isSafeInteger(memberId) || memberId <= 0) return json({ error: 'invalid gym token' }, 401, origin, allowedOrigins)
+  if (!Number.isSafeInteger(memberId) || memberId <= 0) return json({ error: 'invalid gym token' }, 401, origin, allowedOrigins)
 
   const access = await mintAccessToken(memberId, secret)
   let session: { refresh_token: string; refresh_expires_at: number } | null = null
