@@ -1,4 +1,4 @@
-const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? 'https://gritfitness.id/api'
+const BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? 'https://gritfitness.id/api/member'
 
 export class ApiError extends Error {
   status: number
@@ -23,10 +23,18 @@ interface Options {
   body?: unknown
   /** treat 404 as "no data" and return this value instead of throwing */
   emptyOn404?: unknown
+  /** extra statuses whose body is returned instead of throwing (e.g. 429 on request-otp = OTP still valid) */
+  okOn?: number[]
 }
 
-// Paths must not have a trailing slash: the server 301-redirects them to plain http://.
-export async function api<T>(path: string, { method = 'GET', body, emptyOn404 }: Options = {}): Promise<T> {
+/** First human-readable message out of a Laravel error body ({message} or {errors:{field:[…]}}). */
+export function apiMessage(data: unknown): string | undefined {
+  const d = data as { message?: string; errors?: Record<string, string[]> } | null
+  const fieldErr = d?.errors && Object.values(d.errors)[0]?.[0]
+  return fieldErr ?? d?.message
+}
+
+export async function api<T>(path: string, { method = 'GET', body, emptyOn404, okOn }: Options = {}): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   const token = getToken()
   if (token) headers.Authorization = `Bearer ${token}`
@@ -42,10 +50,9 @@ export async function api<T>(path: string, { method = 'GET', body, emptyOn404 }:
 
   if (res.status === 401 && token) onUnauthorized()
   if (res.status === 404 && emptyOn404 !== undefined) return emptyOn404 as T
-  if (!res.ok) {
-    const msg = (data as { message?: string; error?: string } | null)?.message ?? (data as { error?: string } | null)?.error
-    const sessionEnded = res.status === 401 && !!token && !path.startsWith('/verify-otp') && !path.startsWith('/request-otp')
-    throw new ApiError(res.status, sessionEnded ? 'Sesi berakhir. Masuk lagi untuk memuat data terbaru.' : (msg ?? `Permintaan gagal (${res.status})`), data)
+  if (!res.ok && !okOn?.includes(res.status)) {
+    const sessionEnded = res.status === 401 && !!token && !path.startsWith('/auth/')
+    throw new ApiError(res.status, sessionEnded ? 'Sesi berakhir. Masuk lagi untuk memuat data terbaru.' : (apiMessage(data) ?? `Permintaan gagal (${res.status})`), data)
   }
   return data as T
 }

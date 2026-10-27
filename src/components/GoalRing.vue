@@ -20,7 +20,7 @@ const met = computed(() => props.count >= props.goal)
       />
     </svg>
     <div class="absolute inset-0 flex flex-col items-center justify-center">
-      <span class="font-display text-3xl leading-none" :class="met ? 'text-grit-300' : ''">{{ count }}<span class="text-lg text-white/50">/{{ goal }}</span></span>
+      <span class="text-3xl font-extrabold leading-none" :class="met ? 'text-grit-500' : ''">{{ count }}<span class="text-lg text-mute">/{{ goal }}</span></span>
       <span class="chart-label mt-1">{{ label ?? 'minggu ini' }}</span>
     </div>
   </div>

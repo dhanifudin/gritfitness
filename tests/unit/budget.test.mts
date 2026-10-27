@@ -9,12 +9,17 @@ const ok = (n: string, c: boolean, x = '') => {
 const NOW = new Date(2026, 9, 1, 12, 0) // Thu 1 Oct 2026
 let vid = 0
 const V = (day: string, activity = 'gym') => ({ client_id: 'v' + vid++, visited_on: day, source: 'manual' as const, activity })
-const bill = (invoice: string, total: string, status = 'Lunas') => ({ status, tanggal_invoice: invoice, total_tagihan: total })
+const bill = (invoice: string, total: string, status = 'Lunas') => ({ paid: status === 'Lunas' || status === 'Dibayar', amount: Number(total), date: invoice.slice(0, 10) })
 
 // ---- isGritActivity / isPaid ----
 ok('isGritActivity: gym/class/pt/recovery are Grit, other is not', b.isGritActivity({ activity: 'gym' }) && b.isGritActivity({ activity: 'class' }) && b.isGritActivity({ activity: 'pt' }) && b.isGritActivity({ activity: 'recovery' }) && !b.isGritActivity({ activity: 'other' }))
 ok('isGritActivity: missing activity defaults to gym (counted)', b.isGritActivity({}))
-ok('isPaid: Lunas and Dibayar only', b.isPaid('Lunas') && b.isPaid('Dibayar') && !b.isPaid('Belum Dibayar') && !b.isPaid('Belum Lunas') && !b.isPaid('Expired'))
+ok('invoiceBill: maps lunas/jumlah/label date', (() => {
+  const parse = (x: string) => (x === '29 Sep 2026' ? new Date(2026, 8, 29, 23, 59).getTime() : null)
+  const m = b.invoiceBill({ lunas: true, jumlah: 1491750, jatuh_tempo_label: '29 Sep 2026' }, parse)
+  const n = b.invoiceBill({ lunas: false, jumlah: 100, jatuh_tempo_label: '??' }, parse)
+  return m.paid && m.amount === 1491750 && m.date === '2026-09-29' && !n.paid && n.date === null
+})())
 
 // ---- monthlySpend ----
 const bills = [

@@ -16,7 +16,7 @@ const total = computed(() => grid.value.flat().filter((c) => c.inMonth && c.visi
   <div>
     <div class="mb-2 flex items-center justify-between">
       <button class="btn-sm" aria-label="Bulan sebelumnya" :disabled="offset >= 24" @click="offset++"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7" /></svg></button>
-      <p class="text-sm font-semibold">{{ MONTHS[base.getMonth()] }} {{ base.getFullYear() }} <span class="font-normal text-white/50">· {{ total }} hari</span></p>
+      <p class="text-sm font-semibold">{{ MONTHS[base.getMonth()] }} {{ base.getFullYear() }} <span class="font-normal text-mute">· {{ total }} hari</span></p>
       <button class="btn-sm" aria-label="Bulan berikutnya" :disabled="offset === 0" @click="offset--"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7" /></svg></button>
     </div>
     <div class="chart-label grid grid-cols-7 gap-1 text-center">
@@ -27,12 +27,12 @@ const total = computed(() => grid.value.flat().filter((c) => c.inMonth && c.visi
         <button
           v-for="c in row" :key="c.date" type="button" :disabled="c.future"
           class="relative flex aspect-square items-center justify-center rounded-lg text-xs transition active:scale-95"
-          :class="[c.visited ? 'bg-grit-500 font-bold text-white' : c.other ? 'bg-white/5 text-white/70 ring-1 ring-inset ring-grit-500/60' : c.inMonth ? 'bg-white/5 text-white/70' : 'text-white/35', c.isToday ? 'ring-2 ring-white/70' : '', c.future ? 'opacity-50' : '']"
+          :class="[c.visited ? 'bg-grit-500 font-bold text-white' : c.other ? 'bg-wash text-soft ring-1 ring-inset ring-grit-500/60' : c.inMonth ? 'bg-wash text-soft' : 'text-mute', c.isToday ? 'ring-2 ring-grit-500' : '', c.future ? 'opacity-50' : '']"
           :data-visited="c.visited || undefined" :data-other="c.other || undefined" :data-date="c.date" :aria-label="`${c.date}${c.visited ? ', latihan' : c.other ? ', aktivitas lain' : ''}`"
           @click="emit('select', c.date)"
         >
           {{ c.day }}
-          <span v-if="!c.visited && !c.other && planned.has(c.date)" class="absolute bottom-1 h-1 w-1 rounded-full bg-grit-300" />
+          <span v-if="!c.visited && !c.other && planned.has(c.date)" class="absolute bottom-1 h-1 w-1 rounded-full bg-grit-500" />
         </button>
       </template>
     </div>

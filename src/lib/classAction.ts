@@ -1,62 +1,41 @@
-// What a class-detail row's `daftar` status means and what to do about it — shared between
-// ClassDetailView.vue (the manual flow) and the auto-register watchlist check, so the two can never
-// disagree about what counts as "registrable right now". Pure, no Vue/browser imports.
+// What a schedule row's booking state means and what to do about it — shared between the class
+// detail sheet (manual flow) and the auto-register watchlist check, so the two can never disagree
+// about what counts as "bookable right now". Pure, no Vue/browser imports.
 
-export type ActionKind = 'register' | 'waiting' | 'cancel'
+export type ActionKind = 'book' | 'waiting' | 'pay'
 
 export interface ClassAction {
   kind: ActionKind
   label: string
-  danger?: boolean
 }
 
-const NOTICES: Record<string, string> = {
-  'SUDAH TERDAFTAR': 'Anda sudah masuk waiting list kelas ini.',
-  'TERDAFTAR WAITING LIST': 'Anda terdaftar sebagai waiting list kelas ini.',
-  TIDAK: 'Anda bukan anggota premium, atau tidak terdaftar di paket kelas ini.',
-  PINALTI: 'Anda belum bisa mengikuti jadwal ini karena masih dalam masa penalti.',
-  DIBATALKAN: 'Anda sudah membatalkan kepesertaan di kelas ini.',
-  BAYAR: 'Kelas ini berbayar. Silakan hubungi front desk untuk mendaftar.',
-  'BAYAR WAITINGLIST': 'Pendaftaran Anda menunggu penyelesaian di front desk.',
+export interface BookableRow {
+  penuh: boolean
+  sudah_booking: boolean
+  booking_status: 'confirmed' | 'booked' | null
+  tagihan_id: number | null
 }
 
-/** Extra detail fields that disambiguate `daftar: "PESERTA"` — after a cancellation the gym KEEPS
- *  answering PESERTA, and the truth lives in `batal` ("Ya" = still cancellable) and `id_peserta`
- *  (absent once the registration was cancelled). Verified against the live API. */
-export interface PesertaCtx {
-  idPeserta?: number | null
-  batal?: string
+/** What action (if any) applies to a schedule row. Null when there's nothing to do (already in). */
+export function classActionFor(row: BookableRow): ClassAction | null {
+  if (row.booking_status === 'confirmed') return null
+  if (row.booking_status === 'booked') return { kind: 'pay', label: 'Lanjutkan Pembayaran' }
+  if (row.penuh) return { kind: 'waiting', label: 'Ikut Waiting List' }
+  return { kind: 'book', label: 'Ambil Kelas Ini' }
 }
 
-const cancelled = (ctx: PesertaCtx) => ctx.idPeserta == null
-const cancelClosed = (ctx: PesertaCtx) => ctx.batal !== 'Ya'
-
-/** What action (if any) applies for a `ClassDetail.daftar` status. Null when there's nothing to do.
- *  Pass `ctx` when the full detail is at hand; without it PESERTA is taken at face value (the
- *  auto-register path only distinguishes register/waiting and never cancels). */
-export function classActionFor(daftar: string | undefined, ctx?: PesertaCtx): ClassAction | null {
-  switch (daftar) {
-    case 'YA':
-    case 'BELUM TERDAFTAR':
-      return { kind: 'register', label: 'Daftar Peserta' }
-    case 'DAFTAR WAITING LIST':
-      return { kind: 'waiting', label: 'Daftar Waiting List' }
-    case 'PESERTA':
-      if (ctx && (cancelled(ctx) || cancelClosed(ctx))) return null
-      return { kind: 'cancel', label: 'Batalkan Kepesertaan', danger: true }
-    default:
-      return null
-  }
+/** Human-readable explanation of the row's booking state, for display. */
+export function classNoticeFor(row: BookableRow): string {
+  if (row.booking_status === 'confirmed') return 'Kamu sudah mengambil kelas ini.'
+  if (row.booking_status === 'booked') return 'Booking menunggu pembayaran. Selesaikan pembayaran agar slot tidak hangus.'
+  if (row.penuh) return 'Kuota peserta sudah penuh. Ikut sebagai waiting list?'
+  return ''
 }
 
-/** Human-readable explanation of the current `daftar` status, for display. */
-export function classNoticeFor(daftar: string | undefined, ctx?: PesertaCtx): string {
-  const d = daftar ?? ''
-  if (d === 'PESERTA') {
-    if (ctx && cancelled(ctx)) return NOTICES.DIBATALKAN
-    if (ctx && cancelClosed(ctx)) return 'Anda terdaftar sebagai peserta. Pembatalan sudah ditutup.'
-    return 'Anda sudah menjadi peserta kelas ini.'
-  }
-  if (d === 'DAFTAR WAITING LIST') return 'Kuota peserta sudah penuh. Daftar sebagai waiting list?'
-  return NOTICES[d] ?? ''
-}
+/** The rules every participant agrees to before booking (verbatim from the gym). */
+export const ATURAN_KELAS = [
+  'Setiap peserta kelas wajib men-scan barcode saat mengikuti kelas.',
+  'Jika tidak scan barcode sebelum kelas, dianggap tidak hadir dan mendapat pinalti: tidak dapat memesan kelas yang sama berikutnya selama 1 kali.',
+  'Cancel kelas maksimal 1 jam sebelum kelas dimulai.',
+  'Cancel kelas tidak dapat dilakukan 1 jam sebelum kelas dimulai, dan jika tidak hadir pinalti akan berlaku.',
+]

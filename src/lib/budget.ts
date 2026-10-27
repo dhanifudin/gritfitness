@@ -7,18 +7,25 @@
 // though recovery *is* a paid GritFitness service and belongs here).
 import { addDays, ymd, type Visit } from './tracker.ts'
 
+/** Normalized invoice for the budget math. `date` is the invoice's (due) date as YYYY-MM-DD —
+ *  the new API only sends a preformatted label, so views map it via qrCache.parseExpiry. */
 export interface BillLike {
-  status: string
-  tanggal_invoice: string // 'YYYY-MM-DD HH:MM:SS'
-  total_tagihan: string // raw numeric string, e.g. "1491750.00"
+  paid: boolean
+  amount: number
+  date: string | null
 }
 
-export const isPaid = (status: string) => status === 'Lunas' || status === 'Dibayar'
+/** Map a new-API invoice to the normalized shape. */
+export function invoiceBill(i: { lunas: boolean; jumlah: number; jatuh_tempo_label: string }, parseDate: (s: string) => number | null): BillLike {
+  const t = parseDate(i.jatuh_tempo_label)
+  return { paid: i.lunas, amount: i.jumlah, date: t === null ? null : ymd(new Date(t)) }
+}
+
 export const isGritActivity = (v: Pick<Visit, 'activity'>) => (v.activity ?? 'gym') !== 'other'
 
-const billMonth = (b: BillLike) => b.tanggal_invoice.slice(0, 7) // 'YYYY-MM'
-const billDate = (b: BillLike) => b.tanggal_invoice.slice(0, 10) // 'YYYY-MM-DD'
-const amount = (b: BillLike) => Number(b.total_tagihan) || 0
+const billMonth = (b: BillLike) => b.date?.slice(0, 7) ?? '' // 'YYYY-MM'
+const billDate = (b: BillLike) => b.date ?? ''
+const amount = (b: BillLike) => b.amount || 0
 
 export interface MonthSpend {
   month: string // 'YYYY-MM'
@@ -34,7 +41,7 @@ export function monthlySpend(bills: BillLike[], now: Date, months = 6): MonthSpe
   })
   const byMonth = new Map<string, number>()
   for (const b of bills) {
-    if (!isPaid(b.status)) continue
+    if (!b.paid) continue
     const k = billMonth(b)
     byMonth.set(k, (byMonth.get(k) ?? 0) + amount(b))
   }
@@ -44,7 +51,7 @@ export function monthlySpend(bills: BillLike[], now: Date, months = 6): MonthSpe
 /** Total paid in the given inclusive date range ('YYYY-MM-DD'); no range = all paid bills. */
 export function totalSpent(bills: BillLike[], range?: { from: string; to: string }): number {
   return bills
-    .filter((b) => isPaid(b.status))
+    .filter((b) => b.paid)
     .filter((b) => !range || (billDate(b) >= range.from && billDate(b) <= range.to))
     .reduce((sum, b) => sum + amount(b), 0)
 }
@@ -77,7 +84,7 @@ export interface UnpaidSummary {
 }
 
 export function unpaidSummary(bills: BillLike[]): UnpaidSummary {
-  const unpaid = bills.filter((b) => !isPaid(b.status))
+  const unpaid = bills.filter((b) => !b.paid)
   return { count: unpaid.length, total: unpaid.reduce((sum, b) => sum + amount(b), 0) }
 }
 

@@ -1,232 +1,224 @@
 <script setup lang="ts">
 import { titleCase } from '@/lib/format'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { jadwalKelas, paketKelas } from '@/api/endpoints'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { myClasses, schedule } from '@/api/endpoints'
+import type { ScheduleRow } from '@/api/types'
 import PageHeader from '@/components/PageHeader.vue'
-import StateBox from '@/components/StateBox.vue'
-import { assetUrl, useAsync } from '@/composables/useAsync'
-import timetable from '@/data/timetable.json'
-import { CK } from '@/lib/dataCache'
 import ClassInfoSheet from '@/components/ClassInfoSheet.vue'
-import SafeImg from '@/components/SafeImg.vue'
+import { rupiah, useAsync } from '@/composables/useAsync'
+import timetable from '@/data/timetable.json'
 import classInfo from '@/data/classInfo.json'
 import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
-import { parseYmd, signupDue, ymd } from '@/lib/tracker'
+import { CK, read, write } from '@/lib/dataCache'
+import { addDays, mergeDay, startOfDay, weekdayOf, type DayItem, type Slot } from '@/lib/timetable'
+import { ymd } from '@/lib/tracker'
 import { useTracker } from '@/stores/tracker'
-import { DAY_NAMES, mergeDay, sameDay, weekDates, weekdayOf, weekLabel, type DayItem, type Slot } from '@/lib/timetable'
 
-const MAX_OFFSET = 3 // current week + 3 weeks ahead
+// Official-style day picker: 14 days starting today, each tap (re)fetches that day's schedule.
+const DAYS_AHEAD = 14
+const DAY_NAMES_SUN = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 const slots = timetable.slots as Slot[]
 const info = classInfo as unknown as ClassInfoData
-
-// What the class is (description, category), joined on the class package id.
-const matchOf = (it: DayItem) => classInfoFor(info, { packageId: it.packageId, kelas: it.kelas })
-// One small icon per class category (Cardio/Flexibility/Strength — the full set, confirmed via classInfo.json)
-// instead of a plain colored dot: a pulse line, a stretch figure, a dumbbell.
-const CAT_ICON: Record<string, { path: string; color: string }> = {
-  '2': { path: 'M3 12h4l2-5 4 10 2-5h6', color: 'text-white/50' }, // Cardio: pulse line
-  '4': { path: 'M12 5v5M7 8l5 2.5L17 8M9 20l3-7 3 7', color: 'text-white/50' }, // Flexibility: stretch figure
-  '5': { path: 'M4 9v6M20 9v6M7 12h10', color: 'text-white/50' }, // Strength: barbell
-}
-const opened = ref<DayItem | null>(null)
-const openedMatch = computed(() => (opened.value ? matchOf(opened.value) : null))
-
-// Real rows: the API only lists today's still-open classes.
-const { data: actual, error, savedAt, stale, reload } = useAsync(jadwalKelas, [], { key: CK.classes })
-// Class photos for predicted rows, by package id (prefetched and cached by the other tabs).
-const { data: packages } = useAsync(paketKelas, [], { key: CK.packages('class') })
-const photoOf = (packageId: number | null) => {
-  const f = packages.value.find((p) => p.id === packageId)?.foto
-  return f ? assetUrl('/storage/kelas/' + f) : ''
-}
 
 const now = ref(new Date())
 let timer: ReturnType<typeof setInterval>
 onMounted(() => (timer = setInterval(() => (now.value = new Date()), 60_000))) // flips "Perkiraan" → "Selesai" on time
 onUnmounted(() => clearInterval(timer))
 
-const offset = ref(0)
-const dates = computed(() => weekDates(offset.value, now.value))
-const todayIdx = computed(() => dates.value.findIndex((d) => sameDay(d, now.value)))
-const picked = ref<number | null>(null) // null = default (today, or Monday on other weeks)
-const selected = computed(() => picked.value ?? (todayIdx.value >= 0 ? todayIdx.value : 0))
+const days = computed(() => Array.from({ length: DAYS_AHEAD }, (_, i) => addDays(startOfDay(now.value), i)))
+const sel = ref(0)
+const selDate = computed(() => days.value[sel.value])
+const selYmd = computed(() => ymd(selDate.value))
 
-function go(delta: number) {
-  offset.value = Math.min(MAX_OFFSET, Math.max(0, offset.value + delta))
-  picked.value = null
+// per-date rows, stale-while-revalidate against the shared cache
+const byDate = ref<Record<string, ScheduleRow[]>>({})
+const loading = ref(false)
+const error = ref('')
+const savedAt = ref(0)
+const stale = ref(false)
+async function loadDay(date: string, force = false) {
+  const hit = read<ScheduleRow[]>(CK.schedule(date))
+  if (hit) {
+    byDate.value = { ...byDate.value, [date]: hit.data }
+    savedAt.value = hit.savedAt
+    if (!force && Date.now() - hit.savedAt < 30_000) return
+  } else {
+    savedAt.value = 0
+  }
+  loading.value = !hit
+  error.value = ''
+  stale.value = false
+  try {
+    const rows = await schedule(date)
+    byDate.value = { ...byDate.value, [date]: rows }
+    savedAt.value = write(CK.schedule(date), rows)
+  } catch (e) {
+    if (hit) stale.value = true
+    else error.value = e instanceof Error ? e.message : 'Terjadi kesalahan'
+  } finally {
+    loading.value = false
+  }
 }
+watch(selYmd, (d) => void loadDay(d), { immediate: true })
+const reload = () => loadDay(selYmd.value, true)
 
-const week = computed(() => dates.value.map((d) => mergeDay(d, actual.value, slots, now.value)))
-const items = computed(() => week.value[selected.value])
+const actual = computed(() => byDate.value[selYmd.value])
+// Real rows merged with the recurring weekly pattern (predictions) for days the gym hasn't published yet.
+const items = computed(() => mergeDay(selDate.value, actual.value ?? [], slots, now.value))
+const rowOf = (it: DayItem) => (actual.value ?? []).find((r) => r.id === it.classId) ?? null
 const generated = new Date(timetable.generatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 
-// ---- "Terdaftar" view: the member's own classes (today from the API, later from the tracker) ----
+// ---- "Terdaftar" view: the member's bookings (API) plus tracker-known signups ----
 const tracker = useTracker()
 onMounted(() => tracker.init())
+const { data: mine, reload: reloadMine } = useAsync(myClasses, null, { key: CK.myClasses })
 type View = 'mine' | 'all'
-// null until the member chooses: the default follows whether anything is registered
+// null until the member chooses: the default follows whether anything is booked
 const view = ref<View | null>(null)
-const effectiveView = computed<View>(() => view.value ?? (mineToday.value.length || mineUpcoming.value.length ? 'mine' : 'all'))
-const mineToday = computed(() => mergeDay(now.value, actual.value, [], now.value).filter((i) => i.mine))
-const mineUpcoming = computed(() =>
-  tracker.signups
-    .filter((s) => s.status === 'planned' && (s.scheduled_on > ymd(now.value) || (s.scheduled_on === ymd(now.value) && !signupDue(s, now.value) && !mineToday.value.length)))
-    .sort((a, b) => a.scheduled_on.localeCompare(b.scheduled_on) || (a.start_time ?? '').localeCompare(b.start_time ?? '')),
-)
-const upDay = (on: string) => (on === ymd(now.value) ? 'Hari ini' : parseYmd(on).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' }))
+const effectiveView = computed<View>(() => (view.value ?? (mine.value?.mendatang.length ? 'mine' : 'all')))
 
-const badge = {
-  confirmed: 'bg-emerald-500/20 text-emerald-300',
-  predicted: 'bg-amber-500/15 text-amber-300',
-  ended: 'bg-white/10 text-white/35',
-} as const
+const opened = ref<{ item: DayItem; row: ScheduleRow | null } | null>(null)
+const openedMatch = computed(() => (opened.value ? classInfoFor(info, { packageId: opened.value.item.packageId, kelas: opened.value.item.kelas }) : null))
+function openItem(it: DayItem) {
+  opened.value = { item: it, row: rowOf(it) }
+}
+function booked() {
+  // keep the sheet open so the success message is readable; refresh the lists behind it
+  void loadDay(selYmd.value, true)
+  void reloadMine()
+}
+
+const badge = { confirmed: 'pill-ok', predicted: 'pill-warn', ended: 'pill-mute' } as const
 const badgeText = { confirmed: 'Terjadwal', predicted: 'Perkiraan', ended: 'Selesai' } as const
-// so status doesn't rely on color (or reading the Indonesian word) alone: check mark / clock / muted check
-const badgeIcon = { confirmed: 'check', predicted: 'clock', ended: 'check' } as const
+const dayLabel = (d: Date, i: number) => (i === 0 ? 'Hari ini' : i === 1 ? 'Besok' : d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' }))
 </script>
 
 <template>
-  <PageHeader title="Kelas" :subtitle="effectiveView === 'all' ? weekLabel(dates) : 'Kelas yang kamu ikuti'" gear />
+  <PageHeader title="Jadwal Kelas" :subtitle="effectiveView === 'all' ? dayLabel(selDate, sel) : 'Kelas yang kamu ikuti'" />
 
-  <div class="seg mx-5 mb-3 grid-cols-2" role="tablist">
+  <div class="seg mx-4 mb-3 grid-cols-2" role="tablist">
     <button role="tab" :aria-selected="effectiveView === 'mine'" class="seg-tab" :class="effectiveView === 'mine' ? 'seg-tab-on' : ''" data-testid="view-mine" @click="view = 'mine'">Terdaftar</button>
     <button role="tab" :aria-selected="effectiveView === 'all'" class="seg-tab" :class="effectiveView === 'all' ? 'seg-tab-on' : ''" data-testid="view-all" @click="view = 'all'">Jadwal</button>
   </div>
 
   <template v-if="effectiveView === 'mine'">
-    <div class="space-y-3 px-5" data-testid="mine-list">
+    <div class="space-y-3 px-4" data-testid="mine-list">
       <RouterLink
-        v-for="it in mineToday"
-        :key="it.key"
-        :to="`/classes/${it.classId}`"
+        v-for="c in mine?.mendatang ?? []"
+        :key="c.id"
+        :to="`/my-classes/${c.schedule_id}`"
         class="card flex items-center justify-between gap-3 p-4"
       >
         <div class="min-w-0">
-          <p class="truncate font-display text-lg leading-tight">{{ titleCase(it.name) }}</p>
-          <p class="mt-0.5 text-sm text-white/50">Hari ini · {{ it.start }}–{{ it.end }}<template v-if="it.instructor"> · {{ it.instructor }}</template></p>
+          <p class="truncate font-extrabold">{{ titleCase(c.nama) }}</p>
+          <p class="mt-0.5 text-sm text-mute">{{ c.tanggal }} · {{ c.jam_mulai }}–{{ c.jam_selesai }}<template v-if="c.instruktur"> · {{ c.instruktur }}</template></p>
         </div>
-        <span class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="it.mine === 'peserta' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/15 text-amber-300'">
-          <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
-          {{ it.mine === 'peserta' ? 'Terdaftar' : 'Waiting list' }}
+        <span class="pill shrink-0" :class="c.status_booking === 'confirmed' ? 'pill-ok' : 'pill-warn'">
+          <span class="pill-dot" aria-hidden="true" />{{ c.status_booking_label }}
         </span>
       </RouterLink>
 
-      <div v-for="s in mineUpcoming" :key="s.schedule_id" class="card flex items-center justify-between gap-3 p-4">
-        <div class="min-w-0">
-          <p class="truncate font-display text-lg leading-tight">{{ titleCase(s.class_name) }}</p>
-          <p class="mt-0.5 text-sm text-white/50">{{ upDay(s.scheduled_on) }}<template v-if="s.start_time"> · {{ s.start_time.slice(0, 5) }}</template></p>
-        </div>
-        <span class="shrink-0 rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-300">Terdaftar</span>
-      </div>
-
-      <div v-if="!mineToday.length && !mineUpcoming.length" class="card p-6 text-center" data-testid="mine-empty">
-        <p class="font-semibold">Belum ada kelas terdaftar</p>
-        <p class="mt-1 text-sm text-white/50">Daftar dari jadwal, atau nyalakan daftar otomatis di kelas yang kamu mau.</p>
+      <div v-if="!mine?.mendatang.length" class="card p-6 text-center" data-testid="mine-empty">
+        <p class="font-bold">Belum ada kelas terbooking</p>
+        <p class="mt-1 text-sm text-mute">Booking dari jadwal, atau nyalakan booking otomatis di kelas yang kamu mau.</p>
         <button class="btn-primary mt-4 w-full" @click="view = 'all'">Lihat jadwal</button>
       </div>
     </div>
   </template>
 
   <template v-else>
-  <div class="mb-3 flex items-center justify-between px-5">
-    <button class="btn-sm !text-sm" :disabled="offset === 0" aria-label="Minggu sebelumnya" @click="go(-1)"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg></button>
-    <span class="text-xs text-white/50">{{ offset === 0 ? 'Minggu ini' : offset === 1 ? 'Minggu depan' : `${offset} minggu lagi` }}</span>
-    <button class="btn-sm !text-sm" :disabled="offset === MAX_OFFSET" aria-label="Minggu berikutnya" @click="go(1)"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg></button>
-  </div>
+    <div class="scrollbar-none mb-3 flex gap-2 overflow-x-auto px-4 pb-1" role="tablist">
+      <button
+        v-for="(d, i) in days"
+        :key="i"
+        role="tab"
+        :aria-selected="sel === i"
+        class="flex w-[52px] shrink-0 flex-col items-center rounded-xl border py-2 text-xs transition"
+        :class="sel === i ? 'border-grit-500 bg-grit-500 text-white' : 'border-line bg-card text-mute'"
+        @click="sel = i"
+      >
+        <span class="text-[11px] font-semibold">{{ DAY_NAMES_SUN[d.getDay()] }}</span>
+        <span class="mt-0.5 text-base leading-none font-extrabold" :class="sel === i ? '' : 'text-ink'">{{ d.getDate() }}</span>
+      </button>
+    </div>
 
-  <div class="mb-4 grid grid-cols-7 gap-1.5 px-5" role="tablist">
-    <button
-      v-for="(d, i) in dates"
-      :key="i"
-      role="tab"
-      :aria-selected="selected === i"
-      class="flex flex-col items-center rounded-xl py-2 text-xs transition"
-      :class="[
-        selected === i ? 'bg-grit-500 text-white' : 'bg-white/5 text-white/50',
-        i === todayIdx && selected !== i ? 'ring-1 ring-white/70' : '',
-        !week[i].length && selected !== i ? 'opacity-40' : '',
-      ]"
-      @click="picked = i"
-    >
-      <span>{{ DAY_NAMES[i] }}</span>
-      <span class="mt-0.5 font-display text-lg leading-none">{{ d.getDate() }}</span>
-      <span class="mt-1 h-1 w-1 rounded-full" :class="week[i].some((x) => x.status === 'confirmed') ? 'bg-emerald-400' : week[i].length ? 'bg-white/15' : 'bg-transparent'" />
-    </button>
-  </div>
-
-  <p v-if="error" class="banner banner-err mx-5 mb-3 flex items-center justify-between gap-3 !py-2 !text-xs">
-    Jadwal terbaru tidak bisa dimuat.
-    <button class="btn-sm btn-danger shrink-0" @click="reload">Coba lagi</button>
-  </p>
-  <StateBox :stale="stale" :saved-at="savedAt" :empty="!items.length" empty-text="Tidak ada jadwal kelas di hari ini">
-    <ul class="space-y-3 px-5">
-      <li v-for="it in items" :key="it.key" class="card overflow-hidden" :class="it.status === 'ended' ? 'opacity-50' : ''">
-        <component
-          :is="it.status === 'confirmed' ? 'RouterLink' : 'div'"
-          v-bind="it.status === 'confirmed' ? { to: `/classes/${it.classId}` } : {}"
-          class="flex w-full gap-3 p-3"
-        >
-          <SafeImg :src="it.fotoUrl ? assetUrl(it.fotoUrl) : photoOf(it.packageId)" :alt="titleCase(it.kelas)" class="h-20 w-20 shrink-0 rounded-xl object-cover" />
-          <div class="min-w-0 flex-1">
-            <div class="flex items-start justify-between gap-2">
-              <p class="truncate font-display text-lg leading-tight">{{ titleCase(it.name) }}</p>
-              <span v-if="it.mine" class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="it.mine === 'peserta' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/15 text-amber-300'">
-                <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
-                {{ it.mine === 'peserta' ? 'Terdaftar' : 'Waiting list' }}
-              </span>
-              <span v-else class="flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" :class="badge[it.status]">
-                <svg viewBox="0 0 24 24" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle v-if="badgeIcon[it.status] === 'clock'" cx="12" cy="12" r="9" />
-                  <path :d="badgeIcon[it.status] === 'clock' ? 'M12 7v5l3 3' : 'M20 6L9 17l-5-5'" />
-                </svg>
-                {{ badgeText[it.status] }}
-              </span>
+    <p v-if="error" class="banner banner-err mx-4 mb-3 flex items-center justify-between gap-3 !py-2 !text-xs">
+      Jadwal terbaru tidak bisa dimuat.
+      <button class="btn-sm btn-danger shrink-0" @click="reload">Coba lagi</button>
+    </p>
+    <div v-if="loading" class="space-y-3 px-4">
+      <div v-for="i in 3" :key="i" class="skeleton h-[84px]" />
+    </div>
+    <template v-else>
+      <p v-if="stale && savedAt" class="banner banner-warn mx-4 mb-3 !px-3 !py-2 !text-xs">Tidak bisa memperbarui · menampilkan data tersimpan</p>
+      <div v-if="!items.length" class="px-4 py-12 text-center">
+        <svg viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-line" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2" /><path d="M3 11h18M8 3v4M16 3v4" /></svg>
+        <p class="mt-2.5 text-sm text-mute">Tidak ada jadwal kelas di hari ini</p>
+      </div>
+      <ul v-else class="space-y-3 px-4">
+        <li v-for="it in items" :key="it.key" :class="it.status === 'ended' ? 'opacity-50' : ''">
+          <button type="button" class="card flex w-full items-center gap-3 p-4 text-left" @click="openItem(it)">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-2">
+                <p class="truncate font-extrabold">{{ titleCase(it.name) }}</p>
+                <span v-if="it.mine" class="pill shrink-0" :class="it.mine === 'peserta' ? 'pill-navy' : 'pill-warn'">
+                  {{ it.mine === 'peserta' ? 'Terbooking' : 'Belum Bayar' }}
+                </span>
+                <span v-else-if="it.status !== 'confirmed'" class="pill shrink-0" :class="badge[it.status]">{{ badgeText[it.status] }}</span>
+                <span v-else-if="it.penuh" class="pill pill-danger shrink-0">Penuh</span>
+                <span v-else class="shrink-0 text-[13px] font-bold text-grit-500">Detail ›</span>
+              </div>
+              <p class="mt-0.5 truncate text-[13px] font-semibold text-mute">
+                {{ it.start }}–{{ it.end }}<template v-if="it.instructor"> · {{ it.instructor }}</template>
+              </p>
+              <p v-if="it.status === 'confirmed' && rowOf(it)" class="mt-1 text-[13px]">
+                <span v-if="rowOf(it)!.gratis && rowOf(it)!.harga_normal > 0" class="pill pill-ok mr-1.5 !px-2 !py-0.5 !text-[11px]">Membership</span>
+                <span v-if="rowOf(it)!.diskon" class="pill pill-warn mr-1.5 !px-2 !py-0.5 !text-[11px]">Diskon</span>
+                <span v-if="rowOf(it)!.harga_normal === 0" class="price-free">Gratis</span>
+                <span v-else-if="rowOf(it)!.harga_akhir === 0" class="price-free">Termasuk Membership</span>
+                <template v-else>
+                  <span v-if="rowOf(it)!.diskon" class="price-strike mr-1">{{ rupiah(rowOf(it)!.harga_normal) }}</span>
+                  <span class="price-final">{{ rupiah(rowOf(it)!.harga_akhir) }}</span>
+                </template>
+                <span class="text-mute"> · {{ rowOf(it)!.slot_terisi }}/{{ rowOf(it)!.slot_max }} slot</span>
+              </p>
             </div>
-            <p class="truncate text-sm text-white/50">{{ titleCase(it.kelas) }}<template v-if="it.instructor"> · {{ it.instructor }}</template></p>
-            <p class="mt-1 flex items-center gap-1.5 text-sm">
-              {{ it.start }}–{{ it.end }}
-              <template v-if="matchOf(it)?.category">
-                <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" :class="CAT_ICON[String(matchOf(it)!.cls.categoryId)]?.color ?? 'text-white/35'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path :d="CAT_ICON[String(matchOf(it)!.cls.categoryId)]?.path ?? 'M12 12h.01'" />
-                </svg>
-                <span class="text-xs text-white/50">{{ matchOf(it)!.category!.name }}</span>
-              </template>
-            </p>
-            <p v-if="it.status === 'confirmed'" class="mt-0.5 text-xs text-white/70">{{ it.peserta }}/{{ it.max }} peserta</p>
-          </div>
-        </component>
-        <button
-          v-if="matchOf(it)"
-          type="button"
-          class="flex w-full items-center justify-between border-t border-white/8 px-4 py-2.5 text-xs font-semibold text-grit-300 active:bg-white/5"
-          @click="opened = it"
-        >
-          Tentang kelas <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-white/35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
-        </button>
-      </li>
-    </ul>
-  </StateBox>
+          </button>
+        </li>
+      </ul>
+    </template>
 
+    <p class="mx-4 mt-4 text-center text-xs leading-relaxed text-mute">
+      Kelas berlabel “Perkiraan” mengikuti pola {{ timetable.weeksUsed }} minggu terakhir (diperbarui {{ generated }}) dan bisa berubah.
+    </p>
   </template>
-
-  <p v-if="effectiveView === 'all'" class="mx-5 mt-4 text-center text-xs leading-relaxed text-white/35">
-    Kelas berlabel “Perkiraan” mengikuti pola {{ timetable.weeksUsed }} minggu terakhir (diperbarui {{ generated }}) dan bisa berubah.
-  </p>
 
   <ClassInfoSheet
     v-if="opened"
+    :row="opened.row"
+    :date="selYmd"
     :match="openedMatch"
-    :title="titleCase(opened.name)"
+    :title="titleCase(opened.item.name)"
     :session="{
-      time: `${opened.start}–${opened.end}`,
-      instructor: opened.instructor,
-      predicted: opened.status === 'predicted',
-      ended: opened.status === 'ended',
-      weekday: weekdayOf(dates[selected]),
-      start_time: opened.start,
-      class_name: opened.name,
-      package_id: opened.packageId,
+      time: `${opened.item.start}–${opened.item.end}`,
+      instructor: opened.item.instructor,
+      predicted: opened.item.status === 'predicted',
+      ended: opened.item.status === 'ended',
+      weekday: weekdayOf(selDate),
+      start_time: opened.item.start,
+      class_name: opened.item.name,
+      package_id: opened.item.packageId,
     }"
     @close="opened = null"
+    @booked="booked"
   />
 </template>
+
+<style scoped>
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+</style>

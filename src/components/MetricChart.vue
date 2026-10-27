@@ -31,7 +31,7 @@ const fmt = (s: string) => {
     </svg>
     <div class="chart-label mt-1 flex justify-between">
       <span>{{ fmt(sorted[0].date) }} · {{ sorted[0].value }} {{ unit }}</span>
-      <span v-if="target != null" class="!text-grit-300">target {{ target }} {{ unit }}</span>
+      <span v-if="target != null" class="!text-grit-500">target {{ target }} {{ unit }}</span>
       <span>{{ fmt(sorted[sorted.length - 1].date) }} · {{ sorted[sorted.length - 1].value }} {{ unit }}</span>
     </div>
   </div>

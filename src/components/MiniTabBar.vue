@@ -19,13 +19,13 @@ const other = computed(() =>
 </script>
 
 <template>
-  <nav class="safe-b fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-white/8 bg-ink-900/95 backdrop-blur">
-    <ul class="grid items-center px-2 py-2" :class="showQr ? 'grid-cols-2' : 'grid-cols-1'">
+  <nav class="safe-b fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-line bg-card">
+    <ul class="grid h-16 items-center px-2" :class="showQr ? 'grid-cols-2' : 'grid-cols-1'">
       <li v-if="showQr" class="flex justify-center">
         <RouterLink
           to="/qr"
-          class="flex flex-col items-center gap-0.5 px-2 py-1 text-xs font-medium"
-          :class="name === 'saved-qr' || name === 'qr' ? 'text-grit-300' : 'text-white/50'"
+          class="flex flex-col items-center gap-1 px-2 py-1 text-[10px] font-bold"
+          :class="name === 'saved-qr' || name === 'qr' ? 'text-grit-500' : 'text-(--tab-inactive)'"
         >
           <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v1M14 20h1M18 18h3v3h-3z" />
@@ -34,7 +34,7 @@ const other = computed(() =>
         </RouterLink>
       </li>
       <li class="flex justify-center">
-        <RouterLink :to="other.to" class="flex flex-col items-center gap-0.5 px-2 py-1 text-xs font-medium text-white/50">
+        <RouterLink :to="other.to" class="flex flex-col items-center gap-1 px-2 py-1 text-[10px] font-bold text-(--tab-inactive)">
           <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <template v-if="other.icon === 'register'">
               <circle cx="9" cy="8" r="3.3" />

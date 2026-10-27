@@ -1,6 +1,6 @@
 import * as ep from '@/api/endpoints'
 import { CK, read, write } from '@/lib/dataCache'
-import { syncClassQrs, syncQr } from '@/lib/qrCache'
+import { localDay, pruneClassQrs, syncClassQr, syncQr } from '@/lib/qrCache'
 
 let running = false
 
@@ -9,36 +9,35 @@ let running = false
 export async function prefetchAll(user: { id: number; nama: string }) {
   if (running || !navigator.onLine) return
   running = true
-  const userId = user.id
   const jobs: [string, () => Promise<unknown>][] = [
-    [CK.classes, ep.jadwalKelas],
-    [CK.bills, ep.tagihan],
-    [CK.memberships, () => ep.memberships(userId)],
-    [CK.leave, () => ep.cutiList(userId)],
-    [CK.packages('membership'), ep.paketMemberships],
-    [CK.packages('pt'), ep.paketPt],
-    [CK.packages('class'), ep.paketKelas],
+    [CK.schedule(localDay()), () => ep.schedule(localDay())],
+    [CK.bills, ep.invoices],
+    [CK.memberships, ep.memberships],
+    [CK.leave, ep.cutiList],
+    [CK.packages('membership'), ep.paketList],
+    [CK.packages('pt'), ep.ptPaketList],
+    [CK.packages('class'), ep.classCatalog],
     [
       CK.memberGym,
       async () => {
-        const r = await ep.memberAktif(userId)
-        syncQr(user, 'gym', r)
+        const r = await ep.membershipActive()
+        syncQr(user, r)
         return r
       },
     ],
     [
-      CK.memberPt,
+      CK.myClasses,
       async () => {
-        const r = await ep.memberPtAktif(userId)
-        syncQr(user, 'pt', r)
-        return r
-      },
-    ],
-    [
-      'classQrs',
-      async () => {
-        const r = await ep.classQrs(userId)
-        syncClassQrs(user, r)
+        const r = await ep.myClasses()
+        // refresh the offline per-class QRs for every upcoming booking
+        pruneClassQrs(user, r.mendatang.map((m) => m.schedule_id))
+        for (const m of r.mendatang) {
+          try {
+            syncClassQr(user, m.schedule_id, await ep.myClassDetail(m.schedule_id))
+          } catch {
+            /* that one stays stale */
+          }
+        }
         return r
       },
     ],

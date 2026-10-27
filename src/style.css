@@ -1,25 +1,68 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design tokens lifted from the official member app (gritfitness.id/member/css/app.css).
+   Light is the default; `.dark` on <html> (src/lib/theme.ts) swaps the surfaces. Brand colors
+   and the status colors stay identical in both modes, exactly like the official app. */
+:root {
+  --page-bg: #ffffff; /* official sets #F0F2F8 but overrides every screen's canvas to white */
+  --wash: #f0f2f8; /* icon tiles, read-only inputs, quiet fills */
+  --card-bg: #ffffff;
+  --border: #e5e8f0;
+  --input-border: #c4ccdd;
+  --text: #1b2a6b;
+  --text-soft: #334155;
+  --muted: #6b7280;
+  --tab-inactive: #9aa2c9;
+  --ok-bg: #dcfce7;
+  --warn-bg: #fef3c7;
+  --danger-bg: #fee2e2;
+  --tier-active-bg: #fff5f8;
+}
+.dark {
+  --page-bg: #0f172a;
+  --wash: #0f172a;
+  --card-bg: #1e293b;
+  --border: #334155;
+  --input-border: #334155;
+  --text: #f1f5f9;
+  --text-soft: #cbd5e1;
+  --muted: #94a3b8;
+  --tab-inactive: #64748b;
+  --ok-bg: rgba(22, 163, 74, 0.18);
+  --warn-bg: rgba(245, 158, 11, 0.18);
+  --danger-bg: rgba(220, 38, 38, 0.18);
+  --tier-active-bg: rgba(224, 21, 90, 0.12);
+}
+
 @theme {
-  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-display: 'Kanit', 'Plus Jakarta Sans', sans-serif;
-  /* surfaces: deep navy, from the GRIT wordmark */
-  --color-ink-950: #0d0c26;
-  --color-ink-900: #14123a;
-  --color-ink-800: #1d1a52;
-  --color-ink-700: #2a2670;
-  /* the one brand accent: the magenta arrow in the GRIT logo */
-  --color-grit-500: #ec2f8f;
-  --color-grit-300: #f480bd;
-  /* chart-only secondary series (muted indigo); never an interactive accent */
-  --color-chart-2: #8b90e8;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* brand (identical in light & dark) */
+  --color-navy: #1b2a6b;
+  --color-grit-500: #e0155a;
+  --color-grit-600: #b81049;
+  --color-ok: #16a34a;
+  --color-warn: #f59e0b;
+  --color-danger: #dc2626;
+  /* surfaces & text — follow the CSS vars so .dark flips them */
+  --color-page: var(--page-bg);
+  --color-wash: var(--wash);
+  --color-card: var(--card-bg);
+  --color-line: var(--border);
+  --color-ink: var(--text);
+  --color-soft: var(--text-soft);
+  --color-mute: var(--muted);
+  /* chart secondary series */
+  --color-chart-2: #4d79ff;
 }
 
 html, body, #app { height: 100%; }
 body {
   margin: 0;
-  background: var(--color-ink-950);
-  color: #ecebff;
+  background: var(--page-bg);
+  color: var(--text);
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
@@ -27,42 +70,69 @@ body {
 .safe-b { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
 .safe-t { padding-top: max(env(safe-area-inset-top), 0px); }
 
-.card { @apply rounded-2xl border border-white/8 bg-ink-900/80; }
+/* flat card, exactly .grit-card: 1px border, 16px radius/padding */
+.card { @apply rounded-2xl border border-line bg-card; }
 
 .btn, .btn-primary, .btn-ghost, .btn-sm {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition active:scale-[.98] disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[15px] font-bold transition active:scale-[.98] disabled:opacity-50;
 }
-.btn-primary { @apply bg-grit-500 text-white; }
-.btn-ghost { @apply border border-white/12 text-white/90; }
+/* .btn-grit: pink, 48px, radius 12 */
+.btn-primary { @apply min-h-12 bg-grit-500 text-white active:bg-grit-600; }
+/* .btn-grit-outline: 1.5px navy outline (white in dark) */
+.btn-ghost { @apply min-h-12 border-[1.5px] border-navy text-navy dark:border-white dark:text-white; }
 /* compact secondary action: full 44px touch target, quiet chrome */
-.btn-sm { @apply min-h-11 border border-white/12 px-3 py-1.5 text-xs text-white/90; }
+.btn-sm { @apply min-h-11 rounded-[10px] border border-line px-3 py-1.5 text-xs font-bold text-soft; }
 /* chain with .btn-ghost or .btn-sm for a destructive secondary action */
-.btn-danger { @apply !text-red-300; }
+.btn-danger { @apply !border-danger !text-danger; }
 
-.input { @apply w-full rounded-xl border border-white/12 bg-ink-800/70 px-4 py-3 text-base outline-none focus:border-grit-300; }
+.input { @apply w-full rounded-[10px] border-[1.5px] border-(--input-border) bg-card px-4 py-3 text-[15px] text-ink outline-none placeholder:text-(--tab-inactive) focus:border-grit-500; }
 
 /* one notice identity: a rounded strip with a colored leading edge */
 .banner { @apply rounded-xl border-l-2 px-4 py-3 text-sm; }
-.banner-info { @apply border-grit-500 bg-white/5 text-white/90; }
-.banner-warn { @apply border-amber-400 bg-amber-500/10 text-amber-100; }
-.banner-err { @apply border-red-400 bg-red-500/10 text-red-200; }
-.banner-ok { @apply border-emerald-400 bg-emerald-500/10 text-emerald-200; }
+.banner-info { @apply border-navy bg-wash text-soft dark:border-white/60; }
+.banner-warn { @apply border-warn bg-(--warn-bg) text-soft; }
+.banner-err { @apply border-danger bg-(--danger-bg) text-soft; }
+.banner-ok { @apply border-ok bg-(--ok-bg) text-soft; }
 
-/* segmented control (tabs between equal views): neutral selection, accent stays for actions */
-.seg { @apply grid gap-1 rounded-xl bg-white/5 p-1; }
-.seg-tab { @apply min-h-11 rounded-lg px-1 text-sm font-semibold text-white/50 transition; }
-.seg-tab-on { @apply bg-white/15 text-white; }
+/* segmented control, exactly .grit-segmented (packages variant: navy active) */
+.seg { @apply grid gap-1.5 rounded-xl bg-line p-1; }
+.seg-tab { @apply min-h-9 rounded-[9px] px-1 text-[13px] font-bold text-mute transition; }
+.seg-tab-on { @apply bg-navy text-white shadow-[0_1px_3px_rgba(0,0,0,.08)]; }
 
 /* toggle switch; the knob lives in the component */
-.switch { @apply relative h-7 w-12 shrink-0 rounded-full bg-white/15 transition disabled:opacity-50; }
+.switch { @apply relative h-7 w-12 shrink-0 rounded-full bg-line transition disabled:opacity-50; }
 .switch-on { @apply bg-grit-500; }
 
-.chart-label { @apply text-[10px] text-white/50; }
+/* status pill, exactly .badge-pill (pair with a .badge-dot span inside) */
+.pill { @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold whitespace-nowrap; }
+.pill-dot { @apply h-1.5 w-1.5 rounded-full bg-current; }
+.pill-ok { @apply bg-(--ok-bg) text-ok; }
+.pill-warn { @apply bg-(--warn-bg) text-warn; }
+.pill-danger { @apply bg-(--danger-bg) text-danger; }
+.pill-navy { @apply bg-navy text-white; }
+.pill-mute { @apply bg-[rgba(148,163,184,.18)] text-mute; }
 
-:focus-visible { outline: 2px solid var(--color-grit-300); outline-offset: 2px; }
+/* gradient hero card, exactly .grit-hero */
+.hero { @apply rounded-[18px] bg-[linear-gradient(120deg,#1B2A6B,#E0155A)] p-[18px] text-white shadow-[0_16px_32px_rgba(27,42,107,.28)]; }
+
+/* settings-style menu card, exactly .grit-menu */
+.menu { @apply overflow-hidden rounded-2xl border border-line bg-card; }
+.menu-item { @apply flex w-full items-center gap-3.5 border-b border-line px-4 py-[15px] text-left text-sm font-semibold text-ink last:border-b-0; }
+
+.chart-label { @apply text-[10px] text-mute; }
+
+/* price display (store.js hargaKelasHtml equivalents) */
+.price-free { @apply font-extrabold text-ok; }
+.price-final { @apply font-extrabold text-ink; }
+.price-strike { @apply text-xs font-semibold text-mute line-through; }
+
+/* skeleton placeholder */
+.skeleton { @apply animate-pulse rounded-2xl border border-line bg-card; }
+
+:focus-visible { outline: 2px solid var(--color-grit-500); outline-offset: 2px; }
 
 /* bottom sheets: the app's one piece of motion — backdrop fades, panel slides up */
-.sheet-handle { @apply mx-auto mb-3 h-1 w-10 rounded-full bg-white/15; }
+.sheet-handle { @apply mx-auto mb-3 h-1 w-10 rounded-full bg-line; }
 .sheet-enter-active, .sheet-leave-active { transition: opacity 0.2s ease; }
 .sheet-enter-from, .sheet-leave-to { opacity: 0; }
 .sheet-enter-active .sheet-panel, .sheet-leave-active .sheet-panel { transition: transform 0.25s cubic-bezier(0.22, 0.9, 0.36, 1); }

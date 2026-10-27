@@ -46,10 +46,10 @@ export function useAsync<T>(fn: () => Promise<T>, initial: T, opts: Options = {}
   return { data, loading, error, savedAt, stale, reload: () => run(true) }
 }
 
-// API sends both raw ("75000.00") and pre-formatted ("Rp. 1.491.750") prices.
+// "Rp150.000", same formatting as the official app (no space after Rp).
 export const rupiah = (v: string | number | null | undefined) => {
-  if (typeof v === 'string' && /^Rp/i.test(v)) return v.replace(/^Rp\.?\s*/i, 'Rp ')
-  return 'Rp ' + Math.round(Number(v ?? 0)).toLocaleString('id-ID')
+  if (typeof v === 'string' && /^Rp/i.test(v)) return v.replace(/^Rp\.?\s*/i, 'Rp')
+  return 'Rp' + Math.round(Number(v ?? 0)).toLocaleString('id-ID')
 }
 
 /** API returns site-relative asset paths like /storage/kelas/x.jpg */

@@ -90,14 +90,16 @@ export function clearAll() {
 /** Cache keys shared by views and the prefetcher. */
 export const CK = {
   memberGym: 'home/member',
-  memberPt: 'home/memberpt',
-  classes: 'classes',
-  classDetail: (id: string | number) => `classes/${id}`,
+  dashboard: 'home/dashboard',
+  schedule: (date: string) => `schedule/${date}`,
+  classSchedule: (id: string | number) => `classes/${id}/schedule`,
+  myClasses: 'myclasses',
   bills: 'bills',
   billDetail: (id: string | number) => `bills/${id}`,
   packages: (tab: string) => `packages/${tab}`,
   packageDetail: (tab: string, id: string | number) => `packages/${tab}/${id}`,
   memberships: 'memberships',
-  membershipDetail: (id: string | number) => `memberships/${id}`,
   leave: 'leave',
+  progress: 'progress',
+  notifications: 'notifications',
 }

@@ -45,7 +45,6 @@ const tracker = useTracker()
 const classWatch = useClassWatch()
 const resync = () => {
   if (document.visibilityState !== 'visible') return
-  auth.recheck()
   void tracker.sync()
   void classWatch.checkAndRegister()
 }
@@ -70,10 +69,10 @@ onUnmounted(() => {
 // a watched class was just auto-registered (or the attempt failed) while the app was open
 const watchToast = ref('')
 const WATCH_MESSAGE: Record<string, (name: string) => string> = {
-  registered: (n) => `Terdaftar otomatis: ${n}`,
+  registered: (n) => `Terbooking otomatis: ${n}`,
   waiting: (n) => `Masuk waiting list otomatis: ${n}`,
-  full: (n) => `${n} sudah penuh, tidak bisa didaftar otomatis`,
-  failed: (n) => `Gagal mendaftar otomatis untuk ${n}, coba manual`,
+  full: (n) => `${n} sudah penuh, tidak bisa dibooking otomatis`,
+  failed: (n) => `Gagal booking otomatis untuk ${n}, coba manual`,
 }
 watch(
   () => classWatch.lastResults,
@@ -91,16 +90,12 @@ watch(
 </script>
 
 <template>
-  <div class="mx-auto flex h-full max-w-md flex-col bg-ink-950">
-    <div v-if="!online" class="safe-t bg-amber-500/90 px-4 py-1.5 text-center text-xs font-semibold text-black">
+  <div class="mx-auto flex h-full max-w-md flex-col bg-page">
+    <div v-if="!online" class="safe-t bg-warn px-4 py-1.5 text-center text-xs font-semibold text-white">
       Offline — menampilkan data terakhir
     </div>
-    <div v-if="showExpired" class="safe-t flex items-center justify-between gap-3 bg-amber-500/15 px-4 py-2 text-xs text-amber-100" data-testid="session-ended">
-      <p>
-        {{ auth.endedReason === 'early'
-          ? 'Sesi berakhir lebih awal — biasanya karena kamu masuk di perangkat atau aplikasi GritFitness lain (hanya satu yang bisa aktif).'
-          : 'Sesi 5 jam habis. Masuk lagi untuk memperbarui data.' }}
-      </p>
+    <div v-if="showExpired" class="safe-t flex items-center justify-between gap-3 bg-(--warn-bg) px-4 py-2 text-xs text-soft" data-testid="session-ended">
+      <p>Sesi berakhir. Masuk lagi untuk memperbarui data.</p>
       <button class="btn-primary min-h-11 shrink-0 !px-3 !py-1.5 !text-xs" data-testid="login-again" @click="loginAgain">Masuk lagi</button>
     </div>
     <main class="safe-t flex-1 overflow-y-auto" :class="showTabs || showMiniTabs ? 'pb-28' : ''">
@@ -115,13 +110,13 @@ watch(
     </button>
     <p
       v-if="showOfflineToast"
-      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-white/8 bg-ink-900/95 px-4 py-3 text-center text-sm text-white/70 shadow-lg backdrop-blur"
+      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-line bg-card px-4 py-3 text-center text-sm text-soft shadow-lg"
     >
       Siap dipakai offline
     </p>
     <p
       v-if="watchToast"
-      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-white/8 bg-ink-900/95 px-4 py-3 text-center text-sm text-emerald-300 shadow-lg backdrop-blur"
+      class="fixed inset-x-4 bottom-24 z-50 mx-auto max-w-sm rounded-xl border border-line bg-card px-4 py-3 text-center text-sm font-semibold text-ok shadow-lg"
     >
       {{ watchToast }}
     </p>

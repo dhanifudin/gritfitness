@@ -1,77 +1,51 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { memberAktif, memberPtAktif } from '@/api/endpoints'
-import PageHeader from '@/components/PageHeader.vue'
-import { useAsync } from '@/composables/useAsync'
-import { CK } from '@/lib/dataCache'
-import { daysLeft, parseExpiry } from '@/lib/qrCache'
+import { computed, onMounted } from 'vue'
+import BackHeader from '@/components/BackHeader.vue'
+import SafeImg from '@/components/SafeImg.vue'
+import { titleCase } from '@/lib/format'
 import { useAuth } from '@/stores/auth'
 
 const auth = useAuth()
-const uid = auth.user!.id
-const rows = () => [
-  ['No. HP', auth.user?.no_hp],
-  ['Email', auth.user?.email || '-'],
-  ['Jenis kelamin', auth.user?.jenis_kelamin],
-  ['Alamat', auth.user?.alamat || '-'],
-  ['Tipe', auth.user?.tipe],
-]
+onMounted(() => void auth.refreshUser())
 
-// cache hit in the common case: Beranda already warmed these via prefetchAll
-const { data: gym } = useAsync(() => memberAktif(uid), null as Awaited<ReturnType<typeof memberAktif>> | null, { key: CK.memberGym })
-const { data: pt } = useAsync(() => memberPtAktif(uid), null as Awaited<ReturnType<typeof memberPtAktif>> | null, { key: CK.memberPt })
-const membershipDaysLeft = computed(() => (gym.value && !gym.value.error ? daysLeft({ expiresAt: parseExpiry(gym.value.tanggal_selesai) }) : null))
+const initial = computed(() => (auth.user?.nama?.[0] ?? 'M').toUpperCase())
+const gender = (g: string | null | undefined) => (g === 'pria' ? 'Pria' : g === 'wanita' ? 'Wanita' : g || '-')
+const rows = computed(() => [
+  ['Nama', titleCase(auth.user?.nama)],
+  ['Email', auth.user?.email || '-'],
+  ['Nomor WhatsApp', auth.user?.telepon ? '+' + auth.user.telepon : '-'],
+  ['Jenis Kelamin', gender(auth.user?.jenis_kelamin)],
+  ['Tanggal Lahir', auth.user?.tanggal_lahir || '-'],
+  ['Alamat', auth.user?.alamat || '-'],
+  ['Kode Member', auth.user?.kode || '-'],
+])
 </script>
 
 <template>
-  <PageHeader title="Profil" />
-  <div class="px-5">
-    <div class="card p-4">
-      <div class="flex items-start justify-between gap-3">
-        <p class="font-display text-lg font-semibold">{{ auth.user?.nama }}</p>
-        <RouterLink to="/profile/edit" class="btn-sm shrink-0" data-testid="edit-profile">Ubah Profil</RouterLink>
+  <BackHeader title="Profil">
+    <template #right>
+      <RouterLink to="/profile/edit" class="px-2 text-[13px] font-bold text-grit-500" data-testid="edit-profile">Ubah</RouterLink>
+    </template>
+  </BackHeader>
+  <div class="px-4 pb-6">
+    <div class="card flex items-center gap-4 p-4">
+      <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[linear-gradient(135deg,#1B2A6B,#E0155A)] text-2xl font-extrabold text-white">
+        <SafeImg v-if="auth.user?.foto" :src="auth.user.foto" :alt="auth.user?.nama ?? ''" class="h-full w-full object-cover" />
+        <template v-else>{{ initial }}</template>
       </div>
-      <dl class="mt-4 space-y-3 text-sm">
-        <div v-for="[k, v] in rows()" :key="k" class="flex justify-between gap-4">
-          <dt class="text-white/50">{{ k }}</dt>
-          <dd class="text-right">{{ v }}</dd>
-        </div>
-      </dl>
-    </div>
-
-    <div class="card mt-3 p-4" data-testid="membership-card">
-      <p class="text-sm text-white/50">Membership</p>
-      <template v-if="gym && !gym.error">
-        <p class="mt-1 font-display text-lg leading-tight">{{ gym.nama_paket }}</p>
-        <p class="mt-1 text-sm text-white/50">
-          Berlaku s.d. {{ gym.tanggal_selesai }}
-          <span v-if="membershipDaysLeft != null" :class="membershipDaysLeft <= 7 ? 'font-semibold text-amber-300' : ''"> · sisa {{ membershipDaysLeft }} hari</span>
-        </p>
-      </template>
-      <template v-else-if="gym">
-        <p class="mt-1 font-display text-lg">{{ gym.error === 'Cuti' ? 'Sedang cuti' : 'Belum aktif atau sudah berakhir' }}</p>
-        <p class="mt-1 text-sm text-white/50">Hubungi front desk untuk mengaktifkan paket.</p>
-      </template>
-      <div v-if="pt && !pt.error" class="mt-4 border-t border-white/8 pt-4">
-        <p class="text-xs text-white/50">Personal Trainer</p>
-        <p class="mt-1 font-semibold">{{ pt.nama_paket }}</p>
-        <p class="text-sm text-white/50">s.d. {{ pt.tanggal_selesai }}</p>
+      <div class="min-w-0">
+        <p class="truncate font-extrabold">{{ titleCase(auth.user?.nama) }}</p>
+        <p class="text-sm font-semibold text-mute">{{ auth.user?.kode }}</p>
       </div>
     </div>
 
-    <ul class="mt-3 space-y-3">
-      <li>
-        <RouterLink to="/memberships" class="card flex min-h-16 items-center justify-between gap-3 px-4 py-3" data-testid="profile-memberships">
-          <p class="font-semibold">Riwayat Membership</p>
-          <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-white/35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
-        </RouterLink>
-      </li>
-      <li>
-        <RouterLink to="/leave" class="card flex min-h-16 items-center justify-between gap-3 px-4 py-3" data-testid="profile-leave">
-          <p class="font-semibold">Cuti Membership</p>
-          <svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0 text-white/35" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
-        </RouterLink>
-      </li>
-    </ul>
+    <div class="card mt-3 p-4 text-sm">
+      <div v-for="[k, v] in rows" :key="k" class="flex justify-between gap-4 border-b border-line py-2.5 last:border-b-0">
+        <span class="shrink-0 font-semibold text-mute">{{ k }}</span>
+        <span class="min-w-0 text-right font-bold break-words">{{ v }}</span>
+      </div>
+    </div>
+
+    <RouterLink to="/profile/edit" class="btn-primary mt-4 w-full" data-testid="edit-profile-cta">Ubah Profil</RouterLink>
   </div>
 </template>

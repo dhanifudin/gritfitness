@@ -13,21 +13,19 @@ export interface Slot {
   weeks: number
 }
 
-/** Subset of the API's jadwal-kelas row this module needs. */
+/** Subset of a /schedule?date row this module needs (rows are already per-day). */
 export interface ActualClass {
   id: number
-  id_paket_kelas?: number
-  nama_jadwal_kelas: string
-  nama_kelas: string
+  kelas: string
+  kategori?: string | null
   instruktur: string | null
-  tanggal: string // DD/MM/YYYY
-  jam_awal: string
-  jam_akhir: string
-  maksimal_member: number
-  peserta: number
-  foto_url?: string
-  /** "Peserta" | "Waiting List" | "Tidak Terdaftar" — the member's own status on this row */
-  status_saya?: string
+  jam_mulai: string
+  jam_selesai: string
+  slot_max: number
+  slot_terisi: number
+  penuh: boolean
+  sudah_booking: boolean
+  booking_status: 'confirmed' | 'booked' | null
 }
 
 export type DayStatus = 'confirmed' | 'predicted' | 'ended'
@@ -35,8 +33,8 @@ export type DayStatus = 'confirmed' | 'predicted' | 'ended'
 export interface DayItem {
   key: string
   status: DayStatus
-  /** the member's own registration on a real row */
-  mine?: 'peserta' | 'waiting' | null
+  /** the member's own booking on a real row */
+  mine?: 'peserta' | 'unpaid' | null
   start: string
   end: string
   name: string
@@ -46,14 +44,14 @@ export interface DayItem {
   classId?: number
   peserta?: number
   max?: number
-  fotoUrl?: string
+  penuh?: boolean
 }
 
-export function mineOf(statusSaya: string | null | undefined): 'peserta' | 'waiting' | null {
-  const s = (statusSaya ?? '').toLowerCase()
-  if (s.includes('peserta')) return 'peserta'
-  if (s.includes('waiting')) return 'waiting'
-  return null
+/** The member's own standing on a row: confirmed booking, or one still waiting on payment. */
+export function mineOf(row: Pick<ActualClass, 'sudah_booking' | 'booking_status'>): 'peserta' | 'unpaid' | null {
+  if (row.booking_status === 'confirmed') return 'peserta'
+  if (row.booking_status === 'booked') return 'unpaid'
+  return row.sudah_booking ? 'peserta' : null
 }
 
 export const DAY_NAMES = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
@@ -83,9 +81,10 @@ export function weekLabel(dates: Date[]): string {
 }
 
 /**
- * Classes of one day. Real rows are `confirmed`; recurring-timetable slots fill the rest as
- * `predicted` (future) or `ended` (already past). A predicted slot is dropped when a real row
- * starts at the same time, because the real row supersedes it.
+ * Classes of one day. Real rows (already fetched for exactly this date) are `confirmed`;
+ * recurring-timetable slots fill the rest as `predicted` (future) or `ended` (already past).
+ * A predicted slot is dropped when a real row starts at the same time, because the real row
+ * supersedes it.
  */
 export function mergeDay(date: Date, actual: ActualClass[], slots: Slot[], now = new Date()): DayItem[] {
   const today = startOfDay(now)
@@ -93,27 +92,26 @@ export function mergeDay(date: Date, actual: ActualClass[], slots: Slot[], now =
   const isPast = day < today
   const isToday = day.getTime() === today.getTime()
 
-  const real = actual.filter((a) => sameDay(parseDmy(a.tanggal), date))
-  const items: DayItem[] = real.map((a) => ({
+  const items: DayItem[] = actual.map((a) => ({
     key: `c${a.id}`,
     status: 'confirmed',
-    mine: mineOf(a.status_saya),
-    start: a.jam_awal,
-    end: a.jam_akhir,
-    name: a.nama_jadwal_kelas,
-    kelas: a.nama_kelas,
+    mine: mineOf(a),
+    start: a.jam_mulai,
+    end: a.jam_selesai,
+    name: a.kelas,
+    kelas: a.kategori ?? a.kelas,
     instructor: a.instruktur,
-    packageId: a.id_paket_kelas ?? null,
+    packageId: null,
     classId: a.id,
-    peserta: a.peserta,
-    max: a.maksimal_member,
-    fotoUrl: a.foto_url,
+    peserta: a.slot_terisi,
+    max: a.slot_max,
+    penuh: a.penuh,
   }))
 
   const nowTime = hhmm(now)
   for (const s of slots) {
     if (s.wd !== weekdayOf(date)) continue
-    if (real.some((a) => a.jam_awal === s.start)) continue
+    if (actual.some((a) => a.jam_mulai === s.start)) continue
     items.push({
       key: `p${s.wd}-${s.start}-${s.name}`,
       status: isPast || (isToday && s.start <= nowTime) ? 'ended' : 'predicted',

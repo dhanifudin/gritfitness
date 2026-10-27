@@ -6,7 +6,6 @@ import type { User } from '@/api/types'
 import { clearAll as clearData } from '@/lib/dataCache'
 import { saveLastPhone } from '@/lib/lastPhone'
 import { clearQr } from '@/lib/qrCache'
-import { endReason, msUntilExpiry, type EndReason } from '@/lib/session'
 import { revokeTrackerSession } from '@/lib/supabase'
 
 const userKey = 'grit.user'
@@ -21,54 +20,49 @@ const load = (): User | null => {
 export const useAuth = defineStore('auth', () => {
   const user = ref<User | null>(load())
   const token = ref<string | null>(getToken())
-  // bumped on expire() so `loggedIn` re-evaluates; the clock alone is not reactive
-  const tick = ref(0)
-  /** Why the session ended while the profile is still remembered; null while logged in. */
-  const endedReason = ref<EndReason | null>(null)
-  let expiryTimer: ReturnType<typeof setTimeout> | undefined
 
-  /** Token present and not past its server-issued expiry (about 5 h after login). */
-  const tokenValid = computed(() => {
-    void tick.value
-    if (!token.value) return false
-    const exp = user.value?.token_expired ? Date.parse(user.value.token_expired) : NaN
-    return Number.isNaN(exp) || Date.now() < exp
-  })
-  const loggedIn = computed(() => tokenValid.value && !!user.value)
-  /** Profile is remembered but the token is gone/expired: only the cached QR stays reachable. */
+  const loggedIn = computed(() => !!token.value && !!user.value)
+  /** Profile is remembered but the token is gone (revoked server-side): only the cached QR stays reachable. */
   const sessionExpired = computed(() => !loggedIn.value && !!user.value)
 
-  /** Notice the natural expiry at the right moment (also after the device slept), not at some later request. */
-  function armExpiryTimer() {
-    clearTimeout(expiryTimer)
-    const ms = token.value ? msUntilExpiry(user.value?.token_expired, Date.now()) : null
-    if (ms != null) expiryTimer = setTimeout(recheck, ms + 500)
-  }
-  function recheck() {
-    if (token.value && !tokenValid.value) expire()
-    else tick.value++
-  }
+  /** The register_token issued by verify-otp for numbers without an account yet. */
+  const registerToken = ref<string | null>(null)
 
-  async function login(noHp: string, otp: string) {
-    const { access_token, token_type, ...u } = await ep.verifyOtp(noHp, otp)
-    void token_type
+  async function completeLogin(u: User, accessToken: string, noHp: string) {
     if (user.value && user.value.id !== u.id) {
       void revokeTrackerSession(user.value.id) // shared-device hygiene: don't leave a stray grit session behind
       clearData()
       clearQr()
     }
-    setToken(access_token)
-    token.value = access_token
+    setToken(accessToken)
+    token.value = accessToken
     user.value = u
-    endedReason.value = null
-    armExpiryTimer()
+    registerToken.value = null
     localStorage.setItem(userKey, JSON.stringify(u))
-    saveLastPhone(u.no_hp) // convenience only: remembered across logout, never used to skip OTP
+    saveLastPhone(noHp) // convenience only: remembered across logout, never used to skip OTP
     // tracker: load this member's local copy and push anything recorded while logged out
     const { useTracker } = await import('./tracker')
     const tracker = useTracker()
     tracker.init(u.id)
     void tracker.sync()
+  }
+
+  /** Verify the OTP. Returns 'registered' when logged in, 'new' when the number needs to register first. */
+  async function login(noHp: string, otp: string): Promise<'registered' | 'new'> {
+    const res = await ep.verifyOtp(noHp, otp)
+    if (res.status === 'registered' && res.access_token && res.user) {
+      await completeLogin(res.user, res.access_token, noHp)
+      return 'registered'
+    }
+    registerToken.value = res.register_token ?? null
+    return 'new'
+  }
+
+  /** Finish a new member's registration (FormData per the API) and log in with the result. */
+  async function registerAccount(form: FormData, noHp: string) {
+    if (registerToken.value) form.set('register_token', registerToken.value)
+    const res = await ep.register(form)
+    if (res.access_token && res.user) await completeLogin(res.user, res.access_token, noHp)
   }
 
   function patchUser(patch: Partial<User>) {
@@ -77,14 +71,23 @@ export const useAuth = defineStore('auth', () => {
     localStorage.setItem(userKey, JSON.stringify(user.value))
   }
 
-  /** Session ended (401 / clock): drop the token but keep the profile and cached QR. */
+  /** Refresh the profile from the server (no-op when it fails — the cached copy stays). */
+  async function refreshUser() {
+    if (!token.value) return
+    try {
+      const u = await ep.me()
+      user.value = u
+      localStorage.setItem(userKey, JSON.stringify(u))
+    } catch {
+      /* offline or revoked; the 401 handler deals with the latter */
+    }
+  }
+
+  /** Session ended (401: token revoked server-side): drop the token but keep the profile and cached QR. */
   function expire() {
-    if (!token.value) return // already ended: parallel 401s must not repeat this
-    endedReason.value = endReason(user.value?.token_expired, Date.now())
-    clearTimeout(expiryTimer)
+    if (!token.value) return // parallel 401s must not repeat this
     setToken(null)
     token.value = null
-    tick.value++
   }
 
   /** Deliberate logout: also wipes every locally cached personal datum. */
@@ -92,21 +95,19 @@ export const useAuth = defineStore('auth', () => {
     const { useTracker } = await import('./tracker')
     const tracker = useTracker()
     tracker.init(user.value?.id ?? null)
-    if (tokenValid.value) await tracker.flushBeforeLogout() // push queued check-ins first
+    if (token.value) await tracker.flushBeforeLogout() // push queued check-ins first
     await tracker.wipe()
-    if (tokenValid.value) await ep.logout().catch(() => {})
-    clearTimeout(expiryTimer)
-    endedReason.value = null
+    if (token.value) await ep.logout().catch(() => {})
     setToken(null)
     token.value = null
     user.value = null
+    registerToken.value = null
     localStorage.removeItem(userKey)
+    localStorage.removeItem('grit.notifSeen')
     clearData()
     clearQr()
     await caches?.delete('api').catch(() => {}) // leftover from v1 service-worker API caching
   }
 
-  armExpiryTimer()
-
-  return { user, token, loggedIn, tokenValid, sessionExpired, endedReason, login, logout, expire, recheck, patchUser }
+  return { user, token, loggedIn, sessionExpired, registerToken, login, registerAccount, logout, expire, patchUser, refreshUser }
 })

@@ -51,7 +51,7 @@ async function togglePush() {
         <span class="text-sm">Target per minggu</span>
         <div class="flex items-center gap-3">
           <button class="btn-sm !text-sm" aria-label="Kurangi target" :disabled="goal <= 1" @click="tracker.setSettings({ goal_per_week: goal - 1 })"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14" /></svg></button>
-          <span class="w-6 text-center font-display text-lg" data-testid="goal-value">{{ goal }}</span>
+          <span class="w-6 text-center text-lg font-extrabold" data-testid="goal-value">{{ goal }}</span>
           <button class="btn-sm !text-sm" aria-label="Tambah target" :disabled="goal >= 7" @click="tracker.setSettings({ goal_per_week: goal + 1 })"><svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg></button>
         </div>
       </div>
@@ -69,7 +69,7 @@ async function togglePush() {
       <div class="flex items-center justify-between gap-3">
         <div class="min-w-0">
           <p class="font-semibold">Notifikasi latihan</p>
-          <p class="mt-0.5 text-xs text-white/50">Kelas favorit yang terlewat, dan pengingat kalau belum tercatat beberapa hari.</p>
+          <p class="mt-0.5 text-xs text-mute">Kelas favorit yang terlewat, dan pengingat kalau belum tercatat beberapa hari.</p>
         </div>
         <button
           type="button" role="switch" :aria-checked="pushOn" data-testid="push-toggle"
@@ -85,7 +85,7 @@ async function togglePush() {
         </button>
       </div>
       <p v-if="!pushOn && pushBlocked" class="mt-2 text-xs text-amber-200/80">{{ pushBlocked }}</p>
-      <p v-if="pushError" class="mt-2 text-xs text-red-300">{{ pushError }}</p>
+      <p v-if="pushError" class="mt-2 text-xs text-danger">{{ pushError }}</p>
     </section>
   </div>
 </template>

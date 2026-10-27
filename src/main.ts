@@ -5,6 +5,7 @@ import { router } from './router'
 import { setUnauthorizedHandler } from './api/client'
 import { hasValidQr } from './lib/qrCache'
 import { useAuth } from './stores/auth'
+import './lib/theme' // applies the saved light/dark theme before first paint
 import './style.css'
 
 const app = createApp(App)

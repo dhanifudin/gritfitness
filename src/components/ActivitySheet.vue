@@ -93,29 +93,29 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
 <template>
   <Teleport to="body">
 <Transition name="sheet" appear>    <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/60" role="dialog" aria-modal="true" :aria-label="editing ? 'Ubah aktivitas' : 'Tambah aktivitas'" data-testid="activity-sheet" @click.self="emit('close')">
-      <div class="sheet-panel safe-b max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl border-t border-white/8 bg-ink-900 p-5">
+      <div class="sheet-panel safe-b max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl border-t border-line bg-card p-5">
         <div class="sheet-handle mt-3" aria-hidden="true" />
         <div class="flex items-start justify-between gap-3">
-          <h2 class="font-display text-xl font-semibold">{{ editing ? 'Ubah aktivitas' : 'Tambah aktivitas' }}</h2>
-          <button class="-mr-2 flex h-9 w-9 items-center justify-center rounded-full text-white/70 active:bg-white/10" aria-label="Tutup" @click="emit('close')">
+          <h2 class="text-xl font-extrabold">{{ editing ? 'Ubah aktivitas' : 'Tambah aktivitas' }}</h2>
+          <button class="-mr-2 flex h-9 w-9 items-center justify-center rounded-full text-soft active:bg-wash" aria-label="Tutup" @click="emit('close')">
             <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
           </button>
         </div>
 
         <!-- date -->
-        <p class="mt-3 text-xs font-semibold text-white/50">Tanggal</p>
+        <p class="mt-3 text-xs font-semibold text-mute">Tanggal</p>
         <div class="mt-1.5 grid grid-cols-3 gap-1.5">
-          <button v-for="q in quick" :key="q.label" type="button" class="rounded-xl py-2 text-xs font-semibold transition" :class="date === q.d ? 'bg-grit-500 text-white' : 'bg-white/5 text-white/50'" @click="date = q.d">{{ q.label }}</button>
+          <button v-for="q in quick" :key="q.label" type="button" class="rounded-xl py-2 text-xs font-semibold transition" :class="date === q.d ? 'bg-grit-500 text-white' : 'bg-wash text-mute'" @click="date = q.d">{{ q.label }}</button>
         </div>
         <input v-model="date" type="date" :min="minDate" :max="today" class="input mt-2" data-testid="act-date" />
-        <p class="mt-1 text-xs text-white/50">{{ dateLabel }}</p>
+        <p class="mt-1 text-xs text-mute">{{ dateLabel }}</p>
 
         <!-- type -->
-        <p class="mt-3 text-xs font-semibold text-white/50">Jenis aktivitas</p>
+        <p class="mt-3 text-xs font-semibold text-mute">Jenis aktivitas</p>
         <div class="mt-1.5 grid grid-cols-2 gap-1.5">
           <button
             v-for="a in ACTIVITIES" :key="a.key" type="button" :aria-pressed="activity === a.key" :data-testid="'act-' + a.key"
-            class="rounded-xl px-3 py-2.5 text-left transition" :class="activity === a.key ? 'bg-grit-500 text-white' : 'bg-white/5 text-white/70'"
+            class="rounded-xl px-3 py-2.5 text-left transition" :class="activity === a.key ? 'bg-grit-500 text-white' : 'bg-wash text-soft'"
             @click="pickActivity(a.key)"
           >
             <span class="flex items-center gap-1.5 text-sm font-semibold"><ActivityIcon :kind="a.key" /> {{ a.label }}</span>
@@ -126,13 +126,13 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
         <!-- class picker -->
         <div v-if="activity === 'class'" class="mt-3" data-testid="class-picker">
           <input v-model="query" class="input" placeholder="Cari kelas (mis. yoga)" data-testid="class-search" />
-          <p v-if="className" class="mt-2 flex items-center gap-1.5 text-sm font-semibold text-grit-300"><svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg> {{ className }}</p>
-          <div class="mt-2 max-h-48 overflow-y-auto rounded-xl bg-white/5 p-2">
-            <p v-if="!shown.length" class="px-2 py-3 text-sm text-white/50">Tidak ada kelas yang cocok.</p>
+          <p v-if="className" class="mt-2 flex items-center gap-1.5 text-sm font-semibold text-grit-500"><svg viewBox="0 0 24 24" class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg> {{ className }}</p>
+          <div class="mt-2 max-h-48 overflow-y-auto rounded-xl bg-wash p-2">
+            <p v-if="!shown.length" class="px-2 py-3 text-sm text-mute">Tidak ada kelas yang cocok.</p>
             <div v-for="g in shown" :key="g.category" class="mb-2">
-              <p class="px-2 text-xs text-white/50">{{ g.category }}</p>
-              <button v-for="c in g.classes" :key="c.id" type="button" class="block w-full rounded-lg px-2 py-2 text-left text-sm" :class="classId === c.id ? 'bg-grit-500/30' : 'active:bg-white/10'" @click="pickClass(c)">
-                {{ c.name }}<span v-if="c.minutes" class="text-white/50"> · {{ c.minutes }} mnt</span>
+              <p class="px-2 text-xs text-mute">{{ g.category }}</p>
+              <button v-for="c in g.classes" :key="c.id" type="button" class="block w-full rounded-lg px-2 py-2 text-left text-sm" :class="classId === c.id ? 'bg-grit-500/30' : 'active:bg-wash'" @click="pickClass(c)">
+                {{ c.name }}<span v-if="c.minutes" class="text-mute"> · {{ c.minutes }} mnt</span>
               </button>
             </div>
           </div>
@@ -143,25 +143,25 @@ onUnmounted(() => document.removeEventListener('keydown', onKey))
           <input v-model="customName" maxlength="60" class="input" placeholder="Nama aktivitas (mis. Hyrox)" data-testid="act-name" />
           <input v-model="cost" inputmode="numeric" class="input" placeholder="Biaya, Rp (opsional)" data-testid="act-cost" />
         </div>
-        <label v-if="activity === 'other'" class="mt-2 flex items-center gap-2 text-sm text-white/70">
+        <label v-if="activity === 'other'" class="mt-2 flex items-center gap-2 text-sm text-soft">
           <input v-model="counted" type="checkbox" class="h-4 w-4 accent-grit-500" data-testid="act-counts" /> Hitung sebagai latihan (untuk target mingguan)
         </label>
-        <p class="mt-2 rounded-lg px-3 py-2 text-xs" :class="counted ? 'bg-emerald-500/10 text-emerald-200' : 'bg-white/5 text-white/50'">
+        <p class="mt-2 rounded-lg px-3 py-2 text-xs" :class="counted ? 'bg-(--ok-bg) text-emerald-200' : 'bg-wash text-mute'">
           {{ counted ? 'Dihitung untuk target mingguan dan rantai.' : `${activityMeta(activity).label} hanya dicatat, tidak dihitung untuk target.` }}
         </p>
 
         <!-- optional details -->
         <div class="mt-3 grid grid-cols-2 gap-2">
-          <label class="block text-xs text-white/50">Jam (opsional)<input v-model="time" type="time" class="input mt-1" /></label>
-          <label class="block text-xs text-white/50">Durasi, menit<input v-model="duration" inputmode="numeric" class="input mt-1" placeholder="60" /></label>
+          <label class="block text-xs text-mute">Jam (opsional)<input v-model="time" type="time" class="input mt-1" /></label>
+          <label class="block text-xs text-mute">Durasi, menit<input v-model="duration" inputmode="numeric" class="input mt-1" placeholder="60" /></label>
         </div>
-        <p class="mt-3 text-xs font-semibold text-white/50">Energi</p>
+        <p class="mt-3 text-xs font-semibold text-mute">Energi</p>
         <div class="mt-1.5 grid grid-cols-5 gap-1.5">
-          <button v-for="x in ENERGY" :key="x.v" type="button" :aria-label="x.t" :aria-pressed="energy === x.v" class="rounded-xl py-2 text-xl transition" :class="energy === x.v ? 'bg-grit-500' : 'bg-white/5'" @click="energy = energy === x.v ? null : x.v">{{ x.e }}</button>
+          <button v-for="x in ENERGY" :key="x.v" type="button" :aria-label="x.t" :aria-pressed="energy === x.v" class="rounded-xl py-2 text-xl transition" :class="energy === x.v ? 'bg-grit-500' : 'bg-wash'" @click="energy = energy === x.v ? null : x.v">{{ x.e }}</button>
         </div>
         <textarea v-model="note" rows="2" maxlength="500" class="input mt-3" placeholder="Catatan (opsional)" />
 
-        <p v-if="error" class="mt-3 text-sm text-red-300" data-testid="act-error">{{ error }}</p>
+        <p v-if="error" class="mt-3 text-sm text-danger" data-testid="act-error">{{ error }}</p>
         <button class="btn-primary mt-4 w-full" data-testid="act-save" @click="save">{{ editing ? 'Simpan perubahan' : 'Simpan' }}</button>
       </div>
     </div>

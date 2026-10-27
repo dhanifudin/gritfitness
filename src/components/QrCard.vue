@@ -1,31 +1,51 @@
 <script setup lang="ts">
-defineProps<{
-  entry: { qr_code: string; nama_paket: string; tanggal_mulai?: string; tanggal_selesai?: string }
+import qrcode from 'qrcode-generator'
+import { computed } from 'vue'
+
+// Renders the daily QR payload client-side, same recipe as the official app:
+// qrcode(0,'M'), svg cells, navy modules on a white card.
+const props = defineProps<{
+  payload: string
+  title: string
+  sub?: string
   compact?: boolean
   tight?: boolean
-  /** override the two text lines (used for per-class QRs) */
-  title?: string
-  sub?: string
 }>()
+
+const svg = computed(() => {
+  try {
+    const qr = qrcode(0, 'M')
+    qr.addData(props.payload)
+    qr.make()
+    return qr.createSvgTag({ cellSize: 5, margin: 1, scalable: true })
+  } catch {
+    return ''
+  }
+})
 </script>
 
 <template>
-  <div class="relative">
-    <!-- scanner-style corner brackets: this is the one screen a member holds up at the door -->
-    <span class="pointer-events-none absolute -top-1.5 -left-1.5 h-6 w-6 rounded-tl-lg border-t-2 border-l-2 border-grit-500" aria-hidden="true" />
-    <span class="pointer-events-none absolute -top-1.5 -right-1.5 h-6 w-6 rounded-tr-lg border-t-2 border-r-2 border-grit-500" aria-hidden="true" />
-    <span class="pointer-events-none absolute -bottom-1.5 -left-1.5 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-grit-500" aria-hidden="true" />
-    <span class="pointer-events-none absolute -bottom-1.5 -right-1.5 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-grit-500" aria-hidden="true" />
-    <div class="rounded-3xl bg-white text-center text-ink-900" :class="compact ? 'p-4' : 'p-6'">
-      <img
-        :src="`data:image/svg+xml;base64,${entry.qr_code}`"
-        alt="QR Member"
-        class="mx-auto aspect-square"
-        :class="compact ? (tight ? 'w-[min(100%,18rem,27dvh)]' : 'w-[min(100%,18rem,34dvh)]') : 'w-full max-w-72'"
-      />
-      <p class="font-semibold" :class="compact ? 'mt-2 leading-tight' : 'mt-3'">{{ title ?? entry.nama_paket }}</p>
-      <p class="text-sm text-ink-700/80">{{ sub ?? `${entry.tanggal_mulai} – ${entry.tanggal_selesai}` }}</p>
-      <slot />
-    </div>
+  <div class="card bg-white p-4 text-center dark:border-transparent" :class="compact ? 'p-4' : 'p-6'">
+    <div
+      class="qr-svg mx-auto aspect-square"
+      :class="compact ? (tight ? 'w-[min(100%,15rem,27dvh)]' : 'w-[min(100%,15rem,34dvh)]') : 'w-full max-w-60'"
+      role="img"
+      aria-label="QR absensi"
+      v-html="svg"
+    />
+    <p class="font-bold text-navy" :class="compact ? 'mt-2 leading-tight' : 'mt-3'">{{ title }}</p>
+    <p v-if="sub" class="text-sm text-[#6b7280]">{{ sub }}</p>
+    <slot />
   </div>
 </template>
+
+<style scoped>
+.qr-svg :deep(svg) {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.qr-svg :deep(path) {
+  fill: #1b2a6b; /* navy modules, like the official app; the white rect background stays */
+}
+</style>
