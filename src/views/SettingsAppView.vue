@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BackHeader from '@/components/BackHeader.vue'
 import ConfirmSheet from '@/components/ConfirmSheet.vue'
-import { checkForUpdate } from '@/composables/useSw'
+import { checkForUpdate, useInstall } from '@/composables/useSw'
 import { useAuth } from '@/stores/auth'
 import { useTracker } from '@/stores/tracker'
 
@@ -13,6 +13,7 @@ const router = useRouter()
 onMounted(() => tracker.init())
 
 const version = __APP_VERSION__
+const install = useInstall()
 const checking = ref(false)
 const updateMsg = ref('')
 async function checkUpdate() {
@@ -42,7 +43,10 @@ async function out() {
 
 <template>
   <BackHeader title="Aplikasi & akun" />
-  <div class="space-y-3 px-5">
+  <div class="space-y-3 px-4">
+    <button v-if="install.canInstall()" class="btn-ghost w-full" data-testid="install-app" @click="install.install()">Pasang aplikasi di layar utama</button>
+    <p v-else-if="install.showIosHint()" class="text-center text-xs text-mute">Untuk memasang: ketuk tombol Bagikan lalu “Tambah ke Layar Utama”.</p>
+
     <section class="card p-4">
       <p class="text-xs text-mute">Versi aplikasi</p>
       <p class="mt-1 font-semibold">{{ version.sha }} · {{ version.date }}</p>

@@ -3,7 +3,6 @@ import { titleCase } from '@/lib/format'
 import { computed, ref, watch } from 'vue'
 import { schedule } from '@/api/endpoints'
 import type { ScheduleRow } from '@/api/types'
-import AvatarButton from '@/components/AvatarButton.vue'
 import ClassDetailPopup from '@/components/ClassDetailPopup.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import { rupiah } from '@/composables/useAsync'
@@ -60,7 +59,11 @@ function booked() {
 
 <template>
   <PageHeader title="Jadwal Kelas">
-    <template #right><AvatarButton /></template>
+    <template #right>
+      <RouterLink to="/auto-booking" class="flex h-10 w-10 items-center justify-center rounded-xl bg-wash text-ink" aria-label="Booking otomatis" data-testid="open-auto-booking">
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4l2.5 2.5M21 12a9 9 0 11-9-9c2.5 0 4.8 1 6.4 2.6L21 8M21 3v5h-5" /></svg>
+      </RouterLink>
+    </template>
   </PageHeader>
 
   <div class="scrollbar-none mb-3 flex gap-2 overflow-x-auto px-4 pb-1" role="tablist">

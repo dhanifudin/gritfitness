@@ -11,7 +11,11 @@ export const router = createRouter({
     { path: '/qr', name: 'qr', component: () => import('@/views/QrView.vue') },
     // cache-only: no API calls, reachable in every session state (public => no tab bar)
     { path: '/saved-qr', name: 'saved-qr', component: () => import('@/views/SavedQrView.vue'), meta: { public: true } },
+    // official body progress (gym measurements) + input form
     { path: '/progress', name: 'progress', component: () => import('@/views/ProgressView.vue') },
+    { path: '/progress/new', name: 'progress-new', component: () => import('@/views/ProgressNewView.vue') },
+    // our activity tracker (visits, badges, budget, notes)
+    { path: '/activity', name: 'activity', component: () => import('@/views/ActivityStatsView.vue') },
     { path: '/classes', name: 'classes', component: () => import('@/views/ClassesView.vue') },
     // a class catalog entry's upcoming sessions (official "kelas-jadwal")
     { path: '/classes/:id/schedule', name: 'class-schedule', component: () => import('@/views/ClassScheduleView.vue') },

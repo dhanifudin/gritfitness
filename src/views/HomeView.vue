@@ -2,8 +2,8 @@
 import { titleCase } from '@/lib/format'
 import { computed, onMounted } from 'vue'
 import { dashboard } from '@/api/endpoints'
-import AvatarButton from '@/components/AvatarButton.vue'
 import ConsentSheet from '@/components/ConsentSheet.vue'
+import SafeImg from '@/components/SafeImg.vue'
 import { useAsync } from '@/composables/useAsync'
 import { CK } from '@/lib/dataCache'
 import { prefetchAll } from '@/lib/prefetch'
@@ -25,6 +25,7 @@ onMounted(() => {
 const { data: dash } = useAsync(dashboard, null, { key: CK.dashboard })
 
 const first = computed(() => (auth.user!.nama.split(' ')[0] ?? '').toLowerCase().replace(/^\w/, (c) => c.toUpperCase()))
+const initial = computed(() => (auth.user!.nama[0] ?? 'M').toUpperCase())
 const m = computed(() => dash.value?.membership ?? null)
 const heroPct = computed(() => (m.value && m.value.total_hari > 0 ? Math.round((m.value.sisa_hari / m.value.total_hari) * 100) : 0))
 const next = computed(() => dash.value?.kelas_berikutnya ?? null)
@@ -43,7 +44,10 @@ const hasUnread = computed(() => {
   <div class="px-4 pt-5 pb-6">
     <!-- Header: avatar (hidden-menu toggle) + greeting + bell, exactly the official dash-header -->
     <div class="flex items-center gap-3">
-      <AvatarButton :size="46" />
+      <div class="flex h-[46px] w-[46px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[linear-gradient(135deg,#1B2A6B,#E0155A)] text-lg font-extrabold text-white" aria-hidden="true">
+        <SafeImg v-if="auth.user?.foto" :src="auth.user.foto" :alt="auth.user?.nama ?? ''" class="h-full w-full object-cover" />
+        <template v-else>{{ initial }}</template>
+      </div>
       <div class="min-w-0 flex-1">
         <h1 class="truncate text-xl font-extrabold">Halo, {{ first }}!</h1>
         <p class="text-[13px] font-semibold text-mute">Yuk latihan hari ini 💪</p>
