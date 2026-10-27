@@ -52,8 +52,20 @@ export function useUpdater() {
     registration?.update().catch(() => {})
     applyIfSafe()
   }
-  onMounted(() => document.addEventListener('visibilitychange', onVisible))
-  onUnmounted(() => document.removeEventListener('visibilitychange', onVisible))
+  // focus too: desktop/standalone windows can regain focus without a visibilitychange,
+  // and a stale bundle should live no longer than it has to
+  const onFocus = () => {
+    registration?.update().catch(() => {})
+    applyIfSafe()
+  }
+  onMounted(() => {
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onFocus)
+  })
+  onUnmounted(() => {
+    document.removeEventListener('visibilitychange', onVisible)
+    window.removeEventListener('focus', onFocus)
+  })
   return { needRefresh, offlineReady, update, applyIfSafe }
 }
 

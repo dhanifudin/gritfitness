@@ -22,9 +22,10 @@ const days = computed(() => {
 const sel = ref(0)
 const selYmd = computed(() => ymd(days.value[sel.value]))
 
-// per-date rows, stale-while-revalidate against the shared cache
+// Per-date rows, stale-while-revalidate against the shared cache. `byDate` is only ever written
+// under the fetch's own `date` argument, so one day's answer can never render under another day;
+// an entry stays undefined (= skeleton, never the empty state) until that very day has an answer.
 const byDate = ref<Record<string, ScheduleRow[]>>({})
-const loading = ref(false)
 const error = ref('')
 const stale = ref(false)
 async function loadDay(date: string, force = false) {
@@ -33,7 +34,6 @@ async function loadDay(date: string, force = false) {
     byDate.value = { ...byDate.value, [date]: hit.data }
     if (!force && Date.now() - hit.savedAt < 30_000) return
   }
-  loading.value = !hit
   error.value = ''
   stale.value = false
   try {
@@ -43,14 +43,14 @@ async function loadDay(date: string, force = false) {
   } catch (e) {
     if (hit) stale.value = true
     else error.value = e instanceof Error ? e.message : 'Terjadi kesalahan'
-  } finally {
-    loading.value = false
   }
 }
 watch(selYmd, (d) => void loadDay(d), { immediate: true })
 const reload = () => loadDay(selYmd.value, true)
 
-const rows = computed(() => byDate.value[selYmd.value] ?? [])
+const rows = computed(() => byDate.value[selYmd.value])
+const loading = computed(() => rows.value === undefined && !error.value)
+const caption = computed(() => days.value[sel.value].toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
 const opened = ref<ScheduleRow | null>(null)
 function booked() {
   void loadDay(selYmd.value, true)
@@ -81,6 +81,8 @@ function booked() {
     </button>
   </div>
 
+  <p class="mb-2 px-4 text-[13px] font-bold text-soft" data-testid="day-caption">{{ caption }}</p>
+
   <p v-if="error" class="banner banner-err mx-4 mb-3 flex items-center justify-between gap-3 !py-2 !text-xs">
     Jadwal tidak bisa dimuat.
     <button class="btn-sm btn-danger shrink-0" @click="reload">Coba lagi</button>
@@ -88,7 +90,7 @@ function booked() {
   <div v-if="loading" class="space-y-3 px-4">
     <div v-for="i in 2" :key="i" class="skeleton h-[84px]" />
   </div>
-  <template v-else>
+  <template v-else-if="rows">
     <p v-if="stale" class="banner banner-warn mx-4 mb-3 !px-3 !py-2 !text-xs">Tidak bisa memperbarui · menampilkan data tersimpan</p>
     <div v-if="!rows.length" class="px-4 py-12 text-center">
       <svg viewBox="0 0 24 24" class="mx-auto h-12 w-12 text-line" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2" /><path d="M3 11h18M8 3v4M16 3v4" /></svg>
