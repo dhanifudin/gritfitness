@@ -3,7 +3,9 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import CelebrationSheet from '@/components/CelebrationSheet.vue'
 import MiniTabBar from '@/components/MiniTabBar.vue'
+import SideMenu from '@/components/SideMenu.vue'
 import TabBar from '@/components/TabBar.vue'
+import TodayClassPrompt from '@/components/TodayClassPrompt.vue'
 import { useAuth } from '@/stores/auth'
 import { useOnline, useUpdater } from '@/composables/useSw'
 import { syncPushSubscription } from '@/lib/push'
@@ -122,6 +124,8 @@ watch(
     </p>
     <TabBar v-if="showTabs" />
     <MiniTabBar v-else-if="showMiniTabs" />
+    <SideMenu v-if="auth.loggedIn" />
+    <TodayClassPrompt v-if="showTabs && !tracker.needsConsent" />
     <CelebrationSheet v-if="showTabs && !tracker.needsConsent" />
   </div>
 </template>

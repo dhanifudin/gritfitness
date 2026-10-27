@@ -7,6 +7,7 @@ import BadgeGrid from '@/components/BadgeGrid.vue'
 import DaySheet from '@/components/DaySheet.vue'
 import ConsentSheet from '@/components/ConsentSheet.vue'
 import MetricChart from '@/components/MetricChart.vue'
+import MissingDays from '@/components/MissingDays.vue'
 import MonthHeatmap from '@/components/MonthHeatmap.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import StateBox from '@/components/StateBox.vue'
@@ -18,7 +19,7 @@ import { costPerVisit, invoiceBill, monthlySpend, otherActivitySpend, totalSpent
 import { useSyncLabel } from '@/composables/useSyncLabel'
 import { classEfficiency, classSavings } from '@/lib/classValue'
 import { CK } from '@/lib/dataCache'
-import { favouriteLabel, favouriteWeekdays } from '@/lib/insight'
+import { dailyInsight, favouriteLabel, favouriteWeekdays } from '@/lib/insight'
 import { activityBreakdown, addDays, counts, parseYmd, weekCounts, weekdayHistogram, ymd, type Visit } from '@/lib/tracker'
 import { parseExpiry } from '@/lib/qrCache'
 import { weightChange } from '@/lib/trackerData'
@@ -62,6 +63,8 @@ const spendMax = computed(() => Math.max(1, ...spendMonths.value.map((m) => m.to
 const spentThisYear = computed(() => totalSpent(bills.value, { from: `${tracker.now.getFullYear()}-01-01`, to: today.value }))
 const cpv = computed(() => costPerVisit(bills.value, tracker.visits, tracker.now, 30))
 const unpaid = computed(() => unpaidSummary(bills.value))
+// one rotating, data-backed insight sentence (moved here from the old Beranda)
+const insight = computed(() => dailyInsight({ visits: tracker.visits, now: tracker.now, total: s.value.total, streak: s.value.streak, cpv: cpv.value }, rupiah))
 // classes are free for members: the non-member price of each registered class is what the membership saved
 const savings = computed(() => classSavings(tracker.signups, ymd(addDays(tracker.now, -29)), ymd(tracker.now)))
 const efficiency = computed(() => classEfficiency({ saved: savings.value.saved, spent: cpv.value.spent, visits: cpv.value.visits }))
@@ -132,6 +135,9 @@ const visitMeta = (v: Visit) => [activityLabel(v), v.duration_min ? `${v.duratio
         <div><p class="text-xs text-mute">Total latihan</p><p class="text-2xl font-extrabold" data-testid="total">{{ s.total }}<span class="text-base text-mute"> hari</span></p></div>
       </div>
     </section>
+
+    <MissingDays />
+    <p v-if="insight" class="px-1 text-sm text-mute" data-testid="insight">{{ insight.text }}</p>
 
     <section class="card p-4"><h2 class="mb-3 text-sm font-semibold">8 minggu terakhir</h2><WeekBars :weeks="weeks" :goal="goal" /></section>
     <section class="card p-4"><MonthHeatmap :visits="tracker.visits" :now="tracker.now" :planned="planned" @select="daySheet = $event" /></section>

@@ -7,6 +7,7 @@ import BackHeader from '@/components/BackHeader.vue'
 import ConfirmSheet from '@/components/ConfirmSheet.vue'
 import QrCard from '@/components/QrCard.vue'
 import StateBox from '@/components/StateBox.vue'
+import { CK, invalidate } from '@/lib/dataCache'
 import { titleCase } from '@/lib/format'
 import { syncClassQr } from '@/lib/qrCache'
 import { useAuth } from '@/stores/auth'
@@ -56,6 +57,8 @@ async function confirmCancel() {
   try {
     await cancelClass(scheduleId)
     cancelling.value = false
+    invalidate(CK.myClasses)
+    invalidate(CK.dashboard)
     tracker.setSignupStatus(scheduleId, 'cancelled') // keep the home/jadwal lists honest right away
     await load()
     setTimeout(() => router.back(), 150)

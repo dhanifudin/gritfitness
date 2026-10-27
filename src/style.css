@@ -131,6 +131,16 @@ body {
 
 :focus-visible { outline: 2px solid var(--color-grit-500); outline-offset: 2px; }
 
+/* right drawer (hidden menu): backdrop fades, panel slides in from the right */
+.drawer-enter-active, .drawer-leave-active { transition: opacity 0.2s ease; }
+.drawer-enter-from, .drawer-leave-to { opacity: 0; }
+.drawer-enter-active .drawer-panel, .drawer-leave-active .drawer-panel { transition: transform 0.25s cubic-bezier(0.22, 0.9, 0.36, 1); }
+.drawer-enter-from .drawer-panel, .drawer-leave-to .drawer-panel { transform: translateX(100%); }
+@media (prefers-reduced-motion: reduce) {
+  .drawer-enter-active, .drawer-leave-active,
+  .drawer-enter-active .drawer-panel, .drawer-leave-active .drawer-panel { transition: none; }
+}
+
 /* bottom sheets: the app's one piece of motion — backdrop fades, panel slides up */
 .sheet-handle { @apply mx-auto mb-3 h-1 w-10 rounded-full bg-line; }
 .sheet-enter-active, .sheet-leave-active { transition: opacity 0.2s ease; }

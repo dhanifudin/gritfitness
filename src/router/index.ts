@@ -15,8 +15,13 @@ export const router = createRouter({
     { path: '/classes', name: 'classes', component: () => import('@/views/ClassesView.vue') },
     // a class catalog entry's upcoming sessions (official "kelas-jadwal")
     { path: '/classes/:id/schedule', name: 'class-schedule', component: () => import('@/views/ClassScheduleView.vue') },
-    // one of my bookings: detail + per-class attendance QR + cancel
+    // my bookings (official "Kelas Saya") and one booking's detail + per-class QR + cancel
+    { path: '/my-classes', name: 'my-classes', component: () => import('@/views/MyClassesView.vue') },
     { path: '/my-classes/:id', name: 'my-class-detail', component: () => import('@/views/MyClassDetailView.vue') },
+    // official "Riwayat Kehadiran" layout, fed by real /my-classes data
+    { path: '/attendance', name: 'attendance', component: () => import('@/views/AttendanceView.vue') },
+    // hidden-menu home of the weekly pattern + auto-booking toggles
+    { path: '/auto-booking', name: 'auto-booking', component: () => import('@/views/AutoBookingView.vue') },
     { path: '/account', name: 'account', component: () => import('@/views/AccountView.vue') },
     { path: '/notifications', name: 'notifications', component: () => import('@/views/NotificationsView.vue') },
     { path: '/bills', name: 'bills', component: () => import('@/views/BillsView.vue') },

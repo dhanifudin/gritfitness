@@ -4,20 +4,16 @@ import { useRoute } from 'vue-router'
 import { classSchedule } from '@/api/endpoints'
 import type { ScheduleRow } from '@/api/types'
 import BackHeader from '@/components/BackHeader.vue'
-import ClassInfoSheet from '@/components/ClassInfoSheet.vue'
+import ClassDetailPopup from '@/components/ClassDetailPopup.vue'
 import StateBox from '@/components/StateBox.vue'
 import { rupiah, useAsync } from '@/composables/useAsync'
-import classInfo from '@/data/classInfo.json'
-import { classInfoFor, type ClassInfoData } from '@/lib/classInfo'
 import { CK } from '@/lib/dataCache'
 import { titleCase } from '@/lib/format'
-import { weekdayOf } from '@/lib/timetable'
 
 // One class from the catalog: description + every upcoming published session, grouped by day
 // (official "kelas-jadwal" screen).
 const route = useRoute()
 const id = String(route.params.id)
-const info = classInfo as unknown as ClassInfoData
 
 const { data, loading, error, reload } = useAsync(() => classSchedule(id), null, { key: CK.classSchedule(id) })
 
@@ -32,10 +28,7 @@ const groups = computed(() => {
 })
 
 const opened = ref<{ row: ScheduleRow; date: string } | null>(null)
-const openedMatch = computed(() => (data.value ? classInfoFor(info, { kelas: data.value.kelas.nama }) : null))
-const wd = (dateStr: string) => weekdayOf(new Date(dateStr + 'T00:00'))
 function booked() {
-  opened.value = null
   void reload()
 }
 </script>
@@ -84,22 +77,5 @@ function booked() {
     </div>
   </StateBox>
 
-  <ClassInfoSheet
-    v-if="opened && data"
-    :row="opened.row"
-    :date="opened.date"
-    :match="openedMatch"
-    :title="titleCase(data.kelas.nama)"
-    :session="{
-      time: `${opened.row.jam_mulai}–${opened.row.jam_selesai}`,
-      instructor: opened.row.instruktur,
-      predicted: false,
-      weekday: wd(opened.date),
-      start_time: opened.row.jam_mulai,
-      class_name: data.kelas.nama,
-      package_id: null,
-    }"
-    @close="opened = null"
-    @booked="booked"
-  />
+  <ClassDetailPopup v-if="opened && data" :row="opened.row" :date="opened.date" :name="data.kelas.nama" @close="opened = null" @booked="booked" />
 </template>

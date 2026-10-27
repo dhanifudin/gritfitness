@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AvatarButton from '@/components/AvatarButton.vue'
 import ConfirmSheet from '@/components/ConfirmSheet.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import SafeImg from '@/components/SafeImg.vue'
@@ -14,13 +15,16 @@ onMounted(() => void auth.refreshUser())
 const initial = computed(() => (auth.user?.nama?.[0] ?? 'M').toUpperCase())
 const phone = computed(() => (auth.user?.telepon ? '+' + auth.user.telepon : ''))
 
+// official menu order (pages/account.f7.html): Profil, Memberships, Kelas Saya, Cuti, Tagihan,
+// Progres, Riwayat Kehadiran, Pengaturan
 const MENU = [
   { to: '/profile', label: 'Profil', testid: 'account-profile', icon: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 20c0-3.3 3.6-5 8-5s8 1.7 8 5' },
   { to: '/memberships', label: 'Memberships Saya', testid: 'profile-memberships', icon: 'M3 7h18v10H3zM3 11h18' },
+  { to: '/my-classes', label: 'Kelas Saya', testid: 'account-my-classes', icon: 'M12 3l9 6-9 6-9-6zM5 13v4l7 4 7-4v-4' },
   { to: '/leave', label: 'Cuti Membership', testid: 'profile-leave', icon: 'M10 9v6M14 9v6M5 5h14a1 1 0 011 1v12a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z' },
   { to: '/bills', label: 'Tagihan', testid: 'account-bills', icon: 'M5 3h14v18l-2-1.5L15 21l-2-1.5L11 21l-2-1.5L7 21l-2-1.5zM9 8h6M9 12h6' },
   { to: '/progress', label: 'Progres', testid: 'account-progress', icon: 'M4 20h16M7 20v-6M12 20V6M17 20v-9' },
-  { to: '/saved-qr', label: 'QR Tersimpan (offline)', testid: 'settings-saved-qr', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v1M14 20h1M18 18h3v3h-3z' },
+  { to: '/attendance', label: 'Riwayat Kehadiran', testid: 'account-attendance', icon: 'M12 2l2.4 2.4 3.4-.5 1 3.3 3.2 1.2-1 3.3 2 2.8-2.7 2-.2 3.5-3.4.3-2 2.7-3-1.6-3 1.6-2-2.7-3.4-.3-.2-3.5-2.7-2 2-2.8-1-3.3L6.2 5.2l3.4.5zM9 12l2 2 4-4' },
   { to: '/settings', label: 'Pengaturan', testid: 'open-settings', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.7 1.7 0 00.3 1.8 2 2 0 11-2.8 2.8 1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0 1.7 1.7 0 00-2.8-1.2 2 2 0 11-2.8-2.8A1.7 1.7 0 003 14.2a2 2 0 110-4 1.7 1.7 0 001.2-2.9 2 2 0 112.8-2.8A1.7 1.7 0 009.8 3a2 2 0 014 0 1.7 1.7 0 002.9 1.2 2 2 0 112.8 2.8A1.7 1.7 0 0021 9.8a2 2 0 010 4 1.7 1.7 0 00-1.6 1.2z' },
 ]
 
@@ -38,7 +42,9 @@ async function doLogout() {
 </script>
 
 <template>
-  <PageHeader title="Profil" />
+  <PageHeader title="Profil">
+    <template #right><AvatarButton /></template>
+  </PageHeader>
 
   <div class="px-4 pb-6">
     <RouterLink to="/profile" class="card flex items-center gap-4 p-4">

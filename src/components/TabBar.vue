@@ -1,26 +1,24 @@
 <script setup lang="ts">
-// Five direct tabs, official-style flat bar (64px, card surface, pink active). The official app
-// has four (no QR); QR keeps its own center tab here because it's the daily gym-door screen.
-// Progres lives in the Akun menu, matching the official IA.
+// The four official tabs — order, labels and SVGs copied from the official member app's
+// index.html (.grit-tabbar). Everything else lives in the hidden side menu.
 const tabs = [
-  { to: '/', label: 'Beranda', icon: 'M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z' },
-  { to: '/classes', label: 'Jadwal', icon: 'M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z' },
-  { to: '/qr', label: 'QR', icon: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v1M14 20h1M18 18h3v3h-3z' },
-  { to: '/packages', label: 'Paket', icon: 'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8' },
-  { to: '/account', label: 'Akun', icon: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 20c0-3.3 3.6-5 8-5s8 1.7 8 5' },
+  { to: '/', label: 'Beranda', icon: 'M4 11L12 4l8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z' },
+  { to: '/packages', label: 'Paket', icon: 'M6.5 7v10M17.5 7v10M4 10v4M20 10v4M6.5 12h11' },
+  { to: '/classes', label: 'Jadwal', icon: 'M3.5 9.5h17M8 3.5v3M16 3.5v3M5.5 5h13a2 2 0 012 2v12a2 2 0 01-2 2h-13a2 2 0 01-2-2V7a2 2 0 012-2z' },
+  { to: '/account', label: 'Profil', icon: 'M12 11.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM5 20c0-3.9 3.1-6 7-6s7 2.1 7 6' },
 ]
 </script>
 
 <template>
   <nav class="safe-b fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-line bg-card">
-    <ul class="grid h-16 grid-cols-5 items-center px-2">
+    <ul class="grid h-16 grid-cols-4 items-center px-2">
       <li v-for="t in tabs" :key="t.to" class="flex justify-center">
         <RouterLink
           :to="t.to"
           class="flex flex-col items-center gap-1 px-2 py-1 text-[10px] font-bold text-(--tab-inactive)"
           active-class="!text-grit-500"
         >
-          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path :d="t.icon" />
           </svg>
           {{ t.label }}

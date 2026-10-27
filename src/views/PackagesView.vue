@@ -2,6 +2,7 @@
 import { titleCase } from '@/lib/format'
 import { ref } from 'vue'
 import { classCatalog, paketList, ptPaketList } from '@/api/endpoints'
+import AvatarButton from '@/components/AvatarButton.vue'
 import PageHeader from '@/components/PageHeader.vue'
 import StateBox from '@/components/StateBox.vue'
 import { rupiah, useAsync } from '@/composables/useAsync'
@@ -30,7 +31,9 @@ const empty = () => (tab.value === 'membership' ? !membership.data.value?.data.l
 </script>
 
 <template>
-  <PageHeader title="Pilih Paketmu" subtitle="Membership, PT, dan kelas GritFitness" />
+  <PageHeader title="Pilih Paketmu" subtitle="Membership, PT, dan kelas GritFitness">
+    <template #right><AvatarButton /></template>
+  </PageHeader>
   <div class="seg mx-4 mb-4 grid-cols-3">
     <button
       v-for="t in tabs"
